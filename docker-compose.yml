@@ -1,0 +1,28 @@
+services:
+  group-frontend:
+    build:
+      context: ./shared-frontend
+    container_name: shared-frontend
+
+    ports:
+      - "8005:80"
+    networks:
+      - group-22-network
+
+  ollama:
+    image: ollama/ollama:latest
+    container_name: group-22-ollama
+    volumes:
+      - ollama-data:/root/.ollama
+    expose:
+      - "11434"
+    networks:
+      - group-22-network
+
+volumes:
+  student-5-data:
+  ollama-data:
+
+networks:
+  group-22-network:
+    name: group-22-network
