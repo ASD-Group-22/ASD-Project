@@ -1,0 +1,377 @@
+:root {
+    --bg0: #0b1020;
+    --bg1: #111a31;
+    --surface: #101a31;
+    --surface2: #172542;
+
+    --text: #e8edf8;
+    --muted: #aab8d5;
+
+    --accent: #45c9ff;
+    --accent2: #1eb1ee;
+    --border: #2b3a63;
+
+    --danger: #ff7885;
+    --success: #54d59a;
+
+    --radius: 12px;
+}
+
+
+/* Base styles */
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    min-height: 100vh;
+    font-family: "Segoe UI", Tahoma, sans-serif;
+    line-height: 1.45;
+    color: var(--text);
+
+    background:
+        radial-gradient(
+            1100px 540px at 10% -10%,
+            #1e3263 0%,
+            transparent 60%
+        ),
+        linear-gradient(
+            160deg,
+            var(--bg0),
+            var(--bg1)
+        );
+}
+
+
+/* Main layout */
+
+.app-shell {
+    max-width: 1280px;
+    margin: auto;
+    padding: 1.25rem;
+}
+
+.app-header {
+    margin-bottom: 1rem;
+}
+
+.app-header h1,
+h2,
+h3 {
+    margin-top: 0;
+}
+
+.app-header p,
+.muted {
+    color: var(--muted);
+}
+
+
+/* Cards */
+
+.card {
+    margin-bottom: 1rem;
+    padding: 1rem;
+
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+
+    background: rgba(16, 26, 49, 0.96);
+    box-shadow: 0 18px 40px rgba(0, 0, 0, 0.28);
+}
+
+
+/* Tabs */
+
+.tab-nav {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 0.8rem;
+}
+
+.tab-btn {
+    color: var(--text);
+    background: #1a2b4f;
+    border-color: var(--border);
+}
+
+.tab-btn.is-active {
+    color: #06202c;
+    background: var(--accent);
+}
+
+.tab-frame {
+    display: none;
+    width: 100%;
+    min-height: 950px;
+
+    border: 0;
+    border-radius: 10px;
+}
+
+.tab-frame.is-active {
+    display: block;
+}
+
+
+/* Embedded pages */
+
+.embedded-body {
+    min-height: auto;
+    background: transparent;
+}
+
+.embedded-shell {
+    padding: 0.2rem;
+}
+
+
+/* Form controls */
+
+label {
+    color: var(--muted);
+}
+
+input,
+textarea,
+select {
+    width: 100%;
+    margin-top: 0.25rem;
+    padding: 0.58rem 0.7rem;
+
+    color: var(--text);
+    background: var(--surface2);
+
+    border: 1px solid var(--border);
+    border-radius: 9px;
+}
+
+
+/* Buttons */
+
+button {
+    padding: 0.55rem 0.85rem;
+
+    font-weight: 700;
+    color: #06202c;
+
+    background: var(--accent);
+
+    border: 1px solid transparent;
+    border-radius: 9px;
+
+    cursor: pointer;
+}
+
+button:hover {
+    background: var(--accent2);
+}
+
+button.secondary {
+    color: var(--text);
+    background: #27385f;
+    border-color: var(--border);
+}
+
+button.danger {
+    color: #2b0710;
+    background: var(--danger);
+}
+
+
+/* Forms and shared row layouts */
+
+.grid-form {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.75rem;
+}
+
+.span-2 {
+    grid-column: 1 / -1;
+}
+
+.action-row,
+.search-row,
+.section-heading,
+.listing-title-row {
+    display: flex;
+    gap: 0.65rem;
+    align-items: center;
+}
+
+.section-heading,
+.listing-title-row {
+    justify-content: space-between;
+}
+
+.search-row input {
+    flex: 1;
+    margin-top: 0;
+}
+
+
+/* Results and listings */
+
+.panel {
+    margin-top: 0.75rem;
+    padding: 0.75rem;
+
+    background: #0d1629;
+
+    border: 1px solid var(--border);
+    border-radius: 10px;
+}
+
+.listing-card,
+.candidate-row {
+    margin-bottom: 0.65rem;
+    padding: 0.75rem;
+
+    background: var(--surface);
+
+    border: 1px solid var(--border);
+    border-radius: 10px;
+}
+
+.exchange-flow {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.45rem;
+
+    margin: 0.55rem 0;
+
+    font-weight: 700;
+}
+
+.arrow {
+    color: var(--muted);
+    font-weight: 400;
+}
+
+
+/* Status badges */
+
+.badge {
+    padding: 0.2rem 0.5rem;
+
+    font-size: 0.8rem;
+
+    border-radius: 999px;
+}
+
+.badge-active {
+    color: #03251a;
+    background: var(--success);
+}
+
+.badge-inactive {
+    color: #2b0710;
+    background: var(--danger);
+}
+
+
+/* Candidate matching */
+
+.candidate-row {
+    display: grid;
+    gap: 0.2rem;
+}
+
+
+/* Agentic workflow */
+
+.workflow-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 0.65rem;
+}
+
+.workflow-grid div {
+    padding: 0.75rem;
+
+    background: var(--surface2);
+
+    border: 1px solid var(--border);
+    border-radius: 10px;
+}
+
+.workflow-grid strong,
+.workflow-grid span {
+    display: block;
+}
+
+.workflow-grid span {
+    margin-top: 0.35rem;
+    color: var(--muted);
+}
+
+.workflow-log-row {
+    display: grid;
+    grid-template-columns: 90px 1fr;
+    gap: 0.6rem;
+
+    padding: 0.45rem 0;
+
+    border-bottom: 1px solid var(--border);
+}
+
+
+/* Human review */
+
+.human-review {
+    margin-top: 1rem;
+    padding-top: 1rem;
+
+    border-top: 1px solid var(--border);
+}
+
+.human-decision {
+    margin-top: 0.75rem;
+    padding: 0.75rem;
+
+    color: var(--muted);
+    background: var(--surface2);
+
+    border: 1px solid var(--border);
+    border-radius: 10px;
+}
+
+.decision-accepted {
+    color: var(--text);
+    border-color: var(--success);
+}
+
+.decision-rejected {
+    color: var(--text);
+    border-color: var(--danger);
+}
+
+
+/* Error messages */
+
+.error {
+    color: #ff9aa5;
+}
+
+
+/* Responsive layout */
+
+@media (max-width: 760px) {
+    .grid-form,
+    .workflow-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .span-2 {
+        grid-column: auto;
+    }
+
+    .search-row,
+    .section-heading {
+        flex-direction: column;
+        align-items: stretch;
+    }
+}
