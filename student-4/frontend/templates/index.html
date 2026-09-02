@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>Skill Profile Service</title>
+
+    <link
+        rel="stylesheet"
+        href="/static/styles.css"
+    >
+</head>
+
+
+<body>
+
+    <main>
+
+        <h1>Skill Profile Service</h1>
+
+        <p>
+            Create and manage your student skill profile.
+        </p>
+
+
+        <section>
+
+            <h2>Create Profile</h2>
+
+            <label>
+                Student ID
+            </label>
+
+            <input
+                id="studentId"
+                type="number"
+                value="4"
+            >
+
+
+            <label>
+                Skill Name
+            </label>
+
+            <input
+                id="skillName"
+                type="text"
+                placeholder="Python"
+            >
+
+
+            <label>
+                Skill Level
+            </label>
+
+            <select id="skillLevel">
+
+                <option>Beginner</option>
+
+                <option selected>
+                    Intermediate
+                </option>
+
+                <option>Advanced</option>
+
+            </select>
+
+
+            <label>
+                Strength
+            </label>
+
+            <input
+                id="strength"
+                type="text"
+                placeholder="Problem solving"
+            >
+
+
+            <label>
+                Weakness
+            </label>
+
+            <input
+                id="weakness"
+                type="text"
+                placeholder="Advanced libraries"
+            >
+
+
+            <button onclick="createProfile()">
+                Create Profile
+            </button>
+
+        </section>
+
+
+        <section>
+
+            <h2>Find Profile</h2>
+
+            <label>
+                Profile ID
+            </label>
+
+            <input
+                id="profileId"
+                type="number"
+            >
+
+            <button onclick="loadProfile()">
+                Load Profile
+            </button>
+
+            <button onclick="updateProfile()">
+                Update Profile
+            </button>
+
+            <button onclick="deleteProfile()">
+                Delete Profile
+            </button>
+
+        </section>
+
+
+        <section>
+
+            <h2>Current Profile</h2>
+
+            <pre id="profileDisplay">
+No profile loaded.
+            </pre>
+
+        </section>
+
+
+        <section>
+
+            <h2>Status</h2>
+
+            <p id="status">
+                Ready.
+            </p>
+
+        </section>
+
+    </main>
+
+
+    <script>
+
+        function getProfileData() {
+
+            return {
+
+                student_id:
+                    Number(
+                        document.getElementById(
+                            "studentId"
+                        ).value
+                    ),
+
+                skills: [
+                    {
+                        skill_name:
+                            document.getElementById(
+                                "skillName"
+                            ).value,
+
+                        skill_level:
+                            document.getElementById(
+                                "skillLevel"
+                            ).value,
+
+                        strength:
+                            document.getElementById(
+                                "strength"
+                            ).value,
+
+                        weakness:
+                            document.getElementById(
+                                "weakness"
+                            ).value
+                    }
+                ]
+            };
+        }
+
+
+        async function createProfile() {
+
+            const response = await fetch(
+                "/profiles",
+                {
+                    method: "POST",
+
+                    headers: {
+                        "Content-Type":
+                            "application/json"
+                    },
+
+                    body: JSON.stringify(
+                        getProfileData()
+                    )
+                }
+            );
+
+
+            const data = await response.json();
+
+            document.getElementById(
+                "status"
+            ).textContent =
+                data.message || data.error;
+
+
+            if (data.profile_id) {
+
+                document.getElementById(
+                    "profileId"
+                ).value =
+                    data.profile_id;
+
+                await loadProfile();
+            }
+        }
+
+
+        async function loadProfile() {
+
+            const profileId =
+                document.getElementById(
+                    "profileId"
+                ).value;
+
+
+            const response = await fetch(
+                `/profiles/${profileId}`
+            );
+
+
+            const data = await response.json();
+
+
+            document.getElementById(
+                "profileDisplay"
+            ).textContent =
+                JSON.stringify(
+                    data,
+                    null,
+                    2
+                );
+
+
+            if (response.ok) {
+
+                document.getElementById(
+                    "studentId"
+                ).value =
+                    data.student_id;
+
+
+                if (
+                    data.skills &&
+                    data.skills.length > 0
+                ) {
+
+                    const skill =
+                        data.skills[0];
+
+
+                    document.getElementById(
+                        "skillName"
+                    ).value =
+                        skill.skill_name;
+
+
+                    document.getElementById(
+                        "skillLevel"
+                    ).value =
+                        skill.skill_level;
+
+
+                    document.getElementById(
+                        "strength"
+                    ).value =
+                        skill.strength || "";
+
+
+                    document.getElementById(
+                        "weakness"
+                    ).value =
+                        skill.weakness || "";
+                }
+
+
+                document.getElementById(
+                    "status"
+                ).textContent =
+                    "Profile loaded successfully.";
+
+            }
+
+            else {
+
+                document.getElementById(
+                    "status"
+                ).textContent =
+                    data.error;
+            }
+        }
+
+
+        async function updateProfile() {
+
+            const profileId =
+                document.getElementById(
+                    "profileId"
+                ).value;
+
+
+            const response = await fetch(
+                `/profiles/${profileId}`,
+                {
+                    method: "PUT",
+
+                    headers: {
+                        "Content-Type":
+                            "application/json"
+                    },
+
+                    body: JSON.stringify(
+                        getProfileData()
+                    )
+                }
+            );
+
+
+            const data = await response.json();
+
+
+            document.getElementById(
+                "status"
+            ).textContent =
+                data.message || data.error;
+
+
+            if (response.ok) {
+                await loadProfile();
+            }
+        }
+
+
+        async function deleteProfile() {
+
+            const profileId =
+                document.getElementById(
+                    "profileId"
+                ).value;
+
+
+            const response = await fetch(
+                `/profiles/${profileId}`,
+                {
+                    method: "DELETE"
+                }
+            );
+
+
+            const data = await response.json();
+
+
+            document.getElementById(
+                "status"
+            ).textContent =
+                data.message || data.error;
+
+
+            if (response.ok) {
+
+                document.getElementById(
+                    "profileDisplay"
+                ).textContent =
+                    "Profile deleted.";
+            }
+        }
+
+    </script>
+
+</body>
+
+</html>
