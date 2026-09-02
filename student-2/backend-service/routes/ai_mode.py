@@ -16,6 +16,11 @@ def ai_match(listing_id):
         
         target_response.raise_for_status()
         target = target_response.json()
+        if target.get("status") != "active":
+            return jsonify({
+                "error": "Inactive listings cannot request AI recommendations"
+            }), 409
+        
         result = run_agentic_match(target)
         return jsonify({"listing": target, **result}), 200
     

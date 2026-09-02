@@ -122,6 +122,11 @@ def get_candidate_matches(listing_id):
         
         target_response.raise_for_status()
         target = target_response.json()
+        if target.get("status") != "active":
+            return jsonify({
+                "error": "Inactive listings cannot request matches"
+            }), 409   
+        
         candidates = deterministic_candidates(target, get_listings(include_inactive=False))
 
         return jsonify({"listing": target, "candidates": candidates}), 200
