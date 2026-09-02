@@ -1,0 +1,21 @@
+Generate suggested tasks for the following project.
+
+Project ID:
+{{PROJECT_ID}}
+
+Project Objective:
+{{OBJECTIVE}}
+
+Break the objective into practical development tasks.
+
+For each task provide:
+
+- Task title
+- Description
+- Priority
+- Dependencies
+- Suggested order
+
+Group related tasks where appropriate.
+
+The output should be suitable for converting the recommendations into project-management tasks.

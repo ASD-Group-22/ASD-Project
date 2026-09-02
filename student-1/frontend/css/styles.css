@@ -1,0 +1,620 @@
+/* =================================================
+   GLOBAL STYLES
+================================================= */
+
+* {
+    box-sizing: border-box;
+}
+
+html,
+body {
+    margin: 0;
+    padding: 0;
+    font-family: Arial, sans-serif;
+    background: #f4f6f8;
+    color: #333;
+}
+
+body {
+    min-height: 100vh;
+}
+
+main {
+    width: 100%;
+}
+
+
+/* =================================================
+   INDEX PAGE
+================================================= */
+
+.app-shell {
+    width: 100%;
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 30px;
+}
+
+
+/* =================================================
+   INDEX HEADER
+================================================= */
+
+.app-header {
+    margin-bottom: 25px;
+}
+
+.app-header h1 {
+    margin: 0 0 8px 0;
+    color: #222;
+}
+
+.app-header p {
+    margin: 0;
+    color: #666;
+}
+
+
+/* =================================================
+   TAB CONTAINER
+================================================= */
+
+.tab-shell {
+    background: white;
+    border-radius: 10px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    overflow: hidden;
+}
+
+
+/* =================================================
+   TAB NAVIGATION
+================================================= */
+
+.tab-nav {
+    display: flex;
+    gap: 0;
+    border-bottom: 1px solid #e5e7eb;
+    background: #ffffff;
+}
+
+
+/* =================================================
+   TAB BUTTONS
+================================================= */
+
+.tab-btn {
+    border: none;
+    border-bottom: 3px solid transparent;
+    background: transparent;
+    padding: 15px 25px;
+    color: #666;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.tab-btn:hover {
+    background: #f8fafc;
+    color: #333;
+}
+
+.tab-btn.is-active {
+    color: #2563eb;
+    border-bottom-color: #2563eb;
+}
+
+
+/* =================================================
+   TAB CONTENT
+================================================= */
+
+.tab-content {
+    width: 100%;
+    position: relative;
+}
+
+
+/* =================================================
+   TAB IFRAMES
+
+   IMPORTANT:
+   Only the active iframe is displayed.
+================================================= */
+
+.tab-frame {
+    display: none;
+    width: 100%;
+    height: 850px;
+    border: none;
+    background: #f4f6f8;
+}
+
+.tab-frame.is-active {
+    display: block;
+}
+
+
+/* =================================================
+   NORMAL MODE
+================================================= */
+
+.normal-container {
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.normal-container .normal-header {
+    margin-bottom: 25px;
+}
+
+.normal-container .normal-header h2 {
+    margin-bottom: 8px;
+}
+
+.normal-container .normal-header p {
+    color: #666;
+    margin: 0;
+}
+
+
+/* =================================================
+   NORMAL MODE - CREATE PROJECT
+================================================= */
+
+.normal-container .project-input-card {
+    background: white;
+    border-radius: 10px;
+    padding: 25px;
+    margin-bottom: 25px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.normal-container .project-input-card h3 {
+    margin-top: 0;
+    margin-bottom: 20px;
+}
+
+
+/* =================================================
+   NORMAL MODE - FORM
+================================================= */
+
+.normal-container .form-group {
+    margin-bottom: 15px;
+}
+
+.normal-container .form-group label {
+    display: block;
+    font-weight: bold;
+    margin-bottom: 6px;
+}
+
+.normal-container .form-group input,
+.normal-container .form-group textarea {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    font-size: 14px;
+    font-family: inherit;
+    background: white;
+    box-sizing: border-box;
+}
+
+.normal-container .form-group input:focus,
+.normal-container .form-group textarea:focus {
+    outline: none;
+    border-color: #2563eb;
+}
+
+.normal-container .form-group textarea {
+    min-height: 100px;
+    resize: vertical;
+}
+
+.normal-container .form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px;
+}
+
+
+/* =================================================
+   NORMAL MODE - CREATE BUTTON
+================================================= */
+
+.normal-container .create-button {
+    border: none;
+    border-radius: 6px;
+    padding: 11px 18px;
+    background: #2563eb;
+    color: white;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+.normal-container .create-button:hover {
+    background: #1d4ed8;
+}
+
+.normal-container #create-message {
+    margin-top: 15px;
+    color: #166534;
+}
+
+
+/* =================================================
+   NORMAL MODE - PROJECTS SECTION
+================================================= */
+
+.normal-container .projects-section {
+    background: white;
+    border-radius: 10px;
+    padding: 25px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.normal-container .projects-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.normal-container .projects-header h3 {
+    margin: 0;
+}
+
+
+/* =================================================
+   NORMAL MODE - REFRESH BUTTON
+================================================= */
+
+.normal-container .refresh-button {
+    border: none;
+    border-radius: 6px;
+    padding: 10px 16px;
+    background: #4b5563;
+    color: white;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+.normal-container .refresh-button:hover {
+    background: #374151;
+}
+
+
+/* =================================================
+   NORMAL MODE - PROJECT LIST
+================================================= */
+
+.normal-container #projects-list {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+}
+
+
+/* =================================================
+   NORMAL MODE - PROJECT CARD
+================================================= */
+
+.normal-container .project-card {
+    background: #f8fafc;
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+    padding: 20px;
+}
+
+.normal-container .project-card h4 {
+    margin-top: 0;
+    margin-bottom: 12px;
+    font-size: 18px;
+}
+
+.normal-container .project-card p {
+    margin: 8px 0;
+    color: #555;
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+.normal-container .project-card strong {
+    color: #333;
+}
+
+
+/* =================================================
+   NORMAL MODE - STATUS
+================================================= */
+
+.normal-container .project-status {
+    display: inline-block;
+    margin-top: 5px;
+    padding: 5px 10px;
+    background: #e5e7eb;
+    border-radius: 5px;
+    font-size: 13px;
+    font-weight: bold;
+    color: #374151;
+}
+
+
+/* =================================================
+   NORMAL MODE - DELETE
+================================================= */
+
+.normal-container .delete-button {
+    margin-top: 15px;
+    border: none;
+    border-radius: 6px;
+    padding: 9px 15px;
+    background: #dc2626;
+    color: white;
+    cursor: pointer;
+    font-size: 13px;
+}
+
+.normal-container .delete-button:hover {
+    background: #b91c1c;
+}
+
+
+/* =================================================
+   NORMAL MODE - MESSAGES
+================================================= */
+
+.normal-container .projects-message {
+    grid-column: 1 / -1;
+    padding: 25px;
+    text-align: center;
+    color: #666;
+}
+
+
+/* =================================================
+   AI MODE
+================================================= */
+
+.ai-container {
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.ai-header {
+    margin-bottom: 25px;
+}
+
+.ai-header h2 {
+    margin-bottom: 8px;
+}
+
+.ai-header p {
+    color: #666;
+    margin: 0;
+}
+
+
+/* =================================================
+   AI MODE - INPUT CARD
+================================================= */
+
+.ai-input-card {
+    background: white;
+    border-radius: 10px;
+    padding: 25px;
+    margin-bottom: 25px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+
+/* =================================================
+   AI MODE - FORM
+================================================= */
+
+.ai-container .form-group {
+    margin-bottom: 15px;
+}
+
+.ai-container .form-group label {
+    display: block;
+    font-weight: bold;
+    margin-bottom: 6px;
+}
+
+.ai-container .form-group input,
+.ai-container .form-group textarea {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    font-size: 14px;
+    font-family: inherit;
+    box-sizing: border-box;
+    background: white;
+}
+
+.ai-container .form-group input:focus,
+.ai-container .form-group textarea:focus {
+    outline: none;
+    border-color: #2563eb;
+}
+
+.ai-container .form-group textarea {
+    min-height: 120px;
+    resize: vertical;
+}
+
+
+/* =================================================
+   AI MODE - BUTTON ROW
+================================================= */
+
+.button-row {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-top: 20px;
+}
+
+
+/* =================================================
+   AI MODE - BUTTONS
+================================================= */
+
+.ai-button {
+    border: none;
+    border-radius: 6px;
+    padding: 11px 18px;
+    background: #2563eb;
+    color: white;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+.ai-button:hover {
+    background: #1d4ed8;
+}
+
+.ai-button.secondary {
+    background: #4b5563;
+}
+
+.ai-button.secondary:hover {
+    background: #374151;
+}
+
+.ai-button:disabled {
+    background: #9ca3af;
+    cursor: not-allowed;
+}
+
+
+/* =================================================
+   AI MODE - RESULTS
+================================================= */
+
+.results-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+}
+
+
+/* =================================================
+   AI MODE - CARDS
+================================================= */
+
+.ai-card {
+    background: white;
+    border-radius: 10px;
+    padding: 20px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.ai-card h3 {
+    margin-top: 0;
+    margin-bottom: 8px;
+}
+
+.ai-card p {
+    color: #666;
+    font-size: 14px;
+}
+
+
+/* =================================================
+   AI MODE - RESULT BOX
+================================================= */
+
+.result {
+    background: #f8fafc;
+    border: 1px solid #e5e7eb;
+    border-radius: 6px;
+    padding: 15px;
+    min-height: 100px;
+    white-space: pre-wrap;
+    overflow-x: auto;
+    font-family: Arial, sans-serif;
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+
+/* =================================================
+   AI MODE - STATUS
+================================================= */
+
+.status {
+    margin-top: 15px;
+    padding: 10px;
+    border-radius: 6px;
+    display: none;
+}
+
+.status.show {
+    display: block;
+}
+
+.status.loading {
+    background: #eff6ff;
+    color: #1d4ed8;
+}
+
+.status.error {
+    background: #fef2f2;
+    color: #b91c1c;
+}
+
+
+/* =================================================
+   RESPONSIVE DESIGN
+================================================= */
+
+@media (max-width: 800px) {
+
+    .app-shell {
+        padding: 20px;
+    }
+
+    main {
+        padding: 0;
+    }
+
+    .tab-frame {
+        height: 900px;
+    }
+
+    .normal-container {
+        width: 100%;
+    }
+
+    .normal-container .form-row {
+        grid-template-columns: 1fr;
+    }
+
+    .normal-container #projects-list {
+        grid-template-columns: 1fr;
+    }
+
+    .normal-container .projects-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 15px;
+    }
+
+    .results-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .button-row {
+        flex-direction: column;
+    }
+
+    .ai-button {
+        width: 100%;
+    }
+
+}

@@ -1,0 +1,33 @@
+Analyse the following project for potential risks.
+
+Project ID:
+{{PROJECT_ID}}
+
+Project Information:
+{{PROJECT}}
+
+Tasks:
+{{TASKS}}
+
+Milestones:
+{{MILESTONES}}
+
+Identify potential risks involving:
+
+- Schedule delays
+- Unrealistic deadlines
+- Task dependencies
+- Incomplete requirements
+- Team workload
+- Technical difficulties
+- Milestone delays
+
+For each risk provide:
+
+- Risk
+- Likelihood: Low, Medium, or High
+- Impact: Low, Medium, or High
+- Explanation
+- Recommended mitigation
+
+If there is insufficient information to identify a particular risk, do not invent information.

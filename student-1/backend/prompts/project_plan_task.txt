@@ -1,0 +1,42 @@
+Create a project plan based on the following project information.
+
+Project ID:
+{{PROJECT_ID}}
+
+Project Objective:
+{{OBJECTIVE}}
+
+Existing Project Information:
+{{PROJECT}}
+
+Existing Tasks:
+{{TASKS}}
+
+Existing Milestones:
+{{MILESTONES}}
+
+Analyse the existing project information before making recommendations.
+
+Provide:
+
+1. Project Overview
+2. Current Project Status
+3. Key Requirements
+4. Suggested Milestones
+5. Suggested Tasks
+6. Suggested Task Order
+7. Suggested Deadlines
+8. Potential Risks
+
+Clearly distinguish between:
+- Existing information from the project database
+- New recommendations made by the AI
+
+Do not claim that recommended tasks or milestones already exist.
+
+For each suggested task, provide:
+- Task title
+- Description
+- Priority
+- Suggested milestone
+- Dependencies
