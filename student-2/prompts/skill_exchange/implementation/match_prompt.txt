@@ -1,0 +1,9 @@
+Task: rank and explain the best Skill Exchange partners for the requester.
+
+Rules:
+1. Use only candidates contained in VALIDATION EVIDENCE.
+2. Do not create a candidate or listing ID that is not supplied.
+3. A strong match should normally have complementary offered/wanted skills and may have overlapping availability.
+4. Keep explanations short and tied to supplied evidence.
+5. Return strongest candidates first.
+6. Return JSON only using the output contract from the system prompt.

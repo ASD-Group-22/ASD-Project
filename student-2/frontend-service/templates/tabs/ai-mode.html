@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <title>Skill Exchange AI Mode</title>
+
+    <link rel="stylesheet" href="/css/styles.css">
+</head>
+
+<body class="embedded-body">
+
+    <main class="embedded-shell">
+
+        <!-- AI-assisted matching -->
+        <section class="card">
+            <h2>AI-Assisted Skill Exchange Match</h2>
+
+            <p class="muted">
+                The backend retrieves real candidates first, then Qwen ranks and explains only the supplied candidate evidence. Listing 1 is a seeded demo.
+            </p>
+
+            <form id="ai-form" class="search-row">
+                <input
+                    id="listing_id"
+                    type="number"
+                    min="1"
+                    required
+                    value="1"
+                >
+
+                <button type="submit">
+                    Run Agentic Match
+                </button>
+            </form>
+
+            <div id="result" class="panel">
+                Run the match to capture Plan → Act → Observe → Adapt evidence.
+            </div>
+        </section>
+
+        <!-- Agentic workflow summary -->
+        <section class="card">
+            <h2>Release 0 Agentic Workflow</h2>
+
+            <div class="workflow-grid">
+
+                <div>
+                    <strong>Plan</strong>
+                    <span>
+                        Identify the requester, evidence sources and AI task.
+                    </span>
+                </div>
+
+                <div>
+                    <strong>Act</strong>
+                    <span>
+                        Retrieve listing candidates and API context, then call Ollama.
+                    </span>
+                </div>
+
+                <div>
+                    <strong>Observe</strong>
+                    <span>
+                        Validate AI listing IDs against the supplied evidence.
+                    </span>
+                </div>
+
+                <div>
+                    <strong>Adapt</strong>
+                    <span>
+                        Retry once with stricter constraints if the output fails validation.
+                    </span>
+                </div>
+
+            </div>
+        </section>
+
+    </main>
+
+    <script>
+        const API = 'http://localhost:5202';
+
+        const aiForm = document.getElementById('ai-form');
+        const listingIdInput = document.getElementById('listing_id');
+        const resultPanel = document.getElementById('result');
+
+        /*
+         * Escapes text before inserting values returned from the API
+         * into dynamically generated HTML.
+         */
+        function escapeHtml(value) {
+            return String(value ?? '')
+                .replaceAll('&', '&amp;')
+                .replaceAll('<', '&lt;')
+                .replaceAll('>', '&gt;')
+                .replaceAll('"', '&quot;')
+                .replaceAll("'", '&#039;');
+        }
+        /*
+         * Sends a request to the Skill Exchange backend and returns
+         * the parsed JSON response.
+         */
+        async function request(path, options = {}) {
+            const response = await fetch(API + path, options);
+            const responseText = await response.text();
+
+            let body;
+
+            try {
+                body = JSON.parse(responseText);
+            } catch {
+                body = {
+                    raw: responseText
+                };
+            }
+
+            if (!response.ok) {
+                throw new Error(
+                    body.error ||
+                    body.message ||
+                    body.raw ||
+                    `HTTP ${response.status}`
+                );
+            }
+
+            return body;
+        }
+
+        /*
+         * Displays the Plan → Act → Observe → Adapt stages returned
+         * by the backend.
+         */
+        function renderWorkflow(rows) {
+            return (rows || [])
+                .map(stage => `
+                    <div class="workflow-log-row">
+                        <strong>${escapeHtml(stage.stage)}</strong>
+                        <span>${escapeHtml(stage.message)}</span>
+                    </div>
+                `)
+                .join('');
+        }
+        /*
+         * Displays one validated Skill Exchange recommendation.
+         */
+        function renderRecommendation(recommendation) {
+            return `
+                <article class="listing-card">
+
+                    <div class="listing-title-row">
+                        <strong>
+                            #${escapeHtml(recommendation.listing_id)}
+                            ·
+                            ${escapeHtml(recommendation.student_name)}
+                        </strong>
+
+                        <span class="badge badge-active">
+                            ${escapeHtml(recommendation.match_level)}
+                        </span>
+                    </div>
+
+                    <p>
+                        ${escapeHtml(recommendation.reason)}
+                    </p>
+
+                    <p class="muted">
+                        Offers ${escapeHtml(recommendation.skill_offered)}
+                        · Wants ${escapeHtml(recommendation.skill_wanted)}
+                        · ${escapeHtml(recommendation.availability)}
+                    </p>
+
+                </article>
+            `;
+        }
+        /*
+         * Creates the human oversight controls only when there is
+         * a validated recommendation for the user to review.
+         */
+        function renderHumanReviewControls(hasRecommendations) {
+            if (!hasRecommendations) {
+                return '';
+            }
+
+            return `
+                <div class="human-review">
+
+                    <h3>Human Review</h3>
+
+                    <p class="muted">
+                        The AI recommendation is advisory. The student may accept or
+                        reject the recommendation; no exchange is created automatically.
+                    </p>
+
+                    <div class="action-row">
+                        <button
+                            type="button"
+                            id="accept-recommendation"
+                        >
+                            Accept Recommendation
+                        </button>
+
+                        <button
+                            type="button"
+                            id="reject-recommendation"
+                            class="danger"
+                        >
+                            Reject Recommendation
+                        </button>
+                    </div>
+
+                    <div
+                        id="human-decision"
+                        class="human-decision"
+                    >
+                        Awaiting human decision.
+                    </div>
+
+                </div>
+            `;
+        }
+
+
+        /*
+         * Adds behaviour to the human review buttons after they have
+         * been inserted into the result panel.
+         */
+        function wireHumanReview() {
+            const acceptButton =
+                document.getElementById('accept-recommendation');
+
+            const rejectButton =
+                document.getElementById('reject-recommendation');
+
+            const decision =
+                document.getElementById('human-decision');
+
+            if (!acceptButton || !rejectButton || !decision) {
+                return;
+            }
+
+            acceptButton.addEventListener('click', () => {
+                decision.className =
+                    'human-decision decision-accepted';
+
+                decision.innerHTML = `
+                    <strong>Human Decision: Accepted</strong>
+                    <br>
+                    The user accepted the AI-assisted recommendation.
+                `;
+            });
+
+            rejectButton.addEventListener('click', () => {
+                decision.className =
+                    'human-decision decision-rejected';
+
+                decision.innerHTML = `
+                    <strong>Human Decision: Rejected</strong>
+                    <br>
+                    The user rejected the AI-assisted recommendation.
+                    No action was taken.
+                `;
+            });
+        }
+
+        /*
+         * Runs the grounded AI-assisted matching workflow.
+         */
+        aiForm.addEventListener('submit', async event => {
+            event.preventDefault();
+
+            resultPanel.textContent =
+                'Running grounded AI workflow...';
+
+            try {
+                const listingId = listingIdInput.value;
+
+                const response = await request(
+                    `/skill-exchange/${listingId}/ai-match`,
+                    {
+                        method: 'POST'
+                    }
+                );
+
+                const recommendations =
+                    response.recommendations || [];
+
+                const hasRecommendations =
+                    recommendations.length > 0;
+
+
+                resultPanel.innerHTML = `
+                    <h3>Workflow Evidence</h3>
+                    ${renderWorkflow(response.workflow)}
+                    <h3>Validated Recommendations</h3>
+                    ${
+                        hasRecommendations
+                            ? recommendations
+                                .map(renderRecommendation)
+                                .join('')
+                            : '<p>No recommendation.</p>'
+                    }
+                    <h3>AI Review</h3>
+                    <p class="muted">
+                        Main model:
+                        ${escapeHtml(response.model)}
+
+                        · Review model:
+                        ${escapeHtml(
+                            response.review_model || 'disabled'
+                        )}
+                        · Review status:
+                        ${escapeHtml(response.review_status)}
+                    </p>
+                    ${renderHumanReviewControls(
+                        hasRecommendations
+                    )}
+                `;
+                wireHumanReview();
+
+            } catch (error) {
+                resultPanel.innerHTML = `
+                    <p class="error">
+                        ${escapeHtml(error.message)}
+                    </p>
+
+                    <p class="muted">
+                        Normal CRUD still works if Ollama is unavailable. Check Ollama and the installed model names.
+                    </p>
+                `;
+            }
+        });
+    </script>
+
+</body>
+
+</html>
