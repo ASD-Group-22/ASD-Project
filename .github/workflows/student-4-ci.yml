@@ -1,0 +1,179 @@
+name: Student 4 - Skill Profile CI
+
+on:
+  push:
+    branches:
+      - student-4-skill-profile
+
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+
+      # =========================
+      # BUILD STUDENT 4 SERVICES
+      # =========================
+
+      - name: Build database image
+        run: |
+          docker build \
+            -t student4-database \
+            ./student-4/database
+
+
+      - name: Build backend image
+        run: |
+          docker build \
+            -t student4-backend \
+            ./student-4/backend
+
+
+      - name: Build frontend image
+        run: |
+          docker build \
+            -t student4-frontend \
+            ./student-4/frontend
+
+
+      # =========================
+      # CREATE TEST NETWORK
+      # =========================
+
+      - name: Create Docker network
+        run: |
+          docker network create student4-network
+
+
+      # =========================
+      # START DATABASE
+      # =========================
+
+      - name: Start database service
+        run: |
+          docker run -d \
+            --name student4-database \
+            --network student4-network \
+            -p 5004:5004 \
+            student4-database
+
+
+      - name: Check database health
+        run: |
+          for i in {1..10}; do
+            if curl --fail http://localhost:5004/; then
+              exit 0
+            fi
+
+            echo "Waiting for database..."
+            sleep 2
+          done
+
+          exit 1
+
+
+      # =========================
+      # START BACKEND
+      # =========================
+
+      - name: Start backend service
+        run: |
+          docker run -d \
+            --name student4-backend \
+            --network student4-network \
+            -p 5005:5005 \
+            -e DATABASE_SERVICE_URL="http://student4-database:5004" \
+            student4-backend
+
+
+      - name: Check backend health
+        run: |
+          for i in {1..10}; do
+            if curl --fail http://localhost:5005/; then
+              exit 0
+            fi
+
+            echo "Waiting for backend..."
+            sleep 2
+          done
+
+          exit 1
+
+
+      # =========================
+      # VALIDATE SEED DATA / API
+      # =========================
+
+      - name: Validate Skill Profile API
+        run: |
+          curl --fail \
+            http://localhost:5005/api/profiles/student/4
+
+
+      - name: Validate seeded profile
+        run: |
+          curl --fail \
+            http://localhost:5005/api/profiles/student/10
+
+
+      # =========================
+      # START FRONTEND
+      # =========================
+
+      - name: Start frontend service
+        run: |
+          docker run -d \
+            --name student4-frontend \
+            --network student4-network \
+            -p 5006:5006 \
+            -e BACKEND_SERVICE_URL="http://student4-backend:5005" \
+            student4-frontend
+
+
+      - name: Check frontend
+        run: |
+          for i in {1..10}; do
+            if curl --fail http://localhost:5006/; then
+              exit 0
+            fi
+
+            echo "Waiting for frontend..."
+            sleep 2
+          done
+
+          exit 1
+
+
+      # =========================
+      # DEBUGGING EVIDENCE
+      # =========================
+
+      - name: Show running containers
+        if: always()
+        run: |
+          docker ps -a
+
+
+      - name: Show database logs
+        if: always()
+        run: |
+          docker logs student4-database || true
+
+
+      - name: Show backend logs
+        if: always()
+        run: |
+          docker logs student4-backend || true
+
+
+      - name: Show frontend logs
+        if: always()
+        run: |
+          docker logs student4-frontend || true

@@ -1,0 +1,19 @@
+Review the following Student 4 Skill Profile Service evidence.
+
+REVIEW TARGET:
+{{REVIEW_TARGET}}
+
+EVIDENCE:
+{{EVIDENCE}}
+
+Identify implementation problems, integration risks, or useful improvements.
+
+Do not repeat findings.
+Each finding may only be stated once.
+Return no more than 3 findings, 3 risks, and 3 recommended actions.
+
+Base every finding directly on the supplied evidence.
+
+Do not invent authentication requirements, JWT requirements, security requirements, or other functionality that is not part of the evidence or review target.
+
+When a boolean value is false, do not describe that condition as true.
