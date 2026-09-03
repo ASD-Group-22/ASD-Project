@@ -1,7 +1,11 @@
-from flask import Flask, jsonify
+from flask import Flask
 from flask_cors import CORS
 
-from routes import normal_ui_bp, ai_mode_bp
+from routes import (
+    projects_bp,
+    tasks_bp,
+    ai_bp
+)
 
 
 app = Flask(__name__)
@@ -9,21 +13,29 @@ app = Flask(__name__)
 CORS(app)
 
 
-app.register_blueprint(normal_ui_bp)
-app.register_blueprint(ai_mode_bp)
+# Register API routes
+app.register_blueprint(projects_bp)
+app.register_blueprint(tasks_bp)
+app.register_blueprint(ai_bp)
 
+
+# ============================================================
+# HEALTH CHECK
+# ============================================================
 
 @app.route("/health", methods=["GET"])
 def health():
-
-    return jsonify({
+    return {
         "status": "healthy",
-        "service": "project-service"
-    })
+        "service": "backend-service"
+    }
 
+
+# ============================================================
+# START SERVER
+# ============================================================
 
 if __name__ == "__main__":
-
     app.run(
         host="0.0.0.0",
         port=5001,

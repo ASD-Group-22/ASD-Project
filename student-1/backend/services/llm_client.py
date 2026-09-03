@@ -2,13 +2,21 @@ import os
 import requests
 
 
-OLLAMA_BASE_URL = os.getenv("OLLAMA_BASE_URL")
+OLLAMA_BASE_URL = os.getenv(
+    "OLLAMA_BASE_URL"
+)
 
-OLLAMA_MODEL = os.getenv("OLLAMA_MODEL")
+OLLAMA_MODEL = os.getenv(
+    "OLLAMA_MODEL"
+)
 
-OLLAMA_REVIEW_MODEL = os.getenv("OLLAMA_REVIEW_MODEL")
+OLLAMA_REVIEW_MODEL = os.getenv(
+    "OLLAMA_REVIEW_MODEL"
+)
 
-OLLAMA_GENERATE_URL = f"{OLLAMA_BASE_URL}/api/generate"
+OLLAMA_GENERATE_URL = (
+    f"{OLLAMA_BASE_URL}/api/generate"
+)
 
 
 def generate(prompt, model=None):
@@ -29,3 +37,10 @@ def generate(prompt, model=None):
     data = response.json()
 
     return data["response"]
+
+
+def generate_review(prompt):
+    return generate(
+        prompt,
+        model=OLLAMA_REVIEW_MODEL
+    )

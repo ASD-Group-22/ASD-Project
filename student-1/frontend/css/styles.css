@@ -1,6 +1,6 @@
-/* =================================================
-   GLOBAL STYLES
-================================================= */
+/* =========================================================
+   GLOBAL
+   ========================================================= */
 
 * {
     box-sizing: border-box;
@@ -10,123 +10,162 @@ html,
 body {
     margin: 0;
     padding: 0;
-    font-family: Arial, sans-serif;
+    min-height: 100%;
+
+    font-family:
+        Arial,
+        Helvetica,
+        sans-serif;
+
     background: #f4f6f8;
-    color: #333;
+    color: #222;
 }
 
 body {
     min-height: 100vh;
 }
 
-main {
-    width: 100%;
+button,
+input,
+textarea,
+select {
+    font-family: inherit;
+}
+
+button {
+    cursor: pointer;
+}
+
+button:disabled {
+    cursor: not-allowed;
+    opacity: 0.6;
+}
+
+[hidden] {
+    display: none !important;
 }
 
 
-/* =================================================
-   INDEX PAGE
-================================================= */
+/* =========================================================
+   APP SHELL
+   ========================================================= */
 
 .app-shell {
-    width: 100%;
-    max-width: 1400px;
-    margin: 0 auto;
-    padding: 30px;
+    min-height: 100vh;
+
+    display: flex;
+    flex-direction: column;
 }
 
 
-/* =================================================
-   INDEX HEADER
-================================================= */
+/* =========================================================
+   HEADER
+   ========================================================= */
 
 .app-header {
-    margin-bottom: 25px;
+    background: #1f2937;
+    color: white;
+
+    padding: 28px 40px;
+
+    border-bottom:
+        1px solid #111827;
 }
 
 .app-header h1 {
-    margin: 0 0 8px 0;
-    color: #222;
+    margin: 0 0 6px 0;
+
+    font-size: 28px;
+    font-weight: 700;
 }
 
 .app-header p {
     margin: 0;
-    color: #666;
+
+    color: #d1d5db;
+
+    font-size: 15px;
 }
 
 
-/* =================================================
-   TAB CONTAINER
-================================================= */
+/* =========================================================
+   TAB SHELL
+   ========================================================= */
 
 .tab-shell {
-    background: white;
-    border-radius: 10px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-    overflow: hidden;
+    width: 100%;
+    max-width: 1400px;
+
+    margin: 0 auto;
+
+    flex: 1;
 }
-
-
-/* =================================================
-   TAB NAVIGATION
-================================================= */
 
 .tab-nav {
     display: flex;
-    gap: 0;
-    border-bottom: 1px solid #e5e7eb;
-    background: #ffffff;
+
+    background: white;
+
+    border-bottom:
+        1px solid #d1d5db;
+
+    padding: 0 30px;
 }
-
-
-/* =================================================
-   TAB BUTTONS
-================================================= */
 
 .tab-btn {
     border: none;
-    border-bottom: 3px solid transparent;
+
     background: transparent;
-    padding: 15px 25px;
-    color: #666;
+
+    color: #6b7280;
+
+    padding: 17px 24px;
+
     font-size: 15px;
     font-weight: 600;
-    cursor: pointer;
+
+    border-bottom:
+        3px solid transparent;
+
+    transition:
+        color 0.2s ease,
+        border-color 0.2s ease,
+        background 0.2s ease;
 }
 
 .tab-btn:hover {
-    background: #f8fafc;
-    color: #333;
+    color: #111827;
+    background: #f9fafb;
 }
 
 .tab-btn.is-active {
-    color: #2563eb;
-    border-bottom-color: #2563eb;
+    color: #111827;
+
+    border-bottom-color:
+        #111827;
 }
 
 
-/* =================================================
+/* =========================================================
    TAB CONTENT
-================================================= */
+   ========================================================= */
 
 .tab-content {
     width: 100%;
-    position: relative;
 }
-
-
-/* =================================================
-   TAB IFRAMES
-
-   IMPORTANT:
-   Only the active iframe is displayed.
-================================================= */
 
 .tab-frame {
     display: none;
+
     width: 100%;
-    height: 850px;
+
+    height:
+        calc(100vh - 150px);
+
+    min-height: 700px;
+
     border: none;
+
     background: #f4f6f8;
 }
 
@@ -135,486 +174,722 @@ main {
 }
 
 
-/* =================================================
-   NORMAL MODE
-================================================= */
+/* =========================================================
+   COMMON FORM ELEMENTS
+   ========================================================= */
 
-.normal-container {
-    max-width: 1200px;
-    margin: 0 auto;
-}
-
-.normal-container .normal-header {
-    margin-bottom: 25px;
-}
-
-.normal-container .normal-header h2 {
-    margin-bottom: 8px;
-}
-
-.normal-container .normal-header p {
-    color: #666;
-    margin: 0;
-}
-
-
-/* =================================================
-   NORMAL MODE - CREATE PROJECT
-================================================= */
-
-.normal-container .project-input-card {
-    background: white;
-    border-radius: 10px;
-    padding: 25px;
-    margin-bottom: 25px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-}
-
-.normal-container .project-input-card h3 {
-    margin-top: 0;
-    margin-bottom: 20px;
-}
-
-
-/* =================================================
-   NORMAL MODE - FORM
-================================================= */
-
-.normal-container .form-group {
-    margin-bottom: 15px;
-}
-
-.normal-container .form-group label {
-    display: block;
-    font-weight: bold;
-    margin-bottom: 6px;
-}
-
-.normal-container .form-group input,
-.normal-container .form-group textarea {
-    width: 100%;
-    padding: 10px;
-    border: 1px solid #ccc;
-    border-radius: 6px;
-    font-size: 14px;
-    font-family: inherit;
-    background: white;
-    box-sizing: border-box;
-}
-
-.normal-container .form-group input:focus,
-.normal-container .form-group textarea:focus {
-    outline: none;
-    border-color: #2563eb;
-}
-
-.normal-container .form-group textarea {
-    min-height: 100px;
-    resize: vertical;
-}
-
-.normal-container .form-row {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 15px;
-}
-
-
-/* =================================================
-   NORMAL MODE - CREATE BUTTON
-================================================= */
-
-.normal-container .create-button {
-    border: none;
-    border-radius: 6px;
-    padding: 11px 18px;
-    background: #2563eb;
-    color: white;
-    cursor: pointer;
-    font-size: 14px;
-}
-
-.normal-container .create-button:hover {
-    background: #1d4ed8;
-}
-
-.normal-container #create-message {
-    margin-top: 15px;
-    color: #166534;
-}
-
-
-/* =================================================
-   NORMAL MODE - PROJECTS SECTION
-================================================= */
-
-.normal-container .projects-section {
-    background: white;
-    border-radius: 10px;
-    padding: 25px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-}
-
-.normal-container .projects-header {
+.form-group {
     display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 20px;
+    flex-direction: column;
+
+    gap: 7px;
+
+    margin-bottom: 18px;
 }
 
-.normal-container .projects-header h3 {
-    margin: 0;
+.form-group label {
+    font-size: 14px;
+    font-weight: 600;
+
+    color: #374151;
 }
 
+input,
+textarea,
+select {
+    width: 100%;
 
-/* =================================================
-   NORMAL MODE - REFRESH BUTTON
-================================================= */
+    border:
+        1px solid #d1d5db;
 
-.normal-container .refresh-button {
-    border: none;
     border-radius: 6px;
-    padding: 10px 16px;
-    background: #4b5563;
-    color: white;
-    cursor: pointer;
+
+    background: white;
+    color: #111827;
+
     font-size: 14px;
+
+    padding: 10px 12px;
+
+    outline: none;
+
+    transition:
+        border-color 0.2s ease,
+        box-shadow 0.2s ease;
 }
 
-.normal-container .refresh-button:hover {
-    background: #374151;
+input:focus,
+textarea:focus,
+select:focus {
+    border-color: #6b7280;
+
+    box-shadow:
+        0 0 0 2px
+        rgba(
+            107,
+            114,
+            128,
+            0.15
+        );
 }
 
+textarea {
+    resize: vertical;
 
-/* =================================================
-   NORMAL MODE - PROJECT LIST
-================================================= */
-
-.normal-container #projects-list {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 20px;
-}
-
-
-/* =================================================
-   NORMAL MODE - PROJECT CARD
-================================================= */
-
-.normal-container .project-card {
-    background: #f8fafc;
-    border: 1px solid #e5e7eb;
-    border-radius: 10px;
-    padding: 20px;
-}
-
-.normal-container .project-card h4 {
-    margin-top: 0;
-    margin-bottom: 12px;
-    font-size: 18px;
-}
-
-.normal-container .project-card p {
-    margin: 8px 0;
-    color: #555;
-    font-size: 14px;
     line-height: 1.5;
 }
 
-.normal-container .project-card strong {
-    color: #333;
+.form-row {
+    display: grid;
+
+    grid-template-columns:
+        1fr 1fr;
+
+    gap: 18px;
 }
 
 
-/* =================================================
-   NORMAL MODE - STATUS
-================================================= */
+/* =========================================================
+   CREATE PROJECT
+   ========================================================= */
 
-.normal-container .project-status {
-    display: inline-block;
-    margin-top: 5px;
-    padding: 5px 10px;
-    background: #e5e7eb;
-    border-radius: 5px;
-    font-size: 13px;
-    font-weight: bold;
+.create-project-container {
+    max-width: 850px;
+
+    margin: 0 auto;
+
+    padding: 45px 30px;
+}
+
+.create-project-card {
+    background: white;
+
+    border:
+        1px solid #e5e7eb;
+
+    border-radius: 10px;
+
+    padding: 30px;
+
+    box-shadow:
+        0 2px 8px
+        rgba(
+            0,
+            0,
+            0,
+            0.04
+        );
+}
+
+.create-project-header {
+    margin-bottom: 28px;
+}
+
+.create-project-header h2 {
+    margin: 0 0 8px 0;
+
+    font-size: 24px;
+
+    color: #111827;
+}
+
+.create-project-header p {
+    margin: 0;
+
+    color: #6b7280;
+
+    font-size: 14px;
+
+    line-height: 1.5;
+}
+
+
+/* =========================================================
+   CREATE BUTTON
+   ========================================================= */
+
+.create-button {
+    width: 100%;
+
+    border: none;
+
+    border-radius: 6px;
+
+    padding: 12px 18px;
+
+    background: #1f2937;
+    color: white;
+
+    font-size: 14px;
+    font-weight: 600;
+
+    transition:
+        background 0.2s ease,
+        transform 0.1s ease;
+}
+
+.create-button:hover {
+    background: #111827;
+}
+
+.create-button:active {
+    transform:
+        translateY(1px);
+}
+
+
+/* =========================================================
+   STATUS MESSAGES
+   ========================================================= */
+
+.status {
+    min-height: 20px;
+
+    margin-top: 12px;
+
+    color: #4b5563;
+
+    font-size: 14px;
+
+    line-height: 1.5;
+}
+
+
+/* =========================================================
+   MANAGE PROJECTS
+   ========================================================= */
+
+.manage-projects-container {
+    max-width: 1200px;
+
+    margin: 0 auto;
+
+    padding:
+        35px
+        30px
+        60px;
+}
+
+.manage-projects-header {
+    margin-bottom: 22px;
+}
+
+.manage-projects-header h2 {
+    margin: 0 0 8px 0;
+
+    font-size: 25px;
+
+    color: #111827;
+}
+
+.manage-projects-header p {
+    margin: 0;
+
+    color: #6b7280;
+
+    font-size: 14px;
+}
+
+
+/* =========================================================
+   MANAGE PROJECT CARDS
+   ========================================================= */
+
+.manage-projects-card {
+    background: white;
+
+    border:
+        1px solid #e5e7eb;
+
+    border-radius: 10px;
+
+    padding: 25px;
+
+    margin-bottom: 20px;
+
+    box-shadow:
+        0 2px 8px
+        rgba(
+            0,
+            0,
+            0,
+            0.04
+        );
+}
+
+.manage-projects-card h3 {
+    margin:
+        0 0 20px 0;
+
+    font-size: 19px;
+
+    color: #111827;
+}
+
+.manage-projects-card h4 {
+    margin:
+        0 0 12px 0;
+
+    font-size: 15px;
+
     color: #374151;
 }
 
 
-/* =================================================
-   NORMAL MODE - DELETE
-================================================= */
+/* =========================================================
+   PROJECT SELECTOR
+   ========================================================= */
 
-.normal-container .delete-button {
-    margin-top: 15px;
-    border: none;
+#project-select {
+    max-width: 500px;
+}
+
+
+/* =========================================================
+   EDITABLE PROJECT FIELDS
+   ========================================================= */
+
+.editable-field {
+    display: grid;
+
+    grid-template-columns:
+        1fr auto;
+
+    gap: 12px;
+
+    align-items: end;
+
+    margin-bottom: 18px;
+}
+
+.editable-field .form-group {
+    margin-bottom: 0;
+}
+
+.update-button {
+    border:
+        1px solid #d1d5db;
+
     border-radius: 6px;
-    padding: 9px 15px;
-    background: #dc2626;
-    color: white;
-    cursor: pointer;
+
+    background: #f9fafb;
+
+    color: #374151;
+
+    padding:
+        10px
+        16px;
+
     font-size: 13px;
+    font-weight: 600;
+
+    white-space: nowrap;
+
+    transition:
+        background 0.2s ease,
+        border-color 0.2s ease;
 }
 
-.normal-container .delete-button:hover {
-    background: #b91c1c;
-}
+.update-button:hover {
+    background: #f3f4f6;
 
-
-/* =================================================
-   NORMAL MODE - MESSAGES
-================================================= */
-
-.normal-container .projects-message {
-    grid-column: 1 / -1;
-    padding: 25px;
-    text-align: center;
-    color: #666;
-}
-
-
-/* =================================================
-   AI MODE
-================================================= */
-
-.ai-container {
-    max-width: 1200px;
-    margin: 0 auto;
-}
-
-.ai-header {
-    margin-bottom: 25px;
-}
-
-.ai-header h2 {
-    margin-bottom: 8px;
-}
-
-.ai-header p {
-    color: #666;
-    margin: 0;
+    border-color:
+        #9ca3af;
 }
 
 
-/* =================================================
-   AI MODE - INPUT CARD
-================================================= */
+/* =========================================================
+   SECTION HEADER
+   ========================================================= */
 
-.ai-input-card {
-    background: white;
-    border-radius: 10px;
-    padding: 25px;
-    margin-bottom: 25px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+.section-header {
+    display: flex;
+
+    justify-content:
+        space-between;
+
+    align-items: center;
+
+    margin-bottom: 20px;
 }
 
-
-/* =================================================
-   AI MODE - FORM
-================================================= */
-
-.ai-container .form-group {
-    margin-bottom: 15px;
-}
-
-.ai-container .form-group label {
-    display: block;
-    font-weight: bold;
+.section-header h3 {
     margin-bottom: 6px;
 }
 
-.ai-container .form-group input,
-.ai-container .form-group textarea {
-    width: 100%;
-    padding: 10px;
-    border: 1px solid #ccc;
-    border-radius: 6px;
+.section-header p {
+    margin: 0;
+
+    color: #6b7280;
+
     font-size: 14px;
-    font-family: inherit;
-    box-sizing: border-box;
+}
+
+
+/* =========================================================
+   TABLE
+   ========================================================= */
+
+.table-container {
+    width: 100%;
+
+    overflow-x: auto;
+
+    border:
+        1px solid #e5e7eb;
+
+    border-radius: 7px;
+}
+
+.data-table {
+    width: 100%;
+
+    border-collapse:
+        collapse;
+
     background: white;
 }
 
-.ai-container .form-group input:focus,
-.ai-container .form-group textarea:focus {
-    outline: none;
-    border-color: #2563eb;
+.data-table th {
+    background: #f9fafb;
+
+    color: #374151;
+
+    font-size: 13px;
+    font-weight: 600;
+
+    text-align: left;
+
+    padding: 12px;
+
+    border-bottom:
+        1px solid #e5e7eb;
 }
 
-.ai-container .form-group textarea {
-    min-height: 120px;
-    resize: vertical;
+.data-table td {
+    padding: 10px 12px;
+
+    border-bottom:
+        1px solid #e5e7eb;
+
+    vertical-align: middle;
+}
+
+.data-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+.data-table tbody tr:hover {
+    background: #fafafa;
 }
 
 
-/* =================================================
-   AI MODE - BUTTON ROW
-================================================= */
+/* =========================================================
+   EMPTY TABLE
+   ========================================================= */
 
-.button-row {
+.empty-table-message {
+    text-align: center;
+
+    color: #6b7280;
+
+    padding: 25px !important;
+
+    font-size: 14px;
+}
+
+
+/* =========================================================
+   TABLE INPUTS
+   ========================================================= */
+
+.table-input {
+    width: 100%;
+
+    min-width: 200px;
+
+    padding:
+        8px
+        10px;
+
+    font-size: 13px;
+}
+
+.table-select {
+    width: 150px;
+
+    padding:
+        8px
+        10px;
+
+    font-size: 13px;
+}
+
+
+/* =========================================================
+   TABLE ACTIONS
+   ========================================================= */
+
+.table-actions {
     display: flex;
-    gap: 10px;
-    flex-wrap: wrap;
-    margin-top: 20px;
+
+    align-items: center;
+
+    gap: 8px;
+
+    white-space: nowrap;
+}
+
+.small-button {
+    border:
+        1px solid #d1d5db;
+
+    border-radius: 5px;
+
+    background: white;
+
+    color: #374151;
+
+    padding:
+        7px
+        11px;
+
+    font-size: 12px;
+    font-weight: 600;
+
+    transition:
+        background 0.2s ease,
+        border-color 0.2s ease;
+}
+
+.small-button:hover {
+    background: #f3f4f6;
+
+    border-color:
+        #9ca3af;
+}
+
+.delete-button:hover {
+    color: #991b1b;
+
+    border-color:
+        #fca5a5;
+
+    background: #fef2f2;
 }
 
 
-/* =================================================
-   AI MODE - BUTTONS
-================================================= */
+/* =========================================================
+   ADD TASK
+   ========================================================= */
+
+.add-item-section {
+    margin-top: 25px;
+
+    padding-top: 22px;
+
+    border-top:
+        1px solid #e5e7eb;
+}
+
+.add-item-row {
+    display: grid;
+
+    grid-template-columns:
+        1fr
+        150px
+        auto
+        auto;
+
+    gap: 10px;
+
+    align-items: center;
+}
+
+.add-item-row .table-input {
+    min-width: 0;
+}
+
+
+/* =========================================================
+   ACTION BUTTON
+   ========================================================= */
+
+.action-button {
+    border: none;
+
+    border-radius: 6px;
+
+    background: #1f2937;
+
+    color: white;
+
+    padding:
+        10px
+        15px;
+
+    font-size: 13px;
+    font-weight: 600;
+
+    white-space: nowrap;
+
+    transition:
+        background 0.2s ease,
+        transform 0.1s ease;
+}
+
+.action-button:hover {
+    background: #111827;
+}
+
+.action-button:active {
+    transform:
+        translateY(1px);
+}
+
+
+/* =========================================================
+   AI BUTTON
+   ========================================================= */
 
 .ai-button {
-    border: none;
+    border:
+        1px solid #6b7280;
+
     border-radius: 6px;
-    padding: 11px 18px;
-    background: #2563eb;
-    color: white;
-    cursor: pointer;
-    font-size: 14px;
+
+    background: white;
+
+    color: #374151;
+
+    padding:
+        10px
+        15px;
+
+    font-size: 13px;
+    font-weight: 600;
+
+    white-space: nowrap;
+
+    transition:
+        background 0.2s ease,
+        border-color 0.2s ease;
 }
 
 .ai-button:hover {
-    background: #1d4ed8;
-}
+    background: #f3f4f6;
 
-.ai-button.secondary {
-    background: #4b5563;
-}
-
-.ai-button.secondary:hover {
-    background: #374151;
-}
-
-.ai-button:disabled {
-    background: #9ca3af;
-    cursor: not-allowed;
+    border-color:
+        #374151;
 }
 
 
-/* =================================================
-   AI MODE - RESULTS
-================================================= */
+/* =========================================================
+   RESPONSIVE
+   ========================================================= */
 
-.results-grid {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 20px;
-}
+@media (max-width: 900px) {
 
-
-/* =================================================
-   AI MODE - CARDS
-================================================= */
-
-.ai-card {
-    background: white;
-    border-radius: 10px;
-    padding: 20px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-}
-
-.ai-card h3 {
-    margin-top: 0;
-    margin-bottom: 8px;
-}
-
-.ai-card p {
-    color: #666;
-    font-size: 14px;
-}
-
-
-/* =================================================
-   AI MODE - RESULT BOX
-================================================= */
-
-.result {
-    background: #f8fafc;
-    border: 1px solid #e5e7eb;
-    border-radius: 6px;
-    padding: 15px;
-    min-height: 100px;
-    white-space: pre-wrap;
-    overflow-x: auto;
-    font-family: Arial, sans-serif;
-    font-size: 14px;
-    line-height: 1.5;
-}
-
-
-/* =================================================
-   AI MODE - STATUS
-================================================= */
-
-.status {
-    margin-top: 15px;
-    padding: 10px;
-    border-radius: 6px;
-    display: none;
-}
-
-.status.show {
-    display: block;
-}
-
-.status.loading {
-    background: #eff6ff;
-    color: #1d4ed8;
-}
-
-.status.error {
-    background: #fef2f2;
-    color: #b91c1c;
-}
-
-
-/* =================================================
-   RESPONSIVE DESIGN
-================================================= */
-
-@media (max-width: 800px) {
-
-    .app-shell {
-        padding: 20px;
+    .app-header {
+        padding: 24px;
     }
 
-    main {
-        padding: 0;
+    .tab-nav {
+        padding: 0 15px;
     }
 
-    .tab-frame {
-        height: 900px;
+    .manage-projects-container {
+        padding:
+            25px
+            20px
+            50px;
     }
 
-    .normal-container {
-        width: 100%;
+    .create-project-container {
+        padding:
+            30px
+            20px;
     }
 
-    .normal-container .form-row {
-        grid-template-columns: 1fr;
+    .add-item-row {
+        grid-template-columns:
+            1fr
+            1fr;
     }
 
-    .normal-container #projects-list {
-        grid-template-columns: 1fr;
+    .add-item-row .table-input {
+        grid-column:
+            1 / -1;
     }
 
-    .normal-container .projects-header {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 15px;
-    }
-
-    .results-grid {
-        grid-template-columns: 1fr;
-    }
-
-    .button-row {
-        flex-direction: column;
-    }
-
+    .action-button,
     .ai-button {
         width: 100%;
     }
+}
 
+
+@media (max-width: 650px) {
+
+    .app-header h1 {
+        font-size: 22px;
+    }
+
+    .tab-nav {
+        padding: 0;
+    }
+
+    .tab-btn {
+        flex: 1;
+
+        padding:
+            14px
+            10px;
+
+        font-size: 13px;
+    }
+
+    .tab-frame {
+        height:
+            calc(100vh - 130px);
+
+        min-height: 800px;
+    }
+
+    .form-row {
+        grid-template-columns: 1fr;
+
+        gap: 0;
+    }
+
+    .create-project-card,
+    .manage-projects-card {
+        padding: 20px;
+    }
+
+    .editable-field {
+        grid-template-columns: 1fr;
+    }
+
+    .update-button {
+        width: 100%;
+    }
+
+    .add-item-row {
+        grid-template-columns: 1fr;
+    }
+
+    .add-item-row .table-input {
+        grid-column: auto;
+    }
+
+    .table-actions {
+        flex-direction: column;
+
+        align-items: stretch;
+    }
+
+    .small-button {
+        width: 100%;
+    }
 }

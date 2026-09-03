@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>Create Project</title>
+
+    <link
+        rel="stylesheet"
+        href="../css/styles.css"
+    >
+
+</head>
+
+<body>
+
+    <main class="create-project-container">
+
+        <section class="create-project-card">
+
+            <div class="create-project-header">
+
+                <h2>
+                    Create Project
+                </h2>
+
+                <p>
+                    Create a new project to begin
+                    managing tasks.
+                </p>
+
+            </div>
+
+
+            <!-- ===================================== -->
+            <!-- FORM                                  -->
+            <!-- ===================================== -->
+
+            <form id="create-project-form">
+
+                <div class="form-group">
+
+                    <label for="project-name">
+                        Project Name
+                    </label>
+
+                    <input
+                        type="text"
+                        id="project-name"
+                        name="name"
+                        placeholder="Enter project name"
+                        required
+                    >
+
+                </div>
+
+
+                <div class="form-group">
+
+                    <label for="project-description">
+                        Description
+                    </label>
+
+                    <textarea
+                        id="project-description"
+                        name="description"
+                        placeholder="Describe the project"
+                        rows="5"
+                    ></textarea>
+
+                </div>
+
+
+                <div class="form-row">
+
+                    <div class="form-group">
+
+                        <label for="project-start-date">
+                            Start Date
+                        </label>
+
+                        <input
+                            type="date"
+                            id="project-start-date"
+                            name="start_date"
+                        >
+
+                    </div>
+
+
+                    <div class="form-group">
+
+                        <label for="project-end-date">
+                            End Date
+                        </label>
+
+                        <input
+                            type="date"
+                            id="project-end-date"
+                            name="end_date"
+                        >
+
+                    </div>
+
+                </div>
+
+
+                <button
+                    type="submit"
+                    class="create-button"
+                >
+                    Create Project
+                </button>
+
+            </form>
+
+
+            <!-- ===================================== -->
+            <!-- MESSAGE                               -->
+            <!-- ===================================== -->
+
+            <div
+                id="create-message"
+                class="status"
+            ></div>
+
+        </section>
+
+    </main>
+
+
+    <script>
+
+        const API_URL =
+            "http://localhost:5001";
+
+
+        const form =
+            document.getElementById(
+                "create-project-form"
+            );
+
+
+        const message =
+            document.getElementById(
+                "create-message"
+            );
+
+
+        form.addEventListener(
+            "submit",
+            async event => {
+
+                event.preventDefault();
+
+
+                const name =
+                    document.getElementById(
+                        "project-name"
+                    ).value.trim();
+
+
+                const description =
+                    document.getElementById(
+                        "project-description"
+                    ).value.trim();
+
+
+                const startDate =
+                    document.getElementById(
+                        "project-start-date"
+                    ).value;
+
+
+                const endDate =
+                    document.getElementById(
+                        "project-end-date"
+                    ).value;
+
+
+                if (!name) {
+
+                    message.textContent =
+                        "Project name is required.";
+
+                    return;
+
+                }
+
+
+                message.textContent =
+                    "Creating project...";
+
+
+                try {
+
+                    const response =
+                        await fetch(
+                            `${API_URL}/projects`,
+                            {
+                                method: "POST",
+
+                                headers: {
+                                    "Content-Type":
+                                        "application/json"
+                                },
+
+                                body: JSON.stringify({
+                                    name,
+                                    description,
+                                    start_date:
+                                        startDate,
+                                    end_date:
+                                        endDate
+                                })
+                            }
+                        );
+
+
+                    const data =
+                        await response.json();
+
+
+                    if (!response.ok) {
+
+                        throw new Error(
+                            data.error ||
+                            "Failed to create project."
+                        );
+
+                    }
+
+
+                    message.textContent =
+                        `Project "${data.name}" created successfully.`;
+
+
+                    form.reset();
+
+                }
+
+                catch (error) {
+
+                    message.textContent =
+                        `Error: ${error.message}`;
+
+                }
+
+            }
+        );
+
+    </script>
+
+</body>
+
+</html>

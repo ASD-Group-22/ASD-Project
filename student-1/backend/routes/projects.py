@@ -1,22 +1,35 @@
+import os
+import requests
+
 from flask import Blueprint, jsonify, request
 
-from services import project_service
+
+from flask import Blueprint
+
+projects_bp = Blueprint("projects", __name__)
 
 
-projects_bp = Blueprint(
-    "projects",
-    __name__
+DATABASE_SERVICE_URL = os.getenv(
+    "DATABASE_SERVICE_URL",
+    "http://localhost:6001"
 )
 
 
 @projects_bp.route("/projects", methods=["GET"])
 def get_projects():
+    try:
+        response = requests.get(
+            f"{DATABASE_SERVICE_URL}/projects",
+            timeout=5
+        )
 
-    data, status_code = (
-        project_service.get_projects()
-    )
+        return jsonify(response.json()), response.status_code
 
-    return jsonify(data), status_code
+    except requests.RequestException as error:
+        return jsonify({
+            "error": "Could not connect to database service",
+            "details": str(error)
+        }), 503
 
 
 @projects_bp.route(
@@ -24,40 +37,44 @@ def get_projects():
     methods=["GET"]
 )
 def get_project(project_id):
+    try:
+        response = requests.get(
+            f"{DATABASE_SERVICE_URL}/projects/{project_id}",
+            timeout=5
+        )
 
-    data, status_code = (
-        project_service.get_project(project_id)
-    )
+        return jsonify(response.json()), response.status_code
 
-    return jsonify(data), status_code
+    except requests.RequestException as error:
+        return jsonify({
+            "error": "Could not connect to database service",
+            "details": str(error)
+        }), 503
 
 
 @projects_bp.route("/projects", methods=["POST"])
 def create_project():
-
-    data = request.get_json()
+    data = request.get_json(silent=True)
 
     if not data:
         return jsonify({
             "error": "Request body is required"
         }), 400
 
-    if not data.get("name"):
+    try:
+        response = requests.post(
+            f"{DATABASE_SERVICE_URL}/projects",
+            json=data,
+            timeout=5
+        )
+
+        return jsonify(response.json()), response.status_code
+
+    except requests.RequestException as error:
         return jsonify({
-            "error": "Project name is required"
-        }), 400
-
-    if data.get("owner_id") is None:
-        return jsonify({
-            "error": "owner_id is required"
-        }), 400
-
-
-    result, status_code = (
-        project_service.create_project(data)
-    )
-
-    return jsonify(result), status_code
+            "error": "Could not connect to database service",
+            "details": str(error)
+        }), 503
 
 
 @projects_bp.route(
@@ -65,23 +82,27 @@ def create_project():
     methods=["PUT"]
 )
 def update_project(project_id):
-
-    data = request.get_json()
+    data = request.get_json(silent=True)
 
     if not data:
         return jsonify({
             "error": "Request body is required"
         }), 400
 
-
-    result, status_code = (
-        project_service.update_project(
-            project_id,
-            data
+    try:
+        response = requests.put(
+            f"{DATABASE_SERVICE_URL}/projects/{project_id}",
+            json=data,
+            timeout=5
         )
-    )
 
-    return jsonify(result), status_code
+        return jsonify(response.json()), response.status_code
+
+    except requests.RequestException as error:
+        return jsonify({
+            "error": "Could not connect to database service",
+            "details": str(error)
+        }), 503
 
 
 @projects_bp.route(
@@ -89,11 +110,16 @@ def update_project(project_id):
     methods=["DELETE"]
 )
 def delete_project(project_id):
-
-    result, status_code = (
-        project_service.delete_project(
-            project_id
+    try:
+        response = requests.delete(
+            f"{DATABASE_SERVICE_URL}/projects/{project_id}",
+            timeout=5
         )
-    )
 
-    return jsonify(result), status_code
+        return jsonify(response.json()), response.status_code
+
+    except requests.RequestException as error:
+        return jsonify({
+            "error": "Could not connect to database service",
+            "details": str(error)
+        }), 503

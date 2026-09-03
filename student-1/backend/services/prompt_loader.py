@@ -21,17 +21,12 @@ def load_prompt(filename):
 
 
 def build_prompt(filename, variables=None):
-
     prompt = load_prompt(filename)
 
     if variables:
-
         for key, value in variables.items():
-
-            placeholder = "{{" + key + "}}"
-
             prompt = prompt.replace(
-                placeholder,
+                "{{" + key + "}}",
                 str(value)
             )
 
