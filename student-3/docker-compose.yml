@@ -15,6 +15,7 @@ services:
     volumes:
       - ./database-service:/app
       - ./backend-service:/backend-service
+      - ./data:/app/data
     ports:
       - "6000:6000"
 
@@ -30,6 +31,7 @@ services:
       - ./backend-service:/app
       - ./prompts:/prompts
       - ./scripts:/scripts
+      - ./data:/app/data
     ports:
       - "5000:5000"
     environment:

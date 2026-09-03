@@ -2,34 +2,272 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Group Formation App</title>
-  <link rel="stylesheet" href="css/style.css">
+  <title>Group Formation Dashboard</title>
   <style>
-    body { font-family: Arial, sans-serif; margin: 40px; }
-    button { margin: 10px; padding: 10px 20px; cursor: pointer; }
-    #output { margin-top: 20px; white-space: pre-wrap; }
+    body { font-family: Arial; margin: 20px; }
+    .tabs { display: flex; gap: 10px; margin-bottom: 20px; }
+    .tab { padding: 10px 20px; border: 1px solid #ccc; cursor: pointer; }
+    .tab.active { background: #007bff; color: white; }
+    .panel { display: none; }
+    .panel.active { display: block; }
+    table { border-collapse: collapse; width: 100%; margin-top: 10px; }
+    th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
+    button { margin: 5px; padding: 6px 12px; cursor: pointer; }
+
+    /* Modal */
+    .modal-backdrop {
+      position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0,0,0,0.5); display: none;
+      align-items: center; justify-content: center;
+      z-index: 1000;
+    }
+    .modal {
+      background: white; padding: 20px; border-radius: 4px;
+      min-width: 300px; box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+    }
+    .modal h3 { margin-top: 0; }
+
+    /* Toast */
+    #toast {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      background: #28a745;
+      color: white;
+      padding: 10px 15px;
+      border-radius: 4px;
+      display: none;
+      z-index: 2000;
+      font-size: 14px;
+    }
   </style>
 </head>
 <body>
-  <h1>Group Formation App</h1>
-  <p>Interact with the backend below:</p>
 
-  <button onclick="createSkills()">Create Skills</button>
-  <button onclick="finaliseGroups()">Finalise Groups</button>
-  <button onclick="getAIRecommendation()">AI Recommendation</button>
+  <h1>Group Formation Dashboard</h1>
 
-  <div id="output"></div>
+  <div class="tabs">
+    <div class="tab active" data-target="skillsPanel">Skills</div>
+    <div class="tab" data-target="groupsPanel">Groups</div>
+    <div class="tab" data-target="recommendationsPanel">Recommendations</div>
+  </div>
+
+  <!-- Skills Panel -->
+  <div id="skillsPanel" class="panel active">
+    <h2>Project Skill Requirements</h2>
+
+    <label>Subject:
+      <select id="skillsSubjectSelect"></select>
+    </label>
+    <button onclick="loadRequirements()">Load Requirements</button>
+    <button onclick="openSkillModal()">Add Skill</button>
+
+    <table id="skillsTable">
+      <thead>
+        <tr>
+          <th>Skill</th>
+          <th>Level</th>
+          <th>Amount</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
+
+  <!-- Groups Panel -->
+  <div id="groupsPanel" class="panel">
+    <h2>Finalised Groups</h2>
+
+    <button onclick="loadGroups()">Load Groups</button>
+    <button onclick="openGroupCreateModal()">Create Group</button>
+
+    <table id="groupsTable">
+      <thead>
+        <tr>
+          <th>Group Name</th>
+          <th>Members</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
+
+  <!-- Recommendations Panel -->
+  <div id="recommendationsPanel" class="panel">
+    <h2>AI Group Recommendations</h2>
+
+    <label>Subject:
+      <select id="recSubjectSelect"></select>
+    </label>
+    <button onclick="requestRecommendation()">Get Recommendation</button>
+
+    <pre id="recOutput"></pre>
+  </div>
+
+  <!-- Modal -->
+  <div id="modalBackdrop" class="modal-backdrop">
+    <div class="modal" id="modalContent"></div>
+  </div>
+
+  <!-- Toast -->
+  <div id="toast"></div>
 
 <script>
   const backend = "http://localhost:5000";
 
-  async function createSkills() {
+  /* ---------------------- TABS ---------------------- */
+  document.querySelectorAll(".tab").forEach(tab => {
+    tab.addEventListener("click", () => {
+      document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
+      document.querySelectorAll(".panel").forEach(p => p.classList.remove("active"));
+      tab.classList.add("active");
+      document.getElementById(tab.dataset.target).classList.add("active");
+    });
+  });
+
+  /* ---------------------- MODAL ---------------------- */
+  function openModal(html) {
+    document.getElementById("modalContent").innerHTML = html;
+    document.getElementById("modalBackdrop").style.display = "flex";
+  }
+  function closeModal() {
+    document.getElementById("modalBackdrop").style.display = "none";
+  }
+
+  /* ---------------------- TOAST ---------------------- */
+  function showToast(message) {
+    const toast = document.getElementById("toast");
+    toast.textContent = message;
+    toast.style.display = "block";
+    setTimeout(() => toast.style.display = "none", 2000);
+  }
+
+  /* ---------------------- SUBJECTS ---------------------- */
+  async function loadSubjects() {
+    const res = await fetch(`${backend}/ui/subjects?t=${Date.now()}`);
+    const subjects = await res.json();
+
+    const skillsSelect = document.getElementById("skillsSubjectSelect");
+    const recSelect = document.getElementById("recSubjectSelect");
+
+    skillsSelect.innerHTML = "";
+    recSelect.innerHTML = "";
+
+    subjects.forEach(s => {
+      skillsSelect.innerHTML += `<option value="${s}">${s}</option>`;
+      recSelect.innerHTML += `<option value="${s}">${s}</option>`;
+    });
+  }
+
+  /* ---------------------- SKILLS ---------------------- */
+  async function loadRequirements() {
+    const subject = document.getElementById("skillsSubjectSelect").value;
+    const res = await fetch(`${backend}/ui/skills/${subject}?t=${Date.now()}`);
+    const data = await res.json();
+
+    const tbody = document.querySelector("#skillsTable tbody");
+    tbody.innerHTML = "";
+
+    if (!data || data.message || Object.keys(data).length === 0) {
+      tbody.innerHTML = `<tr><td colspan="4">No skills found.</td></tr>`;
+      return;
+    }
+
+    Object.entries(data).forEach(([skill, info]) => {
+      tbody.innerHTML += `
+        <tr>
+          <td>${skill}</td>
+          <td>${info.level}</td>
+          <td>${info.amount}</td>
+          <td>
+            <button onclick="editSkill('${skill}', '${info.level}', '${info.amount}')">Edit</button>
+            <button onclick="deleteSkill('${skill}')">Delete</button>
+          </td>
+        </tr>
+      `;
+    });
+  }
+
+  function openSkillModal() {
+    const html = `
+      <h3>Add Skill</h3>
+      <label>Skill:
+        <select id="modalSkillName">
+          <option value="python">Python</option>
+          <option value="java">Java</option>
+          <option value="c++">C++</option>
+          <option value="documentation">Documentation</option>
+          <option value="research">Research</option>
+          <option value="diagramming">Diagramming</option>
+          <option value="referencing">Referencing</option>
+        </select>
+      </label><br>
+      <label>Level:
+        <select id="modalSkillLevel">
+          <option>beginner</option>
+          <option>intermediate</option>
+          <option>expert</option>
+        </select>
+      </label><br>
+      <label>Amount:
+        <select id="modalSkillAmount">
+          <option>little</option>
+          <option>moderate</option>
+          <option>extensive</option>
+        </select>
+      </label><br><br>
+      <button onclick="saveSkill()">Save</button>
+      <button onclick="closeModal()">Cancel</button>
+    `;
+    openModal(html);
+  }
+
+  function editSkill(skill, level, amount) {
+    const html = `
+      <h3>Edit Skill '${skill}'</h3>
+      <label>Skill:
+        <select id="modalSkillName">
+          <option value="python" ${skill==="python"?"selected":""}>Python</option>
+          <option value="java" ${skill==="java"?"selected":""}>Java</option>
+          <option value="c++" ${skill==="c++"?"selected":""}>C++</option>
+          <option value="documentation" ${skill==="documentation"?"selected":""}>Documentation</option>
+          <option value="research" ${skill==="research"?"selected":""}>Research</option>
+          <option value="diagramming" ${skill==="diagramming"?"selected":""}>Diagramming</option>
+          <option value="referencing" ${skill==="referencing"?"selected":""}>Referencing</option>
+        </select>
+      </label><br>
+      <label>Level:
+        <select id="modalSkillLevel">
+          <option ${level==="beginner"?"selected":""}>beginner</option>
+          <option ${level==="intermediate"?"selected":""}>intermediate</option>
+          <option ${level==="expert"?"selected":""}>expert</option>
+        </select>
+      </label><br>
+      <label>Amount:
+        <select id="modalSkillAmount">
+          <option ${amount==="little"?"selected":""}>little</option>
+          <option ${amount==="moderate"?"selected":""}>moderate</option>
+          <option ${amount==="extensive"?"selected":""}>extensive</option>
+        </select>
+      </label><br><br>
+      <button onclick="saveSkill()">Save</button>
+      <button onclick="closeModal()">Cancel</button>
+    `;
+    openModal(html);
+  }
+
+  async function saveSkill() {
+    const subject = document.getElementById("skillsSubjectSelect").value;
+    const skill = document.getElementById("modalSkillName").value;
+    const level = document.getElementById("modalSkillLevel").value;
+    const amount = document.getElementById("modalSkillAmount").value;
+
     const payload = {
-      subject: "Software Engineering Project",
+      subject,
       requirements: {
-        python: { level: "intermediate", amount: "extensive" },
-        teamwork: { level: "intermediate", amount: "moderate" },
-        design: { level: "intermediate", amount: "moderate" }
+        [skill]: { level, amount }
       }
     };
 
@@ -39,14 +277,83 @@
       body: JSON.stringify(payload)
     });
 
-    document.getElementById("output").textContent = await res.text();
+    const result = await res.json();
+
+    closeModal();
+    await loadRequirements();
+    showToast(result.message || "Skill saved.");
   }
 
-  async function finaliseGroups() {
-    const payload = {
-      group_name: "Group A",
-      members: ["Alice", "Bob", "Charlie"]
-    };
+  async function deleteSkill(skill) {
+    const subject = document.getElementById("skillsSubjectSelect").value;
+    const res = await fetch(`${backend}/ui/skills/delete/${subject}/${skill}`, {
+      method: "DELETE"
+    });
+    const result = await res.json();
+    await loadRequirements();
+    showToast(result.message || "Skill deleted.");
+  }
+
+  /* ---------------------- GROUPS ---------------------- */
+  async function loadGroups() {
+    const res = await fetch(`${backend}/ui/groups?t=${Date.now()}`);
+    const data = await res.json();
+
+    const tbody = document.querySelector("#groupsTable tbody");
+    tbody.innerHTML = "";
+
+    if (!data || data.message || data.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="3">No groups found.</td></tr>`;
+      return;
+    }
+
+    data.forEach(g => {
+      tbody.innerHTML += `
+        <tr>
+          <td>${g.group_name}</td>
+          <td>${g.members.join(", ")}</td>
+          <td>
+            <button onclick="openGroupEditModal('${g.group_name}', '${g.members.join(", ")}')">Edit</button>
+            <button onclick="deleteGroup('${g.group_name}')">Delete</button>
+          </td>
+        </tr>
+      `;
+    });
+  }
+
+  function openGroupCreateModal() {
+    const html = `
+      <h3>Create Group</h3>
+      <label>Group Name:
+        <input type="text" id="modalGroupName">
+      </label><br>
+      <label>Members (comma separated):
+        <input type="text" id="modalGroupMembers">
+      </label><br><br>
+      <button onclick="saveGroup()">Save</button>
+      <button onclick="closeModal()">Cancel</button>
+    `;
+    openModal(html);
+  }
+
+  function openGroupEditModal(name, membersStr) {
+    const html = `
+      <h3>Edit Group '${name}'</h3>
+      <label>Members (comma separated):
+        <input type="text" id="modalGroupMembers" value="${membersStr}">
+      </label><br><br>
+      <button onclick="saveGroupMembers('${name}')">Save</button>
+      <button onclick="closeModal()">Cancel</button>
+    `;
+    openModal(html);
+  }
+
+  async function saveGroup() {
+    const name = document.getElementById("modalGroupName").value;
+    const members = document.getElementById("modalGroupMembers").value
+      .split(",").map(m => m.trim()).filter(m => m);
+
+    const payload = { group_name: name, members };
 
     const res = await fetch(`${backend}/ui/groups/finalise`, {
       method: "POST",
@@ -54,22 +361,58 @@
       body: JSON.stringify(payload)
     });
 
-    document.getElementById("output").textContent = await res.text();
+    const result = await res.json();
+    closeModal();
+    await loadGroups();
+    showToast(result.message || "Group saved.");
   }
 
-  async function getAIRecommendation() {
-    const payload = { action: "recommend" };
+  async function saveGroupMembers(name) {
+    const members = document.getElementById("modalGroupMembers").value
+      .split(",").map(m => m.trim()).filter(m => m);
 
-    const res = await fetch(`${backend}/ai/group-recommendation`, {
+    await fetch(`${backend}/ui/groups/delete/${name}`, { method: "DELETE" });
+
+    const payload = { group_name: name, members };
+
+    const res = await fetch(`${backend}/ui/groups/finalise`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload)
     });
 
-    document.getElementById("output").textContent = await res.text();
+    const result = await res.json();
+    closeModal();
+    await loadGroups();
+    showToast(result.message || "Group updated.");
   }
-</script>
 
+  async function deleteGroup(name) {
+    const res = await fetch(`${backend}/ui/groups/delete/${name}`, {
+      method: "DELETE"
+    });
+    const result = await res.json();
+    await loadGroups();
+    showToast(result.message || "Group deleted.");
+  }
+
+  /* ---------------------- RECOMMENDATIONS ---------------------- */
+  async function requestRecommendation() {
+    const subject = document.getElementById("recSubjectSelect").value;
+
+    const res = await fetch(`${backend}/ai/group-recommendation`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ subject })
+    });
+
+    const data = await res.json();
+    document.getElementById("recOutput").textContent = JSON.stringify(data, null, 2);
+  }
+
+  /* ---------------------- INIT ---------------------- */
+  loadSubjects();
+</script>
 
 </body>
 </html>
