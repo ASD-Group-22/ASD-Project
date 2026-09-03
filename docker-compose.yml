@@ -104,11 +104,52 @@ services:
       - student-2-network
     restart: unless-stopped
 
+  # ==========================================================
+  # STUDENT 5
+  # ==========================================================
+
+  student-5-database:
+    build:
+      context: ./student-5/database
+    container_name: student-5-database
+    volumes:
+      - student_5_database_data:/data
+    restart: unless-stopped
+
+
+  student-5-backend:
+    build:
+      context: ./student-5/backend
+    container_name: student-5-backend
+    ports:
+      - "8055:8055"
+    environment:
+      DATABASE_SERVICE_URL: "http://student-5-database:5000"
+      OLLAMA_URL: "http://host.docker.internal:11434"
+      OLLAMA_MODEL: "qwen3:8b"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      - student-5-database
+    restart: unless-stopped
+
+
+  student-5-frontend:
+    build:
+      context: ./student-5/frontend
+    container_name: student-5-frontend
+    ports:
+      - "8005:8005"
+    environment:
+      BACKEND_PUBLIC_URL: "http://localhost:8055"
+    depends_on:
+      - student-5-backend
+    restart: unless-stopped
 
 volumes:
   student_1_database_data:
   student_2_skill_exchange_data:
-
+  student_5_database_data:
 
 networks:
   student-2-network:
