@@ -1,0 +1,105 @@
+services:
+
+  # ==========================================================
+  # STUDENT 1
+  # ==========================================================
+
+  student-1-database-service:
+    build:
+      context: ./student-1/database
+    container_name: student-1-database-service
+    ports:
+      - "6001:6001"
+    volumes:
+      - student_1_database_data:/app/data
+    restart: unless-stopped
+
+
+  student-1-backend-service:
+    build:
+      context: ./student-1/backend
+    container_name: student-1-backend-service
+    ports:
+      - "5001:5001"
+    environment:
+      DATABASE_SERVICE_URL: http://student-1-database-service:6001
+      OLLAMA_BASE_URL: ${STUDENT1_OLLAMA_BASE_URL}
+      OLLAMA_MODEL: ${OLLAMA_MODEL}
+      OLLAMA_REVIEW_MODEL: ${OLLAMA_REVIEW_MODEL}
+    depends_on:
+      - student-1-database-service
+    restart: unless-stopped
+
+
+  student-1-frontend-service:
+    build:
+      context: ./student-1/frontend
+    container_name: student-1-frontend-service
+    ports:
+      - "3001:80"
+    depends_on:
+      - student-1-backend-service
+    restart: unless-stopped
+
+
+  # ==========================================================
+  # STUDENT 2
+  # ==========================================================
+
+  student-2-skill-exchange-frontend:
+    build:
+      context: ./student-2/frontend-service
+    container_name: student-2-skill-exchange-frontend
+    ports:
+      - "8202:80"
+    depends_on:
+      - student-2-skill-exchange-backend
+    networks:
+      - student-2-network
+    restart: unless-stopped
+
+
+  student-2-skill-exchange-backend:
+    build:
+      context: ./student-2
+      dockerfile: backend-service/Dockerfile
+    container_name: student-2-skill-exchange-backend
+    ports:
+      - "5202:5001"
+    environment:
+      DATABASE_SERVICE_URL: http://student-2-skill-exchange-database:5002
+      OLLAMA_BASE_URL: ${STUDENT2_OLLAMA_BASE_URL:-http://host.docker.internal:11434/v1}
+      OLLAMA_MODEL: ${OLLAMA_MODEL:-qwen3:8b}
+      OLLAMA_REVIEW_MODEL: ${OLLAMA_REVIEW_MODEL:-llama3.1:8b}
+      ENABLE_REVIEW_MODEL: ${ENABLE_REVIEW_MODEL:-true}
+      SKILL_PROFILE_SERVICE_URL: ${SKILL_PROFILE_SERVICE_URL:-}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      - student-2-skill-exchange-database
+    networks:
+      - student-2-network
+    restart: unless-stopped
+
+
+  student-2-skill-exchange-database:
+    build:
+      context: ./student-2/database-service
+    container_name: student-2-skill-exchange-database
+    ports:
+      - "5302:5002"
+    volumes:
+      - student_2_skill_exchange_data:/app/data
+    networks:
+      - student-2-network
+    restart: unless-stopped
+
+
+volumes:
+  student_1_database_data:
+  student_2_skill_exchange_data:
+
+
+networks:
+  student-2-network:
+    driver: bridge
