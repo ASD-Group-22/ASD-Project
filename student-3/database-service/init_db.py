@@ -1,29 +1,20 @@
-import os
 import sys
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
-
-# Add backend-service to Python path
 sys.path.append("/backend-service")
 
-from models.student import Student
-from models.project_requirement import ProjectRequirement
-from models.group import Group
+from services.database_api import Base, engine, SessionLocal
+from models.subject import Subject
 
+Base.metadata.create_all(bind=engine)
 
-# Path to SQLite DB inside /data
-DB_PATH = os.path.join(os.path.dirname(__file__), "data", "groupformation.db")
-DATABASE_URL = f"sqlite:///{DB_PATH}"
+session = SessionLocal()
 
-engine = create_engine(DATABASE_URL, echo=True)
-SessionLocal = sessionmaker(bind=engine)
+default_subjects = ["ASD", "CCI", "AI", "CITP", "Cryptography"]
 
-from sqlalchemy.orm import declarative_base
-Base = declarative_base()
+for name in default_subjects:
+    if not session.query(Subject).filter_by(name=name).first():
+        session.add(Subject(name=name))
 
-# Bind models to Base metadata
-Student.__table__.create(bind=engine, checkfirst=True)
-ProjectRequirement.__table__.create(bind=engine, checkfirst=True)
-Group.__table__.create(bind=engine, checkfirst=True)
+session.commit()
+session.close()
 
-print("Database initialized at:", DB_PATH)
+print("Database initialized with default subjects at /app/data/groupformation.db.")

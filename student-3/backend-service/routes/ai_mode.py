@@ -2,38 +2,34 @@ from flask import Blueprint, request, jsonify
 from services.database_api import SessionLocal
 from models.project_requirement import ProjectRequirement
 from models.student import Student
-from services.llm_client import run_llm
-from services.prompt_loader import load_prompt
 
-ai_bp = Blueprint('ai_mode', __name__)
+ai_bp = Blueprint("ai", __name__)
 
 @ai_bp.post("/group-recommendation")
 def group_recommendation():
     db = SessionLocal()
-    data = request.json
+    data = request.get_json(force=True)
 
-    subject = data['subject']
-    model = data.get("model", "deepseek-r1:8b")
+    subject = data["subject"]
 
     req = db.query(ProjectRequirement).filter_by(subject=subject).first()
+    requirements = req.requirements if req else {}
+
     students = db.query(Student).all()
-
-    if not req or not students:
-        return jsonify({"error": "Missing requirements/students."}), 400
-
-    prompt_template = load_prompt("group_balance_prompt")
-
-    student_data = [
-        dict(id=s.id, name=s.name, email=s.email, skills=s.skills) 
+    student_profiles = [
+        {"name": s.name, "skills": s.skills}
         for s in students
     ]
 
-    prompt = (
-        prompt_template
-        .replace("{{students}}", str(student_data))
-        .replace("{{requirements}}", str(req.requirements))
-    )
+    # Dummy logic: first 4 students
+    recommended = [s.name for s in students[:4]]
 
-    result = run_llm(model=model, prompt=prompt)
+    db.close()
 
-    return jsonify({"recommendation": result}), 200
+    return jsonify({
+        "subject": subject,
+        "requirements": requirements,
+        "students": student_profiles,
+        "recommended_group": recommended,
+        "reasoning": "Dummy logic using real student profiles."
+    }), 200

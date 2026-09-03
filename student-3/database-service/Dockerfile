@@ -9,4 +9,4 @@ COPY . .
 
 EXPOSE 6000
 
-CMD ["python", "app.py"]
+CMD ["bash", "-c", "python init_db.py &&  python app.py"]
