@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Group Formation App</title>
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    body { font-family: Arial, sans-serif; margin: 40px; }
+    button { margin: 10px; padding: 10px 20px; cursor: pointer; }
+    #output { margin-top: 20px; white-space: pre-wrap; }
+  </style>
+</head>
+<body>
+  <h1>Group Formation App</h1>
+  <p>Interact with the backend below:</p>
+
+  <button onclick="createSkills()">Create Skills</button>
+  <button onclick="finaliseGroups()">Finalise Groups</button>
+  <button onclick="getAIRecommendation()">AI Recommendation</button>
+
+  <div id="output"></div>
+
+<script>
+  const backend = "http://localhost:5000";
+
+  async function createSkills() {
+    const payload = {
+      subject: "Software Engineering Project",
+      requirements: {
+        python: { level: "intermediate", amount: "extensive" },
+        teamwork: { level: "intermediate", amount: "moderate" },
+        design: { level: "intermediate", amount: "moderate" }
+      }
+    };
+
+    const res = await fetch(`${backend}/ui/skills/create`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    });
+
+    document.getElementById("output").textContent = await res.text();
+  }
+
+  async function finaliseGroups() {
+    const payload = {
+      group_name: "Group A",
+      members: ["Alice", "Bob", "Charlie"]
+    };
+
+    const res = await fetch(`${backend}/ui/groups/finalise`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    });
+
+    document.getElementById("output").textContent = await res.text();
+  }
+
+  async function getAIRecommendation() {
+    const payload = { action: "recommend" };
+
+    const res = await fetch(`${backend}/ai/group-recommendation`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    });
+
+    document.getElementById("output").textContent = await res.text();
+  }
+</script>
+
+
+</body>
+</html>

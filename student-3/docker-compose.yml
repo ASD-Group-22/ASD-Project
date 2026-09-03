@@ -1,0 +1,50 @@
+services:
+  ollama:
+    image: ollama/ollama:latest
+    container_name: ollama
+    restart: unless-stopped
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_models:/root/.ollama
+
+  database-service:
+    build: ./database-service
+    container_name: database-service
+    restart: unless-stopped
+    volumes:
+      - ./database-service:/app
+      - ./backend-service:/backend-service
+    ports:
+      - "6000:6000"
+
+  backend-service:
+    build: ./backend-service
+    container_name: backend-service
+    restart: unless-stopped
+    depends_on:
+      - database-service
+      - ollama
+    volumes:
+      - ./database-service/data:/app/data   # share the DB folder
+      - ./backend-service:/app
+      - ./prompts:/prompts
+      - ./scripts:/scripts
+    ports:
+      - "5000:5000"
+    environment:
+      - OLLAMA_URL=http://ollama:11434
+
+  frontend-service:
+    build: ./frontend-service
+    container_name: frontend-service
+    restart: unless-stopped
+    depends_on:
+      - backend-service
+    volumes:
+      - ./frontend-service:/app
+    ports:
+      - "8000:8000"
+
+volumes:
+  ollama_models:
