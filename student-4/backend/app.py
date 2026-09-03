@@ -1,3 +1,4 @@
+from services.llm_client import analyse_profile
 from flask import Flask, request, jsonify
 from services.database_api import (
     create_profile,
@@ -80,6 +81,46 @@ def api_get_profile_by_student_id(student_id):
     result, status_code = get_profile_by_student_id(student_id)
 
     return jsonify(result), status_code
+
+# GENERATE AI PROFILE ANALYSIS
+@app.route(
+    "/api/profiles/<int:profile_id>/analyse",
+    methods=["POST"]
+)
+def api_analyse_profile(profile_id):
+
+    profile, status_code = get_profile(
+        profile_id
+    )
+
+    if status_code != 200:
+        return jsonify(profile), status_code
+
+
+    if not profile.get("skills"):
+        return jsonify({
+            "error": "Profile has no skills to analyse"
+        }), 400
+
+
+    try:
+
+        analysis = analyse_profile(
+            profile
+        )
+
+        return jsonify({
+            "profile_id": profile_id,
+            "analysis": analysis
+        }), 200
+
+
+    except Exception as error:
+
+        return jsonify({
+            "error": "AI analysis failed",
+            "details": str(error)
+        }), 503
 
 if __name__ == "__main__":
 

@@ -126,8 +126,20 @@
                 Delete Profile
             </button>
 
+            <button onclick="generateAnalysis()">
+                Generate AI Analysis
+            </button>
+
         </section>
 
+        <section>
+        <h2>AI Skill Analysis</h2>
+
+        <pre id="analysisDisplay">
+        No AI analysis generated.
+        </pre>
+
+        </section>
 
         <section>
 
@@ -388,6 +400,73 @@ No profile loaded.
                     "profileDisplay"
                 ).textContent =
                     "Profile deleted.";
+            }
+        }
+
+        async function generateAnalysis() {
+
+            const profileId =
+                document.getElementById(
+                    "profileId"
+                ).value;
+
+            if (!profileId) {
+
+                document.getElementById(
+                    "status"
+                ).textContent =
+                    "Please load or create a profile first.";
+
+                return;
+            }
+
+
+            document.getElementById(
+                "status"
+            ).textContent =
+                "Generating AI analysis...";
+
+
+            const response = await fetch(
+                `/profiles/${profileId}/analyse`,
+                {
+                    method: "POST"
+                }
+            );
+
+
+            const data = await response.json();
+
+
+            if (response.ok) {
+
+                document.getElementById(
+                    "analysisDisplay"
+                ).textContent =
+                    JSON.stringify(
+                        data.analysis,
+                        null,
+                        2
+                    );
+
+                document.getElementById(
+                    "status"
+                ).textContent =
+                    "AI analysis generated successfully.";
+
+            }
+
+            else {
+
+                document.getElementById(
+                    "analysisDisplay"
+                ).textContent =
+                    data.error || "AI analysis failed.";
+
+                document.getElementById(
+                    "status"
+                ).textContent =
+                    "AI analysis failed.";
             }
         }
 

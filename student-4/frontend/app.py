@@ -95,6 +95,22 @@ def delete_profile(profile_id):
             "error": "Backend service unavailable"
         }), 503
 
+# GENERATE AI ANALYSIS
+@app.route("/profiles/<int:profile_id>/analyse", methods=["POST"])
+def analyse_profile(profile_id):
+
+    try:
+        response = requests.post(
+            f"{BACKEND_SERVICE_URL}/api/profiles/{profile_id}/analyse",
+            timeout=90
+        )
+
+        return jsonify(response.json()), response.status_code
+
+    except requests.RequestException:
+        return jsonify({
+            "error": "AI service unavailable"
+        }), 503
 
 if __name__ == "__main__":
 
@@ -103,4 +119,3 @@ if __name__ == "__main__":
         port=5006,
         debug=True
     )
-    
