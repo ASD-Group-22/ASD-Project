@@ -2,6 +2,7 @@
 .env
 *.env
 !.env.example
+**/.env
 
 # Python virtual environments
 .venv/
@@ -25,3 +26,6 @@ __pycache__/
 # Operating system files
 .DS_Store
 Thumbs.db
+
+# macOS
+.DS_Store
