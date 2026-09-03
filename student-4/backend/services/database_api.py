@@ -44,3 +44,11 @@ def delete_profile(profile_id):
     )
 
     return response.json(), response.status_code
+
+def get_profile_by_student_id(student_id):
+    response = requests.get(
+        f"{DATABASE_SERVICE_URL}/profiles/student/{student_id}",
+        timeout=10
+    )
+
+    return response.json(), response.status_code

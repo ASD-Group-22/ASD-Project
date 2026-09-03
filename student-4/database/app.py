@@ -246,6 +246,45 @@ def delete_profile(profile_id):
         "profile_id": profile_id
     }), 200
 
+# GET PROFILE BY STUDENT ID
+@app.route("/profiles/student/<int:student_id>", methods=["GET"])
+def get_profile_by_student_id(student_id):
+
+    connection = get_db_connection()
+
+    profile = connection.execute("""
+        SELECT *
+        FROM skill_profiles
+        WHERE student_id = ?
+        ORDER BY profile_id DESC
+        LIMIT 1
+    """, (student_id,)).fetchone()
+
+    if profile is None:
+
+        connection.close()
+
+        return jsonify({
+            "error": "Profile not found"
+        }), 404
+
+    skills = connection.execute("""
+        SELECT *
+        FROM student_skills
+        WHERE profile_id = ?
+    """, (profile["profile_id"],)).fetchall()
+
+    connection.close()
+
+    profile_data = dict(profile)
+
+    profile_data["skills"] = [
+        dict(skill)
+        for skill in skills
+    ]
+
+    return jsonify(profile_data), 200
+
 if __name__ == "__main__":
 
     app.run(
