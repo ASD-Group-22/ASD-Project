@@ -1,5 +1,15 @@
 services:
 
+  # SHARED
+  home-page:
+    image: nginx:alpine
+    container_name: home-page
+    ports:
+      - "3000:80"
+    volumes:
+      - ./shared/frontend/index.html:/usr/share/nginx/html/index.html:ro
+    restart: unless-stopped
+
   # ==========================================================
   # STUDENT 1
   # ==========================================================
