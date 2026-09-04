@@ -1,0 +1,24 @@
+Analyse the supplied student Skill Profile.
+
+Return ONLY valid JSON using this exact structure:
+
+{
+  "summary": "short overall summary",
+  "strengths": [
+    "strength 1",
+    "strength 2"
+  ],
+  "weaknesses": [
+    "weakness 1",
+    "weakness 2"
+  ],
+  "recommendations": [
+    {
+      "skill": "skill to improve",
+      "reason": "short explanation"
+    }
+  ]
+}
+
+Do not include markdown.
+Do not include text outside the JSON.

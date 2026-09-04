@@ -1,0 +1,1305 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>Manage Projects</title>
+
+    <link
+        rel="stylesheet"
+        href="../css/styles.css"
+    >
+</head>
+
+<body>
+
+    <main class="manage-projects-container">
+
+        <!-- =====================================================
+             PAGE HEADER
+             ===================================================== -->
+
+        <header class="manage-projects-header">
+
+            <h2>
+                Manage Projects
+            </h2>
+
+            <p>
+                Select a project to manage its details and tasks.
+            </p>
+
+        </header>
+
+
+        <!-- =====================================================
+             PROJECT SELECTOR
+             ===================================================== -->
+
+        <section class="manage-projects-card">
+
+            <h3>
+                Select Project
+            </h3>
+
+            <div class="form-group">
+
+                <label for="project-select">
+                    Project
+                </label>
+
+                <select id="project-select">
+
+                    <option value="">
+                        Select a project...
+                    </option>
+
+                </select>
+
+            </div>
+
+        </section>
+
+
+        <!-- =====================================================
+             PROJECT DETAILS
+             ===================================================== -->
+
+        <section
+            id="project-details"
+            class="manage-projects-card"
+            hidden
+        >
+
+            <h3>
+                Project Details
+            </h3>
+
+
+            <!-- Project Name -->
+
+            <div class="editable-field">
+
+                <div class="form-group">
+
+                    <label for="manage-project-name">
+                        Project Name
+                    </label>
+
+                    <input
+                        type="text"
+                        id="manage-project-name"
+                    >
+
+                </div>
+
+                <button
+                    id="update-project-name"
+                    class="update-button"
+                    type="button"
+                >
+                    Update
+                </button>
+
+            </div>
+
+
+            <!-- Description -->
+
+            <div class="editable-field">
+
+                <div class="form-group">
+
+                    <label for="manage-project-description">
+                        Description
+                    </label>
+
+                    <textarea
+                        id="manage-project-description"
+                        rows="4"
+                    ></textarea>
+
+                </div>
+
+                <button
+                    id="update-project-description"
+                    class="update-button"
+                    type="button"
+                >
+                    Update
+                </button>
+
+            </div>
+
+
+            <!-- Dates -->
+
+            <div class="form-row">
+
+                <div class="editable-field">
+
+                    <div class="form-group">
+
+                        <label for="manage-project-start-date">
+                            Start Date
+                        </label>
+
+                        <input
+                            type="date"
+                            id="manage-project-start-date"
+                        >
+
+                    </div>
+
+                    <button
+                        id="update-project-start-date"
+                        class="update-button"
+                        type="button"
+                    >
+                        Update
+                    </button>
+
+                </div>
+
+
+                <div class="editable-field">
+
+                    <div class="form-group">
+
+                        <label for="manage-project-end-date">
+                            End Date
+                        </label>
+
+                        <input
+                            type="date"
+                            id="manage-project-end-date"
+                        >
+
+                    </div>
+
+                    <button
+                        id="update-project-end-date"
+                        class="update-button"
+                        type="button"
+                    >
+                        Update
+                    </button>
+
+                </div>
+
+            </div>
+
+
+            <!-- Status -->
+
+            <div class="editable-field">
+
+                <div class="form-group">
+
+                    <label for="manage-project-status">
+                        Status
+                    </label>
+
+                    <select id="manage-project-status">
+
+                        <option value="Not Started">
+                            Not Started
+                        </option>
+
+                        <option value="In Progress">
+                            In Progress
+                        </option>
+
+                        <option value="Complete">
+                            Complete
+                        </option>
+
+                    </select>
+
+                </div>
+
+                <button
+                    id="update-project-status"
+                    class="update-button"
+                    type="button"
+                >
+                    Update
+                </button>
+
+            </div>
+
+
+            <div
+                id="project-status-message"
+                class="status"
+            ></div>
+
+        </section>
+
+
+        <!-- =====================================================
+             TASKS
+             ===================================================== -->
+
+        <section
+            id="tasks-section"
+            class="manage-projects-card"
+            hidden
+        >
+
+            <div class="section-header">
+
+                <div>
+
+                    <h3>
+                        Tasks
+                    </h3>
+
+                    <p>
+                        Manage tasks for the selected project.
+                    </p>
+
+                </div>
+
+            </div>
+
+
+            <!-- Task Table -->
+
+            <div class="table-container">
+
+                <table class="data-table">
+
+                    <thead>
+
+                        <tr>
+
+                            <th>
+                                Task
+                            </th>
+
+                            <th>
+                                Status
+                            </th>
+
+                            <th>
+                                Actions
+                            </th>
+
+                        </tr>
+
+                    </thead>
+
+                    <tbody id="tasks-table-body">
+
+                    </tbody>
+
+                </table>
+
+            </div>
+
+
+            <!-- =================================================
+                 ADD TASK
+                 ================================================= -->
+
+            <div class="add-item-section">
+
+                <h4>
+                    Add Task
+                </h4>
+
+                <div class="add-item-row">
+
+                    <input
+                        type="text"
+                        id="new-task"
+                        class="table-input"
+                        placeholder="Enter a task..."
+                    >
+
+                    <select
+                        id="task-status"
+                        class="table-select"
+                    >
+
+                        <option value="Pending">
+                            Pending
+                        </option>
+
+                        <option value="In Progress">
+                            In Progress
+                        </option>
+
+                        <option value="Complete">
+                            Complete
+                        </option>
+
+                    </select>
+
+                    <button
+                        id="add-task-button"
+                        class="action-button"
+                        type="button"
+                    >
+                        Add Task
+                    </button>
+
+                    <button
+                        id="generate-task-button"
+                        class="ai-button"
+                        type="button"
+                    >
+                        AI Generate
+                    </button>
+
+                </div>
+
+
+                <!--
+                    Only user-facing AI error message.
+                    Agentic-loop evidence is printed
+                    to the backend console instead.
+                -->
+
+                <div
+                    id="task-status-message"
+                    class="status"
+                ></div>
+
+            </div>
+
+        </section>
+
+    </main>
+
+
+    <!-- =========================================================
+         JAVASCRIPT
+         ========================================================= -->
+
+    <script>
+
+        const BACKEND_URL =
+            "http://localhost:5001";
+
+
+        const projectSelect =
+            document.getElementById(
+                "project-select"
+            );
+
+        const projectDetails =
+            document.getElementById(
+                "project-details"
+            );
+
+        const tasksSection =
+            document.getElementById(
+                "tasks-section"
+            );
+
+
+        const projectName =
+            document.getElementById(
+                "manage-project-name"
+            );
+
+        const projectDescription =
+            document.getElementById(
+                "manage-project-description"
+            );
+
+        const projectStartDate =
+            document.getElementById(
+                "manage-project-start-date"
+            );
+
+        const projectEndDate =
+            document.getElementById(
+                "manage-project-end-date"
+            );
+
+        const projectStatus =
+            document.getElementById(
+                "manage-project-status"
+            );
+
+
+        const projectStatusMessage =
+            document.getElementById(
+                "project-status-message"
+            );
+
+
+        const tasksTableBody =
+            document.getElementById(
+                "tasks-table-body"
+            );
+
+
+        const newTask =
+            document.getElementById(
+                "new-task"
+            );
+
+        const taskStatus =
+            document.getElementById(
+                "task-status"
+            );
+
+        const addTaskButton =
+            document.getElementById(
+                "add-task-button"
+            );
+
+        const generateTaskButton =
+            document.getElementById(
+                "generate-task-button"
+            );
+
+        const taskStatusMessage =
+            document.getElementById(
+                "task-status-message"
+            );
+
+
+        let selectedProjectId = null;
+
+
+        // =====================================================
+        // LOAD PROJECTS
+        // =====================================================
+
+        async function loadProjects() {
+
+            try {
+
+                const response =
+                    await fetch(
+                        `${BACKEND_URL}/projects`
+                    );
+
+                if (!response.ok) {
+                    throw new Error(
+                        "Failed to load projects."
+                    );
+                }
+
+                const projects =
+                    await response.json();
+
+
+                projectSelect.innerHTML = `
+                    <option value="">
+                        Select a project...
+                    </option>
+                `;
+
+
+                projects.forEach(project => {
+
+                    const option =
+                        document.createElement(
+                            "option"
+                        );
+
+                    option.value =
+                        project.id;
+
+                    option.textContent =
+                        project.name;
+
+                    projectSelect.appendChild(
+                        option
+                    );
+
+                });
+
+            } catch (error) {
+
+                console.error(
+                    "Failed to load projects:",
+                    error
+                );
+
+            }
+
+        }
+
+
+        // =====================================================
+        // SELECT PROJECT
+        // =====================================================
+
+        projectSelect.addEventListener(
+            "change",
+            async () => {
+
+                selectedProjectId =
+                    projectSelect.value;
+
+
+                projectStatusMessage.textContent =
+                    "";
+
+                taskStatusMessage.textContent =
+                    "";
+
+
+                if (!selectedProjectId) {
+
+                    projectDetails.hidden =
+                        true;
+
+                    tasksSection.hidden =
+                        true;
+
+                    return;
+
+                }
+
+
+                await loadProject(
+                    selectedProjectId
+                );
+
+                await loadTasks(
+                    selectedProjectId
+                );
+
+            }
+        );
+
+
+        // =====================================================
+        // LOAD PROJECT
+        // =====================================================
+
+        async function loadProject(
+            projectId
+        ) {
+
+            try {
+
+                const response =
+                    await fetch(
+                        `${BACKEND_URL}/projects/${projectId}`
+                    );
+
+                if (!response.ok) {
+                    throw new Error(
+                        "Failed to load project."
+                    );
+                }
+
+                const project =
+                    await response.json();
+
+
+                projectName.value =
+                    project.name || "";
+
+                projectDescription.value =
+                    project.description || "";
+
+                projectStartDate.value =
+                    project.start_date || "";
+
+                projectEndDate.value =
+                    project.end_date || "";
+
+                projectStatus.value =
+                    project.status || "Not Started";
+
+
+                projectDetails.hidden =
+                    false;
+
+                tasksSection.hidden =
+                    false;
+
+            } catch (error) {
+
+                console.error(
+                    "Failed to load project:",
+                    error
+                );
+
+            }
+
+        }
+
+
+        // =====================================================
+        // UPDATE PROJECT FIELD
+        // =====================================================
+
+        async function updateProjectField(
+            field,
+            value
+        ) {
+
+            if (!selectedProjectId) {
+                return;
+            }
+
+
+            projectStatusMessage.textContent =
+                "";
+
+
+            try {
+
+                const response =
+                    await fetch(
+                        `${BACKEND_URL}/projects/${selectedProjectId}`,
+                        {
+                            method: "PUT",
+
+                            headers: {
+                                "Content-Type":
+                                    "application/json"
+                            },
+
+                            body: JSON.stringify({
+                                [field]: value
+                            })
+                        }
+                    );
+
+
+                const data =
+                    await response.json();
+
+
+                if (!response.ok) {
+                    throw new Error(
+                        data.error ||
+                        "Failed to update project."
+                    );
+                }
+
+
+                projectStatusMessage.textContent =
+                    "Project updated successfully.";
+
+                await loadProjects();
+
+            } catch (error) {
+
+                console.error(
+                    "Failed to update project:",
+                    error
+                );
+
+                projectStatusMessage.textContent =
+                    "Unable to update project.";
+
+            }
+
+        }
+
+
+        // =====================================================
+        // PROJECT UPDATE BUTTONS
+        // =====================================================
+
+        document
+            .getElementById(
+                "update-project-name"
+            )
+            .addEventListener(
+                "click",
+                () => {
+
+                    updateProjectField(
+                        "name",
+                        projectName.value.trim()
+                    );
+
+                }
+            );
+
+
+        document
+            .getElementById(
+                "update-project-description"
+            )
+            .addEventListener(
+                "click",
+                () => {
+
+                    updateProjectField(
+                        "description",
+                        projectDescription.value
+                    );
+
+                }
+            );
+
+
+        document
+            .getElementById(
+                "update-project-start-date"
+            )
+            .addEventListener(
+                "click",
+                () => {
+
+                    updateProjectField(
+                        "start_date",
+                        projectStartDate.value
+                    );
+
+                }
+            );
+
+
+        document
+            .getElementById(
+                "update-project-end-date"
+            )
+            .addEventListener(
+                "click",
+                () => {
+
+                    updateProjectField(
+                        "end_date",
+                        projectEndDate.value
+                    );
+
+                }
+            );
+
+
+        document
+            .getElementById(
+                "update-project-status"
+            )
+            .addEventListener(
+                "click",
+                () => {
+
+                    updateProjectField(
+                        "status",
+                        projectStatus.value
+                    );
+
+                }
+            );
+
+
+        // =====================================================
+        // LOAD TASKS
+        // =====================================================
+
+        async function loadTasks(
+            projectId
+        ) {
+
+            try {
+
+                const response =
+                    await fetch(
+                        `${BACKEND_URL}/projects/${projectId}/tasks`
+                    );
+
+                if (!response.ok) {
+                    throw new Error(
+                        "Failed to load tasks."
+                    );
+                }
+
+                const tasks =
+                    await response.json();
+
+
+                tasksTableBody.innerHTML =
+                    "";
+
+
+                if (tasks.length === 0) {
+
+                    tasksTableBody.innerHTML = `
+                        <tr>
+                            <td
+                                colspan="3"
+                                class="empty-table-message"
+                            >
+                                No tasks found.
+                            </td>
+                        </tr>
+                    `;
+
+                    return;
+
+                }
+
+
+                tasks.forEach(task => {
+
+                    addTaskRow(task);
+
+                });
+
+            } catch (error) {
+
+                console.error(
+                    "Failed to load tasks:",
+                    error
+                );
+
+            }
+
+        }
+
+
+        // =====================================================
+        // ADD TASK ROW
+        // =====================================================
+
+        function addTaskRow(task) {
+
+            const row =
+                document.createElement(
+                    "tr"
+                );
+
+
+            row.innerHTML = `
+
+                <td>
+
+                    <input
+                        type="text"
+                        class="table-input task-text-input"
+                        value="${escapeHtml(task.task)}"
+                    >
+
+                </td>
+
+
+                <td>
+
+                    <select
+                        class="table-select task-status-select"
+                    >
+
+                        <option value="Pending">
+                            Pending
+                        </option>
+
+                        <option value="In Progress">
+                            In Progress
+                        </option>
+
+                        <option value="Complete">
+                            Complete
+                        </option>
+
+                    </select>
+
+                </td>
+
+
+                <td>
+
+                    <div class="table-actions">
+
+                        <button
+                            class="small-button update-task-button"
+                            type="button"
+                        >
+                            Update
+                        </button>
+
+                        <button
+                            class="small-button delete-button"
+                            type="button"
+                        >
+                            Delete
+                        </button>
+
+                    </div>
+
+                </td>
+
+            `;
+
+
+            const statusSelect =
+                row.querySelector(
+                    ".task-status-select"
+                );
+
+            statusSelect.value =
+                task.status;
+
+
+            const taskInput =
+                row.querySelector(
+                    ".task-text-input"
+                );
+
+
+            row
+                .querySelector(
+                    ".update-task-button"
+                )
+                .addEventListener(
+                    "click",
+                    () => {
+
+                        updateTask(
+                            task.id,
+                            taskInput.value.trim(),
+                            statusSelect.value
+                        );
+
+                    }
+                );
+
+
+            row
+                .querySelector(
+                    ".delete-button"
+                )
+                .addEventListener(
+                    "click",
+                    () => {
+
+                        deleteTask(
+                            task.id
+                        );
+
+                    }
+                );
+
+
+            tasksTableBody.appendChild(
+                row
+            );
+
+        }
+
+
+        // =====================================================
+        // ADD NEW TASK
+        // =====================================================
+
+        addTaskButton.addEventListener(
+            "click",
+            async () => {
+
+                if (!selectedProjectId) {
+                    return;
+                }
+
+
+                const task =
+                    newTask.value.trim();
+
+
+                if (!task) {
+
+                    taskStatusMessage.textContent =
+                        "Please enter a task.";
+
+                    return;
+
+                }
+
+
+                try {
+
+                    const response =
+                        await fetch(
+                            `${BACKEND_URL}/projects/${selectedProjectId}/tasks`,
+                            {
+                                method: "POST",
+
+                                headers: {
+                                    "Content-Type":
+                                        "application/json"
+                                },
+
+                                body: JSON.stringify({
+                                    task: task,
+                                    status:
+                                        taskStatus.value
+                                })
+                            }
+                        );
+
+
+                    const data =
+                        await response.json();
+
+
+                    if (!response.ok) {
+                        throw new Error(
+                            data.error ||
+                            "Failed to add task."
+                        );
+                    }
+
+
+                    newTask.value =
+                        "";
+
+                    taskStatus.value =
+                        "Pending";
+
+                    taskStatusMessage.textContent =
+                        "Task added successfully.";
+
+                    await loadTasks(
+                        selectedProjectId
+                    );
+
+                } catch (error) {
+
+                    console.error(
+                        "Failed to add task:",
+                        error
+                    );
+
+                    taskStatusMessage.textContent =
+                        "Unable to add task.";
+
+                }
+
+            }
+        );
+
+
+        // =====================================================
+        // AI GENERATE TASK
+        // =====================================================
+
+        generateTaskButton.addEventListener(
+            "click",
+            async () => {
+
+                if (!selectedProjectId) {
+
+                    taskStatusMessage.textContent =
+                        "Unable to generate task.";
+
+                    return;
+
+                }
+
+
+                generateTaskButton.disabled =
+                    true;
+
+                taskStatusMessage.textContent =
+                    "";
+
+
+                try {
+
+                    const response =
+                        await fetch(
+                            `${BACKEND_URL}/projects/${selectedProjectId}/ai/tasks/generate`,
+                            {
+                                method: "POST"
+                            }
+                        );
+
+
+                    const data =
+                        await response.json();
+
+
+                    if (
+                        response.ok &&
+                        data.success &&
+                        data.suggestion
+                    ) {
+
+                        /*
+                         * AI only populates the input.
+                         *
+                         * The human must review the
+                         * suggestion and click Add Task.
+                         */
+
+                        newTask.value =
+                            data.suggestion;
+
+                        taskStatusMessage.textContent =
+                            "";
+
+                    } else {
+
+                        taskStatusMessage.textContent =
+                            "Unable to generate task.";
+
+                    }
+
+                } catch (error) {
+
+                    console.error(
+                        "AI generation failed:",
+                        error
+                    );
+
+                    taskStatusMessage.textContent =
+                        "Unable to generate task.";
+
+                } finally {
+
+                    generateTaskButton.disabled =
+                        false;
+
+                }
+
+            }
+        );
+
+
+        // =====================================================
+        // UPDATE TASK
+        // =====================================================
+
+        async function updateTask(
+            taskId,
+            task,
+            status
+        ) {
+
+            if (!task) {
+                return;
+            }
+
+
+            try {
+
+                const response =
+                    await fetch(
+                        `${BACKEND_URL}/tasks/${taskId}`,
+                        {
+                            method: "PUT",
+
+                            headers: {
+                                "Content-Type":
+                                    "application/json"
+                            },
+
+                            body: JSON.stringify({
+                                task: task,
+                                status: status
+                            })
+                        }
+                    );
+
+
+                if (!response.ok) {
+                    throw new Error(
+                        "Failed to update task."
+                    );
+                }
+
+
+                taskStatusMessage.textContent =
+                    "Task updated successfully.";
+
+            } catch (error) {
+
+                console.error(
+                    "Failed to update task:",
+                    error
+                );
+
+                taskStatusMessage.textContent =
+                    "Unable to update task.";
+
+            }
+
+        }
+
+
+        // =====================================================
+        // DELETE TASK
+        // =====================================================
+
+        async function deleteTask(
+            taskId
+        ) {
+
+            try {
+
+                const response =
+                    await fetch(
+                        `${BACKEND_URL}/tasks/${taskId}`,
+                        {
+                            method: "DELETE"
+                        }
+                    );
+
+
+                if (!response.ok) {
+                    throw new Error(
+                        "Failed to delete task."
+                    );
+                }
+
+
+                taskStatusMessage.textContent =
+                    "Task deleted successfully.";
+
+                await loadTasks(
+                    selectedProjectId
+                );
+
+            } catch (error) {
+
+                console.error(
+                    "Failed to delete task:",
+                    error
+                );
+
+                taskStatusMessage.textContent =
+                    "Unable to delete task.";
+
+            }
+
+        }
+
+
+        // =====================================================
+        // HTML ESCAPING
+        // =====================================================
+
+        function escapeHtml(value) {
+
+            return String(value)
+                .replaceAll("&", "&amp;")
+                .replaceAll("<", "&lt;")
+                .replaceAll(">", "&gt;")
+                .replaceAll('"', "&quot;")
+                .replaceAll("'", "&#039;");
+
+        }
+
+
+        // =====================================================
+        // INITIAL LOAD
+        // =====================================================
+
+        loadProjects();
+
+    </script>
+
+</body>
+
+</html>

@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Skill Exchange - Normal UI</title>
+    <link rel="stylesheet" href="/css/styles.css">
+</head>
+
+<body class="embedded-body">
+<main class="embedded-shell">
+
+    <!-- Create / update listing -->
+    <section class="card">
+        <div class="section-heading">
+            <div>
+                <h2>Create / Update Listing</h2>
+                <p class="muted">
+                    Store the skill a student can offer now and the skill they want to learn.
+                </p>
+            </div>
+
+            <button id="clear-btn" type="button" class="secondary">Clear Form</button>
+        </div>
+
+        <form id="listing-form" class="grid-form">
+            <input id="listing_id" type="hidden">
+
+            <label>
+                Student ID
+                <input id="student_id" type="number" min="1" required placeholder="1002">
+            </label>
+
+            <label>
+                Student Name
+                <input id="student_name" type="text" maxlength="80" required placeholder="Alex Chen">
+            </label>
+
+            <label>
+                Skill Offered
+                <input id="skill_offered" type="text" maxlength="80" required placeholder="Python">
+            </label>
+
+            <label>
+                Skill Wanted
+                <input id="skill_wanted" type="text" maxlength="80" required placeholder="UI Design">
+            </label>
+
+            <label>
+                Availability
+                <input id="availability" type="text" maxlength="120" required placeholder="Tue Thu evenings">
+            </label>
+
+            <label>
+                Status
+                <select id="status">
+                    <option value="active">Active</option>
+                    <option value="inactive">Inactive</option>
+                </select>
+            </label>
+
+            <label class="span-2">
+                Description
+                <textarea id="description" rows="3" maxlength="400"
+                          placeholder="Short exchange description"></textarea>
+            </label>
+
+            <div class="span-2 action-row">
+                <button id="save-btn" type="submit">Create Listing</button>
+                <span id="form-message" class="muted"></span>
+            </div>
+        </form>
+    </section>
+
+
+    <!-- Existing listings -->
+    <section class="card">
+        <h2>Available Listings</h2>
+
+        <form id="search-form" class="search-row">
+            <input id="search_skill" type="text" placeholder="Search offered or wanted skill">
+            <button type="submit">Search</button>
+            <button id="all-btn" type="button" class="secondary">Show All</button>
+        </form>
+
+        <div id="listings-result" class="panel">Loading...</div>
+    </section>
+
+
+    <!-- Deterministic matching -->
+    <section class="card">
+        <h2>Deterministic Candidate Check</h2>
+
+        <p class="muted">
+            This checks real stored listings before any LLM is called.
+        </p>
+
+        <form id="matches-form" class="search-row">
+            <input id="matches_listing_id" type="number" min="1" required value="1" placeholder="Listing ID">
+            <button type="submit">Find Candidates</button>
+        </form>
+
+        <div id="matches-result" class="panel">
+            Listing 1 is seeded to match listing 2.
+        </div>
+    </section>
+
+</main>
+
+
+<script>
+    const API = 'http://localhost:5202';
+
+    const listingForm = document.getElementById('listing-form');
+    const listingIdInput = document.getElementById('listing_id');
+    const studentIdInput = document.getElementById('student_id');
+    const studentNameInput = document.getElementById('student_name');
+    const skillOfferedInput = document.getElementById('skill_offered');
+    const skillWantedInput = document.getElementById('skill_wanted');
+    const availabilityInput = document.getElementById('availability');
+    const descriptionInput = document.getElementById('description');
+    const statusInput = document.getElementById('status');
+
+    const saveButton = document.getElementById('save-btn');
+    const clearButton = document.getElementById('clear-btn');
+    const formMessage = document.getElementById('form-message');
+
+    const searchForm = document.getElementById('search-form');
+    const searchSkillInput = document.getElementById('search_skill');
+    const showAllButton = document.getElementById('all-btn');
+
+    const listingsResult = document.getElementById('listings-result');
+
+    const matchesForm = document.getElementById('matches-form');
+    const matchesListingIdInput = document.getElementById('matches_listing_id');
+    const matchesResult = document.getElementById('matches-result');
+
+
+    function escapeHtml(value) {
+        return String(value ?? '')
+            .replaceAll('&', '&amp;')
+            .replaceAll('<', '&lt;')
+            .replaceAll('>', '&gt;')
+            .replaceAll('"', '&quot;')
+            .replaceAll("'", '&#039;');
+    }
+
+
+    async function request(path, options = {}) {
+        const response = await fetch(API + path, options);
+        const responseText = await response.text();
+
+        let body;
+
+        try {
+            body = JSON.parse(responseText);
+        } catch {
+            body = { raw: responseText };
+        }
+
+        if (!response.ok) {
+            throw new Error(
+                body.error ||
+                body.message ||
+                body.raw ||
+                `HTTP ${response.status}`
+            );
+        }
+
+        return body;
+    }
+
+    function resetForm() {
+        listingForm.reset();
+        listingIdInput.value = '';
+        statusInput.value = 'active';
+        saveButton.textContent = 'Create Listing';
+    }
+
+    function renderListingCard(listing) {
+        const badgeClass =
+            listing.status === 'active'
+                ? 'badge-active'
+                : 'badge-inactive';
+
+        return `
+            <article class="listing-card">
+                <div class="listing-title-row">
+                    <strong>
+                        #${escapeHtml(listing.listing_id)} ·
+                        ${escapeHtml(listing.student_name)}
+                    </strong>
+
+                    <span class="badge ${badgeClass}">
+                        ${escapeHtml(listing.status)}
+                    </span>
+                </div>
+
+                <div class="exchange-flow">
+                    <span>${escapeHtml(listing.skill_offered)}</span>
+                    <span class="arrow">offers · wants</span>
+                    <span>${escapeHtml(listing.skill_wanted)}</span>
+                </div>
+
+                <p>${escapeHtml(listing.description || 'No description')}</p>
+
+                <p class="muted">
+                    Student ${escapeHtml(listing.student_id)}
+                    · ${escapeHtml(listing.availability)}
+                </p>
+
+                <div class="action-row">
+                    <button type="button"
+                            data-action="edit"
+                            data-id="${escapeHtml(listing.listing_id)}">
+                        Edit
+                    </button>
+
+                    <button type="button"
+                            class="danger"
+                            data-action="deactivate"
+                            data-id="${escapeHtml(listing.listing_id)}">
+                        Deactivate
+                    </button>
+                </div>
+            </article>
+        `;
+    }
+
+    async function loadListings(path = '/skill-exchange') {
+        listingsResult.textContent = 'Loading...';
+
+        try {
+            const body = await request(path);
+            const listings = body.listings || [];
+
+            listingsResult.innerHTML = listings.length
+                ? listings.map(renderListingCard).join('')
+                : '<p>No listings found.</p>';
+
+        } catch (error) {
+            listingsResult.innerHTML =
+                `<p class="error">${escapeHtml(error.message)}</p>`;
+        }
+    }
+
+    listingsResult.addEventListener('click', async event => {
+        const button = event.target.closest('button[data-action]');
+
+        if (!button) {
+            return;
+        }
+
+        const listingId = button.dataset.id;
+        const action = button.dataset.action;
+
+        if (action === 'edit') {
+            try {
+                const listing =
+                    await request(`/skill-exchange/${listingId}`);
+
+                studentIdInput.value = listing.student_id ?? '';
+                studentNameInput.value = listing.student_name ?? '';
+                skillOfferedInput.value = listing.skill_offered ?? '';
+                skillWantedInput.value = listing.skill_wanted ?? '';
+                availabilityInput.value = listing.availability ?? '';
+                descriptionInput.value = listing.description ?? '';
+                statusInput.value = listing.status ?? 'active';
+
+                listingIdInput.value = listingId;
+                saveButton.textContent = 'Update Listing';
+
+                window.scrollTo({
+                    top: 0,
+                    behavior: 'smooth'
+                });
+
+            } catch (error) {
+                alert(error.message);
+            }
+        }
+
+        if (action === 'deactivate') {
+            const confirmed =
+                confirm(`Deactivate listing #${listingId}?`);
+
+            if (!confirmed) {
+                return;
+            }
+
+            try {
+                await request(
+                    `/skill-exchange/${listingId}`,
+                    { method: 'DELETE' }
+                );
+
+                await loadListings();
+
+            } catch (error) {
+                alert(error.message);
+            }
+        }
+    });
+
+    listingForm.addEventListener('submit', async event => {
+        event.preventDefault();
+
+        const listingId = listingIdInput.value;
+        const payload = {
+            student_id: Number(studentIdInput.value),
+            student_name: studentNameInput.value.trim(),
+            skill_offered: skillOfferedInput.value.trim(),
+            skill_wanted: skillWantedInput.value.trim(),
+            availability: availabilityInput.value.trim(),
+            description: descriptionInput.value.trim(),
+            status: statusInput.value
+        };
+
+        const path = listingId
+            ? `/skill-exchange/${listingId}`
+            : '/skill-exchange';
+
+        const method = listingId
+            ? 'PUT'
+            : 'POST';
+
+        try {
+            const body = await request(path, {
+                method,
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(payload)
+            });
+
+            if (listingId) {
+                formMessage.textContent =
+                    `Listing #${listingId} updated.`;
+            } else {
+                formMessage.textContent =
+                    `Listing #${body.listing.listing_id} created.`;
+            }
+
+            resetForm();
+            await loadListings();
+
+        } catch (error) {
+            formMessage.textContent = error.message;
+        }
+    });
+
+
+    clearButton.addEventListener('click', () => {
+        resetForm();
+        formMessage.textContent = '';
+    });
+
+
+    searchForm.addEventListener('submit', async event => {
+        event.preventDefault();
+
+        const skill = searchSkillInput.value.trim();
+
+        const path = skill
+            ? `/skill-exchange/search?skill=${encodeURIComponent(skill)}`
+            : '/skill-exchange';
+
+        await loadListings(path);
+    });
+
+
+    showAllButton.addEventListener('click', () => {
+        searchSkillInput.value = '';
+        loadListings();
+    });
+
+
+    matchesForm.addEventListener('submit', async event => {
+        event.preventDefault();
+
+        const listingId = matchesListingIdInput.value;
+        matchesResult.textContent =
+            'Checking application evidence...';
+
+        try {
+            const body =
+                await request(`/skill-exchange/${listingId}/matches`);
+
+            const candidates = body.candidates || [];
+
+            matchesResult.innerHTML = candidates.length
+                ? candidates.map(candidate => `
+                    <article class="candidate-row">
+                        <strong>
+                            ${escapeHtml(candidate.student_name)}
+                            (#${escapeHtml(candidate.listing_id)})
+                        </strong>
+
+                        <span>
+                            ${escapeHtml(candidate.match_level)}
+                            · score ${escapeHtml(candidate.score)}
+                        </span>
+
+                        <small>
+                            ${escapeHtml(candidate.reason)}
+                        </small>
+                    </article>
+                `).join('')
+                : '<p>No compatible candidates.</p>';
+
+        } catch (error) {
+            matchesResult.innerHTML =
+                `<p class="error">${escapeHtml(error.message)}</p>`;
+        }
+    });
+
+
+    loadListings();
+</script>
+
+</body>
+</html>

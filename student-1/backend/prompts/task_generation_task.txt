@@ -1,0 +1,9 @@
+Generate one useful task for the following project.
+
+PROJECT:
+{{project}}
+
+EXISTING TASKS:
+{{tasks}}
+
+Return only the task text.

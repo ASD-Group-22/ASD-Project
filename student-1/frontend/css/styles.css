@@ -1,0 +1,895 @@
+/* =========================================================
+   GLOBAL
+   ========================================================= */
+
+* {
+    box-sizing: border-box;
+}
+
+html,
+body {
+    margin: 0;
+    padding: 0;
+    min-height: 100%;
+
+    font-family:
+        Arial,
+        Helvetica,
+        sans-serif;
+
+    background: #f4f6f8;
+    color: #222;
+}
+
+body {
+    min-height: 100vh;
+}
+
+button,
+input,
+textarea,
+select {
+    font-family: inherit;
+}
+
+button {
+    cursor: pointer;
+}
+
+button:disabled {
+    cursor: not-allowed;
+    opacity: 0.6;
+}
+
+[hidden] {
+    display: none !important;
+}
+
+
+/* =========================================================
+   APP SHELL
+   ========================================================= */
+
+.app-shell {
+    min-height: 100vh;
+
+    display: flex;
+    flex-direction: column;
+}
+
+
+/* =========================================================
+   HEADER
+   ========================================================= */
+
+.app-header {
+    background: #1f2937;
+    color: white;
+
+    padding: 28px 40px;
+
+    border-bottom:
+        1px solid #111827;
+}
+
+.app-header h1 {
+    margin: 0 0 6px 0;
+
+    font-size: 28px;
+    font-weight: 700;
+}
+
+.app-header p {
+    margin: 0;
+
+    color: #d1d5db;
+
+    font-size: 15px;
+}
+
+
+/* =========================================================
+   TAB SHELL
+   ========================================================= */
+
+.tab-shell {
+    width: 100%;
+    max-width: 1400px;
+
+    margin: 0 auto;
+
+    flex: 1;
+}
+
+.tab-nav {
+    display: flex;
+
+    background: white;
+
+    border-bottom:
+        1px solid #d1d5db;
+
+    padding: 0 30px;
+}
+
+.tab-btn {
+    border: none;
+
+    background: transparent;
+
+    color: #6b7280;
+
+    padding: 17px 24px;
+
+    font-size: 15px;
+    font-weight: 600;
+
+    border-bottom:
+        3px solid transparent;
+
+    transition:
+        color 0.2s ease,
+        border-color 0.2s ease,
+        background 0.2s ease;
+}
+
+.tab-btn:hover {
+    color: #111827;
+    background: #f9fafb;
+}
+
+.tab-btn.is-active {
+    color: #111827;
+
+    border-bottom-color:
+        #111827;
+}
+
+
+/* =========================================================
+   TAB CONTENT
+   ========================================================= */
+
+.tab-content {
+    width: 100%;
+}
+
+.tab-frame {
+    display: none;
+
+    width: 100%;
+
+    height:
+        calc(100vh - 150px);
+
+    min-height: 700px;
+
+    border: none;
+
+    background: #f4f6f8;
+}
+
+.tab-frame.is-active {
+    display: block;
+}
+
+
+/* =========================================================
+   COMMON FORM ELEMENTS
+   ========================================================= */
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+
+    gap: 7px;
+
+    margin-bottom: 18px;
+}
+
+.form-group label {
+    font-size: 14px;
+    font-weight: 600;
+
+    color: #374151;
+}
+
+input,
+textarea,
+select {
+    width: 100%;
+
+    border:
+        1px solid #d1d5db;
+
+    border-radius: 6px;
+
+    background: white;
+    color: #111827;
+
+    font-size: 14px;
+
+    padding: 10px 12px;
+
+    outline: none;
+
+    transition:
+        border-color 0.2s ease,
+        box-shadow 0.2s ease;
+}
+
+input:focus,
+textarea:focus,
+select:focus {
+    border-color: #6b7280;
+
+    box-shadow:
+        0 0 0 2px
+        rgba(
+            107,
+            114,
+            128,
+            0.15
+        );
+}
+
+textarea {
+    resize: vertical;
+
+    line-height: 1.5;
+}
+
+.form-row {
+    display: grid;
+
+    grid-template-columns:
+        1fr 1fr;
+
+    gap: 18px;
+}
+
+
+/* =========================================================
+   CREATE PROJECT
+   ========================================================= */
+
+.create-project-container {
+    max-width: 850px;
+
+    margin: 0 auto;
+
+    padding: 45px 30px;
+}
+
+.create-project-card {
+    background: white;
+
+    border:
+        1px solid #e5e7eb;
+
+    border-radius: 10px;
+
+    padding: 30px;
+
+    box-shadow:
+        0 2px 8px
+        rgba(
+            0,
+            0,
+            0,
+            0.04
+        );
+}
+
+.create-project-header {
+    margin-bottom: 28px;
+}
+
+.create-project-header h2 {
+    margin: 0 0 8px 0;
+
+    font-size: 24px;
+
+    color: #111827;
+}
+
+.create-project-header p {
+    margin: 0;
+
+    color: #6b7280;
+
+    font-size: 14px;
+
+    line-height: 1.5;
+}
+
+
+/* =========================================================
+   CREATE BUTTON
+   ========================================================= */
+
+.create-button {
+    width: 100%;
+
+    border: none;
+
+    border-radius: 6px;
+
+    padding: 12px 18px;
+
+    background: #1f2937;
+    color: white;
+
+    font-size: 14px;
+    font-weight: 600;
+
+    transition:
+        background 0.2s ease,
+        transform 0.1s ease;
+}
+
+.create-button:hover {
+    background: #111827;
+}
+
+.create-button:active {
+    transform:
+        translateY(1px);
+}
+
+
+/* =========================================================
+   STATUS MESSAGES
+   ========================================================= */
+
+.status {
+    min-height: 20px;
+
+    margin-top: 12px;
+
+    color: #4b5563;
+
+    font-size: 14px;
+
+    line-height: 1.5;
+}
+
+
+/* =========================================================
+   MANAGE PROJECTS
+   ========================================================= */
+
+.manage-projects-container {
+    max-width: 1200px;
+
+    margin: 0 auto;
+
+    padding:
+        35px
+        30px
+        60px;
+}
+
+.manage-projects-header {
+    margin-bottom: 22px;
+}
+
+.manage-projects-header h2 {
+    margin: 0 0 8px 0;
+
+    font-size: 25px;
+
+    color: #111827;
+}
+
+.manage-projects-header p {
+    margin: 0;
+
+    color: #6b7280;
+
+    font-size: 14px;
+}
+
+
+/* =========================================================
+   MANAGE PROJECT CARDS
+   ========================================================= */
+
+.manage-projects-card {
+    background: white;
+
+    border:
+        1px solid #e5e7eb;
+
+    border-radius: 10px;
+
+    padding: 25px;
+
+    margin-bottom: 20px;
+
+    box-shadow:
+        0 2px 8px
+        rgba(
+            0,
+            0,
+            0,
+            0.04
+        );
+}
+
+.manage-projects-card h3 {
+    margin:
+        0 0 20px 0;
+
+    font-size: 19px;
+
+    color: #111827;
+}
+
+.manage-projects-card h4 {
+    margin:
+        0 0 12px 0;
+
+    font-size: 15px;
+
+    color: #374151;
+}
+
+
+/* =========================================================
+   PROJECT SELECTOR
+   ========================================================= */
+
+#project-select {
+    max-width: 500px;
+}
+
+
+/* =========================================================
+   EDITABLE PROJECT FIELDS
+   ========================================================= */
+
+.editable-field {
+    display: grid;
+
+    grid-template-columns:
+        1fr auto;
+
+    gap: 12px;
+
+    align-items: end;
+
+    margin-bottom: 18px;
+}
+
+.editable-field .form-group {
+    margin-bottom: 0;
+}
+
+.update-button {
+    border:
+        1px solid #d1d5db;
+
+    border-radius: 6px;
+
+    background: #f9fafb;
+
+    color: #374151;
+
+    padding:
+        10px
+        16px;
+
+    font-size: 13px;
+    font-weight: 600;
+
+    white-space: nowrap;
+
+    transition:
+        background 0.2s ease,
+        border-color 0.2s ease;
+}
+
+.update-button:hover {
+    background: #f3f4f6;
+
+    border-color:
+        #9ca3af;
+}
+
+
+/* =========================================================
+   SECTION HEADER
+   ========================================================= */
+
+.section-header {
+    display: flex;
+
+    justify-content:
+        space-between;
+
+    align-items: center;
+
+    margin-bottom: 20px;
+}
+
+.section-header h3 {
+    margin-bottom: 6px;
+}
+
+.section-header p {
+    margin: 0;
+
+    color: #6b7280;
+
+    font-size: 14px;
+}
+
+
+/* =========================================================
+   TABLE
+   ========================================================= */
+
+.table-container {
+    width: 100%;
+
+    overflow-x: auto;
+
+    border:
+        1px solid #e5e7eb;
+
+    border-radius: 7px;
+}
+
+.data-table {
+    width: 100%;
+
+    border-collapse:
+        collapse;
+
+    background: white;
+}
+
+.data-table th {
+    background: #f9fafb;
+
+    color: #374151;
+
+    font-size: 13px;
+    font-weight: 600;
+
+    text-align: left;
+
+    padding: 12px;
+
+    border-bottom:
+        1px solid #e5e7eb;
+}
+
+.data-table td {
+    padding: 10px 12px;
+
+    border-bottom:
+        1px solid #e5e7eb;
+
+    vertical-align: middle;
+}
+
+.data-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+.data-table tbody tr:hover {
+    background: #fafafa;
+}
+
+
+/* =========================================================
+   EMPTY TABLE
+   ========================================================= */
+
+.empty-table-message {
+    text-align: center;
+
+    color: #6b7280;
+
+    padding: 25px !important;
+
+    font-size: 14px;
+}
+
+
+/* =========================================================
+   TABLE INPUTS
+   ========================================================= */
+
+.table-input {
+    width: 100%;
+
+    min-width: 200px;
+
+    padding:
+        8px
+        10px;
+
+    font-size: 13px;
+}
+
+.table-select {
+    width: 150px;
+
+    padding:
+        8px
+        10px;
+
+    font-size: 13px;
+}
+
+
+/* =========================================================
+   TABLE ACTIONS
+   ========================================================= */
+
+.table-actions {
+    display: flex;
+
+    align-items: center;
+
+    gap: 8px;
+
+    white-space: nowrap;
+}
+
+.small-button {
+    border:
+        1px solid #d1d5db;
+
+    border-radius: 5px;
+
+    background: white;
+
+    color: #374151;
+
+    padding:
+        7px
+        11px;
+
+    font-size: 12px;
+    font-weight: 600;
+
+    transition:
+        background 0.2s ease,
+        border-color 0.2s ease;
+}
+
+.small-button:hover {
+    background: #f3f4f6;
+
+    border-color:
+        #9ca3af;
+}
+
+.delete-button:hover {
+    color: #991b1b;
+
+    border-color:
+        #fca5a5;
+
+    background: #fef2f2;
+}
+
+
+/* =========================================================
+   ADD TASK
+   ========================================================= */
+
+.add-item-section {
+    margin-top: 25px;
+
+    padding-top: 22px;
+
+    border-top:
+        1px solid #e5e7eb;
+}
+
+.add-item-row {
+    display: grid;
+
+    grid-template-columns:
+        1fr
+        150px
+        auto
+        auto;
+
+    gap: 10px;
+
+    align-items: center;
+}
+
+.add-item-row .table-input {
+    min-width: 0;
+}
+
+
+/* =========================================================
+   ACTION BUTTON
+   ========================================================= */
+
+.action-button {
+    border: none;
+
+    border-radius: 6px;
+
+    background: #1f2937;
+
+    color: white;
+
+    padding:
+        10px
+        15px;
+
+    font-size: 13px;
+    font-weight: 600;
+
+    white-space: nowrap;
+
+    transition:
+        background 0.2s ease,
+        transform 0.1s ease;
+}
+
+.action-button:hover {
+    background: #111827;
+}
+
+.action-button:active {
+    transform:
+        translateY(1px);
+}
+
+
+/* =========================================================
+   AI BUTTON
+   ========================================================= */
+
+.ai-button {
+    border:
+        1px solid #6b7280;
+
+    border-radius: 6px;
+
+    background: white;
+
+    color: #374151;
+
+    padding:
+        10px
+        15px;
+
+    font-size: 13px;
+    font-weight: 600;
+
+    white-space: nowrap;
+
+    transition:
+        background 0.2s ease,
+        border-color 0.2s ease;
+}
+
+.ai-button:hover {
+    background: #f3f4f6;
+
+    border-color:
+        #374151;
+}
+
+
+/* =========================================================
+   RESPONSIVE
+   ========================================================= */
+
+@media (max-width: 900px) {
+
+    .app-header {
+        padding: 24px;
+    }
+
+    .tab-nav {
+        padding: 0 15px;
+    }
+
+    .manage-projects-container {
+        padding:
+            25px
+            20px
+            50px;
+    }
+
+    .create-project-container {
+        padding:
+            30px
+            20px;
+    }
+
+    .add-item-row {
+        grid-template-columns:
+            1fr
+            1fr;
+    }
+
+    .add-item-row .table-input {
+        grid-column:
+            1 / -1;
+    }
+
+    .action-button,
+    .ai-button {
+        width: 100%;
+    }
+}
+
+
+@media (max-width: 650px) {
+
+    .app-header h1 {
+        font-size: 22px;
+    }
+
+    .tab-nav {
+        padding: 0;
+    }
+
+    .tab-btn {
+        flex: 1;
+
+        padding:
+            14px
+            10px;
+
+        font-size: 13px;
+    }
+
+    .tab-frame {
+        height:
+            calc(100vh - 130px);
+
+        min-height: 800px;
+    }
+
+    .form-row {
+        grid-template-columns: 1fr;
+
+        gap: 0;
+    }
+
+    .create-project-card,
+    .manage-projects-card {
+        padding: 20px;
+    }
+
+    .editable-field {
+        grid-template-columns: 1fr;
+    }
+
+    .update-button {
+        width: 100%;
+    }
+
+    .add-item-row {
+        grid-template-columns: 1fr;
+    }
+
+    .add-item-row .table-input {
+        grid-column: auto;
+    }
+
+    .table-actions {
+        flex-direction: column;
+
+        align-items: stretch;
+    }
+
+    .small-button {
+        width: 100%;
+    }
+}
