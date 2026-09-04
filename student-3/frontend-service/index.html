@@ -101,7 +101,8 @@
     <label>Subject:
       <select id="recSubjectSelect"></select>
     </label>
-    <button onclick="requestRecommendation()">Get Recommendation</button>
+    <button id="getRecBtn">Get Recommendations</button>
+    <pre id="recommendationOutput"></pre>
 
     <pre id="recOutput"></pre>
   </div>
@@ -397,23 +398,33 @@
   }
 
   /* ---------------------- RECOMMENDATIONS ---------------------- */
-  async function requestRecommendation() {
-    const subject = document.getElementById("recSubjectSelect").value;
+async function getRecommendation() {
+    const subject = document.getElementById("subjectDropdown").value;
 
-    const res = await fetch(`${backend}/ai/group-recommendation`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ subject })
-    });
-
-    if (res.status === 404) {
-        showEmptyRecommendationMessage()
-        return
+    if (!subject) {
+        alert("Please select a subject first.");
+        return;
     }
 
-    const data = await res.json();
-    document.getElementById("recOutput").textContent = JSON.stringify(data, null, 2);
-  }
+    try {
+        const res = await fetch(`${backend}/ai/group-recommendation`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ subject })
+        });
+
+        const data = await res.json();
+
+        // Display recommendation
+        document.getElementById("recommendationOutput").innerText =
+            JSON.stringify(data.recommendation, null, 2);
+
+    } catch (err) {
+        console.error("Recommendation error:", err);
+        alert("Failed to get recommendation.");
+    }
+}
+
 
   /* ---------------------- INIT ---------------------- */
   loadSubjects();
