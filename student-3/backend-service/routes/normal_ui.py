@@ -1,130 +1,85 @@
+import os
+import requests
 from flask import Blueprint, request, jsonify
-from services.database_api import SessionLocal
-from models.project_requirement import ProjectRequirement
-from models.group import Group
-from models.subject import Subject
+from llm_client import ask_llm
 
 ui_bp = Blueprint("ui", __name__)
 
-# SUBJECTS
+DB_URL = os.getenv("DB_URL", "http://database-service:6000")
+
+
+# ---------------- SUBJECTS ----------------
 @ui_bp.get("/subjects")
 def list_subjects():
-    db = SessionLocal()
-    subjects = db.query(Subject).all()
-    db.close()
-    return jsonify([s.name for s in subjects]), 200
+    res = requests.get(f"{DB_URL}/subjects")
+    return jsonify(res.json()), res.status_code
 
-# SKILL REQUIREMENTS
+
+# ---------------- SKILLS ----------------
 @ui_bp.post("/skills/create")
 def create_skill_req():
-    db = SessionLocal()
     data = request.get_json(force=True)
-
     subject = data["subject"]
-    new_skill = data["requirements"]  # e.g. {"python": {"level": "...", "amount": "..."}}
+    requirements = data["requirements"]
 
-    existing = db.query(ProjectRequirement).filter_by(subject=subject).first()
+    res = requests.post(
+        f"{DB_URL}/requirements",
+        json={"subject": subject, "requirements": requirements}
+    )
 
-    if existing:
-        # mutate JSON while session is open
-        existing.requirements.update(new_skill)
-        db.commit()
+    return jsonify(res.json()), res.status_code
 
-        # FORCE LOAD BEFORE CLOSING SESSION
-        updated_requirements = dict(existing.requirements)
-
-        db.close()
-        return jsonify({
-            "message": f"Added/updated skill(s) for subject '{subject}'.",
-            "requirements": updated_requirements
-        }), 200
-    else:
-        req = ProjectRequirement(subject=subject, requirements=new_skill)
-        db.add(req)
-        db.commit()
-
-        # FORCE LOAD BEFORE CLOSING SESSION
-        created_requirements = dict(req.requirements)
-
-        db.close()
-        return jsonify({
-            "message": f"Created requirements for subject '{subject}'.",
-            "requirements": created_requirements
-        }), 201
 
 @ui_bp.get("/skills/<subject>")
 def read_requirements(subject):
-    db = SessionLocal()
-    req = db.query(ProjectRequirement).filter_by(subject=subject).first()
+    res = requests.get(f"{DB_URL}/requirements/{subject}")
+    return jsonify(res.json()), res.status_code
 
-    if not req:
-        db.close()
-        return jsonify({"message": "No requirements found"}), 404
-
-    # FORCE LOAD JSON BEFORE CLOSING SESSION
-    requirements = dict(req.requirements)
-
-    db.close()
-    return jsonify(requirements), 200
 
 @ui_bp.delete("/skills/delete/<subject>/<skill>")
 def delete_requirement(subject, skill):
-    db = SessionLocal()
-    req = db.query(ProjectRequirement).filter_by(subject=subject).first()
+    # DB-service returns updated requirements JSON
+    res = requests.delete(f"{DB_URL}/requirements/{subject}/{skill}")
+    return jsonify(res.json()), res.status_code
 
-    if not req or skill not in req.requirements:
-        db.close()
-        return jsonify({"message": "Skill not found"}), 404
 
-    del req.requirements[skill]
-    db.commit()
-
-    # OPTIONAL: return updated requirements
-    updated_requirements = dict(req.requirements)
-
-    db.close()
-    return jsonify({
-        "message": f"Deleted skill '{skill}' from subject '{subject}'",
-        "requirements": updated_requirements
-    }), 200
-
-# GROUPS
-@ui_bp.post("/groups/finalise")
-def finalise_groups():
-    db = SessionLocal()
-    data = request.get_json(force=True)
-
-    group = Group(
-        name=data["group_name"],
-        members=data["members"]
-    )
-    db.add(group)
-    db.commit()
-    db.close()
-
-    return jsonify({"message": "Group finalised successfully."}), 201
-
+# ---------------- GROUPS ----------------
 @ui_bp.get("/groups")
 def list_groups():
-    db = SessionLocal()
-    groups = db.query(Group).all()
-    db.close()
-    return jsonify([
-        {"group_name": g.name, "members": g.members}
-        for g in groups
-    ]), 200
+    res = requests.get(f"{DB_URL}/groups")
+    return jsonify(res.json()), res.status_code
+
+
+@ui_bp.post("/groups/finalise")
+def finalise_groups():
+    data = request.get_json(force=True)
+    res = requests.post(f"{DB_URL}/groups", json=data)
+    return jsonify(res.json()), res.status_code
+
 
 @ui_bp.delete("/groups/delete/<group_name>")
 def delete_group(group_name):
-    db = SessionLocal()
-    group = db.query(Group).filter_by(name=group_name).first()
+    res = requests.delete(f"{DB_URL}/groups/{group_name}")
+    return jsonify(res.json()), res.status_code
 
-    if not group:
-        db.close()
-        return jsonify({"message": "Group not found"}), 404
 
-    db.delete(group)
-    db.commit()
-    db.close()
+# ---------------- AI RECOMMENDATION (simple) ----------------
+@ui_bp.post("/ai/group-recommendation")
+def ai_group_recommendation():
+    data = request.get_json(force=True)
+    subject = data["subject"]
 
-    return jsonify({"message": "Group deleted"}), 200
+    req_res = requests.get(f"{DB_URL}/requirements/{subject}")
+    requirements = req_res.json()
+
+    prompt = f"""
+You are an AI assistant helping form groups for subject '{subject}'.
+
+Project requirements:
+{requirements}
+
+Return a JSON structure describing recommended groups.
+"""
+
+    answer = ask_llm(prompt)
+    return jsonify({"recommendation": answer}), 200

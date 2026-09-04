@@ -2,10 +2,9 @@ FROM python:3.10-slim
 
 WORKDIR /app
 
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+COPY . /app
 
-COPY . .
+RUN pip install --no-cache-dir flask flask-cors requests sqlalchemy ollama
 
 EXPOSE 5000
 

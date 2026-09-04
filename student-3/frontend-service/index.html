@@ -406,6 +406,11 @@
       body: JSON.stringify({ subject })
     });
 
+    if (res.status === 404) {
+        showEmptyRecommendationMessage()
+        return
+    }
+
     const data = await res.json();
     document.getElementById("recOutput").textContent = JSON.stringify(data, null, 2);
   }
