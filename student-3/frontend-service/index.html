@@ -101,8 +101,12 @@
     <label>Subject:
       <select id="recSubjectSelect"></select>
     </label>
+<<<<<<< HEAD
     <button id="getRecBtn">Get Recommendations</button>
     <pre id="recommendationOutput"></pre>
+=======
+    <button onclick="requestRecommendation()">Get Recommendation</button>
+>>>>>>> e9c0fc0c277d73d0205f7956d635768df3270521
 
     <pre id="recOutput"></pre>
   </div>
@@ -398,6 +402,7 @@
   }
 
   /* ---------------------- RECOMMENDATIONS ---------------------- */
+<<<<<<< HEAD
 async function getRecommendation() {
     const subject = document.getElementById("subjectDropdown").value;
 
@@ -425,6 +430,25 @@ async function getRecommendation() {
     }
 }
 
+=======
+  async function requestRecommendation() {
+    const subject = document.getElementById("recSubjectSelect").value;
+
+    const res = await fetch(`${backend}/ai/group-recommendation`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ subject })
+    });
+
+    if (res.status === 404) {
+        showEmptyRecommendationMessage()
+        return
+    }
+
+    const data = await res.json();
+    document.getElementById("recOutput").textContent = JSON.stringify(data, null, 2);
+  }
+>>>>>>> e9c0fc0c277d73d0205f7956d635768df3270521
 
   /* ---------------------- INIT ---------------------- */
   loadSubjects();

@@ -15,6 +15,10 @@ def create_app():
 
     return app
 
+<<<<<<< HEAD
+=======
+
+>>>>>>> e9c0fc0c277d73d0205f7956d635768df3270521
 app = create_app()
 
 if __name__ == "__main__":
