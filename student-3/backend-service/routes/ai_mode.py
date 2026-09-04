@@ -6,33 +6,20 @@ from llm_client import ask_llm
 ai_bp = Blueprint("ai", __name__)
 DB_URL = os.getenv("DB_URL", "http://database-service:6000")
 
-<<<<<<< HEAD
-=======
-
->>>>>>> e9c0fc0c277d73d0205f7956d635768df3270521
 @ai_bp.post("/group-recommendation")
 def group_recommendation():
     data = request.get_json(force=True)
     subject = data["subject"]
 
-<<<<<<< HEAD
     # Requirements
     req_res = requests.get(f"{DB_URL}/requirements/{subject}")
     requirements = req_res.json()
 
     # Students
-=======
-    # requirements
-    req_res = requests.get(f"{DB_URL}/requirements/{subject}")
-    requirements = req_res.json()
-
-    # students
->>>>>>> e9c0fc0c277d73d0205f7956d635768df3270521
     students_res = requests.get(f"{DB_URL}/students")
     students = students_res.json()
 
     prompt = f"""
-<<<<<<< HEAD
 You are an expert in team formation for university software engineering projects.
 
 Your job is to create a balanced project group for the subject '{subject}'.
@@ -57,17 +44,6 @@ Return ONLY valid JSON in this format:
   "recommended_group": ["Student A", "Student B", ...],
   "reasoning": "Explain why these students form a balanced group."
 }
-=======
-You are an AI assistant helping form groups for subject '{subject}'.
-
-Project requirements:
-{requirements}
-
-Student profiles:
-{students}
-
-Return a JSON structure describing recommended groups.
->>>>>>> e9c0fc0c277d73d0205f7956d635768df3270521
 """
 
     answer = ask_llm(prompt)
