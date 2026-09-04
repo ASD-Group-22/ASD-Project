@@ -82,11 +82,12 @@ services:
       OLLAMA_MODEL: "${OLLAMA_MODEL:-qwen3:8b}"
       OLLAMA_REVIEW_MODEL: "${OLLAMA_REVIEW_MODEL:-llama3.1:8b}"
       ENABLE_REVIEW_MODEL: "true"
-      SKILL_PROFILE_SERVICE_URL: ""
+      SKILL_PROFILE_SERVICE_URL: "http://student-4-backend:5005"
     extra_hosts:
       - "host.docker.internal:host-gateway"
     depends_on:
       - student-2-skill-exchange-database
+      - student-4-backend
     networks:
       - student-2-network
     restart: unless-stopped
@@ -103,6 +104,52 @@ services:
     networks:
       - student-2-network
     restart: unless-stopped
+
+  # ==========================================================
+  # STUDENT 4
+  # ==========================================================
+
+  student-4-database:
+    build:
+      context: ./student-4/database
+    container_name: student-4-database
+    ports:
+      - "5004:5004"
+    volumes:
+      - student_4_skill_profile_data:/app/data
+    restart: unless-stopped
+
+  student-4-backend:
+    build:
+      context: ./student-4/backend
+    container_name: student-4-backend
+    ports:
+      - "5005:5005"
+    environment:
+      DATABASE_SERVICE_URL: "http://student-4-database:5004"
+      OLLAMA_URL: "http://host.docker.internal:11434"
+      OLLAMA_MODEL: "${OLLAMA_MODEL:-qwen3:8b}"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      - student-4-database
+    networks:
+      - default
+      - student-2-network
+    restart: unless-stopped
+
+  student-4-frontend:
+    build:
+      context: ./student-4/frontend
+    container_name: student-4-frontend
+    ports:
+      - "5006:5006"
+    environment:
+      BACKEND_SERVICE_URL: "http://student-4-backend:5005"
+    depends_on:
+      - student-4-backend
+    restart: unless-stopped
+
 
   # ==========================================================
   # STUDENT 5
@@ -149,8 +196,11 @@ services:
 volumes:
   student_1_database_data:
   student_2_skill_exchange_data:
+  student_4_skill_profile_data:
   student_5_database_data:
 
 networks:
+  default:
+    driver: bridge
   student-2-network:
     driver: bridge

@@ -10,7 +10,7 @@ def get_profile(student_id):
         return None
     try:
         response = requests.get(
-            f"{SKILL_PROFILE_SERVICE_URL}/api/profiles/{student_id}", timeout=3
+            f"{SKILL_PROFILE_SERVICE_URL}/api/profiles/student/{student_id}", timeout=3
         )
         if response.status_code == 404:
             return None
