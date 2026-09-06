@@ -1,4 +1,6 @@
 from flask import Flask, request, jsonify
+from datetime import datetime, timezone
+from sqlalchemy.exc import SQLAlchemyError
 from services.database_api import Base, engine, SessionLocal
 from models.project_requirement import ProjectRequirement
 from models.group import Group
@@ -50,7 +52,7 @@ def create_or_update_requirements():
     db.close()
     return jsonify({"message": "Created", "requirements": created}), 201
 
-@app.delete("/requirements/<subject>/<skill>")
+@app.delete("/requirements/<subject>/<path:skill>")
 def delete_skill(subject, skill):
     db = SessionLocal()
     req = db.query(ProjectRequirement).filter_by(subject=subject).first()
@@ -115,35 +117,151 @@ def create_group():
 def delete_group(group_name):
     db = SessionLocal()
     group = db.query(Group).filter_by(name=group_name).first()
+
     if not group:
         db.close()
         return jsonify({"message": "Group not found"}), 404
+
     db.delete(group)
     db.commit()
     db.close()
     return jsonify({"message": "Group deleted"}), 200
 
-# ---------------- RECOMMENDATIONS ----------------
-@app.post("/recommendations")
+# ---------------- RECOMMENDATION HISTORY ----------------
+# Store history metadata inside the existing JSON column, so existing SQLite
+# databases need no schema migration. Older records remain readable.
+def history_record(rec, include_snapshot=True):
+    payload = rec.recommendation
+
+    if (isinstance(payload, dict) and payload.get('history_version') == 1
+            and isinstance(payload.get('snapshot'), dict)):
+        snapshot = payload['snapshot']
+        saved_at = payload.get('saved_at')
+    else:
+        snapshot = {'subject': rec.subject, 'recommendation': payload}
+        saved_at = None
+
+    recommendation = snapshot.get('recommendation')
+    groups = recommendation.get('groups') if isinstance(recommendation, dict) else None
+    result = {
+        'id': rec.id,
+        'subject': rec.subject,
+        'saved_at': saved_at,
+        'model': snapshot.get('model'),
+        'group_count': len(groups) if isinstance(groups, list) else None,
+    }
+
+    if include_snapshot:
+        result['snapshot'] = snapshot
+
+    return result
+
+
+@app.post('/recommendations')
 def create_recommendation():
-    data = request.get_json(force=True)
-    subject = data["subject"]
-    recommendation = data["recommendation"]
+    data = request.get_json(silent=True)
+
+    if not isinstance(data, dict):
+        return jsonify({'error': 'Send a JSON object.'}), 400
+
+    subject = data.get('subject')
+    recommendation = data.get('recommendation')
+
+    if not isinstance(subject, str) or not subject.strip():
+        return jsonify({'error': 'A subject is required.'}), 400
+
+    if not isinstance(recommendation, (dict, str)) or not recommendation:
+        return jsonify({'error': 'A nonempty recommendation object or text is required.'}), 400
+
+    if isinstance(recommendation, str) and not recommendation.strip():
+        return jsonify({'error': 'Recommendation text cannot be blank.'}), 400
+
+    snapshot = {key: data[key] for key in (
+        'recommendation', 'requirements', 'students', 'model', 'profile_source', 'attempts', 'note'
+    ) if key in data}
+
+    snapshot['subject'] = subject.strip()
+    payload = {
+        'history_version': 1,
+        'saved_at': datetime.now(timezone.utc).isoformat(),
+        'snapshot': snapshot,
+    }
 
     db = SessionLocal()
-    rec = Recommendation(subject=subject, recommendation=recommendation)
-    db.add(rec)
-    db.commit()
-    db.close()
 
-    return jsonify({"message": "Recommendation saved"}), 201
+    try:
+        rec = Recommendation(subject=subject.strip(), recommendation=payload)
+        db.add(rec)
+        db.commit()
+        result = history_record(rec)
+        return jsonify({'message': 'Recommendation saved.', **result}), 201
+    except SQLAlchemyError:
+        db.rollback()
+        app.logger.exception('Could not save recommendation')
+        return jsonify({'error': 'Could not save recommendation.'}), 500
+    finally:
+        db.close()
 
-@app.get("/recommendations/<subject>")
+
+@app.get('/recommendations')
+def list_recommendations():
+    subject = request.args.get('subject', '').strip()
+    db = SessionLocal()
+    try:
+        query = db.query(Recommendation)
+        if subject:
+            query = query.filter_by(subject=subject)
+        records = query.order_by(Recommendation.id.desc()).all()
+        return jsonify([history_record(rec, False) for rec in records]), 200
+    finally:
+        db.close()
+
+
+@app.get('/recommendations/history/<int:recommendation_id>')
+def read_history_item(recommendation_id):
+    db = SessionLocal()
+    try:
+        rec = db.get(Recommendation, recommendation_id)
+
+        if rec is None:
+            return jsonify({'error': 'Recommendation not found.'}), 404
+
+        return jsonify(history_record(rec)), 200
+    finally:
+        db.close()
+
+
+@app.delete('/recommendations/history/<int:recommendation_id>')
+def delete_recommendation(recommendation_id):
+    db = SessionLocal()
+    try:
+        rec = db.get(Recommendation, recommendation_id)
+
+        if rec is None:
+            return jsonify({'error': 'Recommendation not found.'}), 404
+
+        db.delete(rec)
+        db.commit()
+
+        return jsonify({'message': 'Recommendation deleted.', 'id': recommendation_id}), 200
+    except SQLAlchemyError:
+        db.rollback()
+        app.logger.exception('Could not delete recommendation')
+        return jsonify({'error': 'Could not delete recommendation.'}), 500
+    finally:
+        db.close()
+
+
+# Preserve the old read-by-subject endpoint, returning the newest saved result.
+@app.get('/recommendations/<subject>')
 def read_recommendation(subject):
     db = SessionLocal()
-    rec = db.query(Recommendation).filter_by(subject=subject).first()
-    db.close()
-    return jsonify(rec.recommendation if rec else {}), 200
+    try:
+        rec = db.query(Recommendation).filter_by(subject=subject).order_by(Recommendation.id.desc()).first()
+        return jsonify(history_record(rec)['snapshot']['recommendation'] if rec else {}), 200
+    finally:
+        db.close()
+
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=6000)

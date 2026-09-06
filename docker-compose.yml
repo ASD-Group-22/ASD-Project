@@ -106,6 +106,46 @@ services:
     restart: unless-stopped
 
   # ==========================================================
+  # STUDENT 3
+  # ==========================================================
+
+  student-3-database:
+    build: ./student-3/database-service
+    volumes:
+      - ./student-3/database-service/data:/app/data
+    ports:
+      - "6000:6000"
+    restart: unless-stopped
+
+  student-3-backend:
+    build: ./student-3/backend-service
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./student-3/prompts:/prompts:ro
+    environment:
+      DB_URL: "http://student-3-database:6000"
+      SKILL_PROFILE_SERVICE_URL: "http://student-4-backend:5005"
+      OLLAMA_URL: "${STUDENT3_OLLAMA_URL:-http://host.docker.internal:11434}"
+      OLLAMA_MODEL: "${STUDENT3_OLLAMA_MODEL:-llama3.1:8b}"
+      PROMPT_ROOT: "/prompts"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      - student-3-database
+      - student-4-backend
+    restart: unless-stopped
+
+  student-3-frontend:
+    build: ./student-3/frontend-service
+    ports:
+      - "8000:8000"
+    depends_on:
+      - student-3-backend
+    restart: unless-stopped
+
+
+  # ==========================================================
   # STUDENT 4
   # ==========================================================
 

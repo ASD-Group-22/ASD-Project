@@ -285,6 +285,29 @@ def get_profile_by_student_id(student_id):
 
     return jsonify(profile_data), 200
 
+# Return the latest profile for students for STUDENT 3 feature
+@app.get('/profiles')
+def list_profiles():
+    connection = get_db_connection()
+    try:
+        rows = connection.execute("""
+            SELECT p.* FROM skill_profiles p
+            JOIN (SELECT student_id, MAX(profile_id) AS latest
+                    FROM skill_profiles GROUP BY student_id) current
+                ON p.profile_id = current.latest
+            ORDER BY p.profile_id
+        """).fetchall()
+        profiles = []
+        for row in rows:
+            profile = dict(row)
+            profile['skills'] = [dict(skill) for skill in connection.execute(
+                'SELECT * FROM student_skills WHERE profile_id = ? ORDER BY student_skill_id',
+                (row['profile_id'],)).fetchall()]
+            profiles.append(profile)
+        return jsonify(profiles), 200
+    finally:
+        connection.close()
+
 if __name__ == "__main__":
 
     app.run(

@@ -52,3 +52,8 @@ def get_profile_by_student_id(student_id):
     )
 
     return response.json(), response.status_code
+
+#ADDED FOR STUDENT 3 TO LIST ALL PROFILES
+def list_profiles():
+    response = requests.get(f'{DATABASE_SERVICE_URL}/profiles', timeout=10)
+    return response.json(), response.status_code

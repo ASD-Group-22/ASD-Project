@@ -82,6 +82,17 @@ def api_get_profile_by_student_id(student_id):
 
     return jsonify(result), status_code
 
+# ADDED FOR STUDENT 3 TO LIST ALL PROFILES
+@app.get('/api/profiles')
+def api_list_profiles():
+    import requests
+    from services.database_api import list_profiles
+    try:
+        result, status_code = list_profiles()
+        return jsonify(result), status_code
+    except (requests.RequestException, ValueError):
+        return jsonify({"error": 'Skill profile database service unavailable'}), 503
+
 # GENERATE AI PROFILE ANALYSIS
 @app.route(
     "/api/profiles/<int:profile_id>/analyse",

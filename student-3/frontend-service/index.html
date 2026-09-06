@@ -3,53 +3,18 @@
 <head>
   <meta charset="UTF-8">
   <title>Group Formation Dashboard</title>
-  <style>
-    body { font-family: Arial; margin: 20px; }
-    .tabs { display: flex; gap: 10px; margin-bottom: 20px; }
-    .tab { padding: 10px 20px; border: 1px solid #ccc; cursor: pointer; }
-    .tab.active { background: #007bff; color: white; }
-    .panel { display: none; }
-    .panel.active { display: block; }
-    table { border-collapse: collapse; width: 100%; margin-top: 10px; }
-    th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
-    button { margin: 5px; padding: 6px 12px; cursor: pointer; }
-
-    /* Modal */
-    .modal-backdrop {
-      position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-      background: rgba(0,0,0,0.5); display: none;
-      align-items: center; justify-content: center;
-      z-index: 1000;
-    }
-    .modal {
-      background: white; padding: 20px; border-radius: 4px;
-      min-width: 300px; box-shadow: 0 2px 10px rgba(0,0,0,0.3);
-    }
-    .modal h3 { margin-top: 0; }
-
-    /* Toast */
-    #toast {
-      position: fixed;
-      bottom: 20px;
-      right: 20px;
-      background: #28a745;
-      color: white;
-      padding: 10px 15px;
-      border-radius: 4px;
-      display: none;
-      z-index: 2000;
-      font-size: 14px;
-    }
-  </style>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="css/styles.css">
 </head>
 <body>
+  <main>
 
   <h1>Group Formation Dashboard</h1>
 
   <div class="tabs">
-    <div class="tab active" data-target="skillsPanel">Skills</div>
-    <div class="tab" data-target="groupsPanel">Groups</div>
-    <div class="tab" data-target="recommendationsPanel">Recommendations</div>
+    <button type="button" class="tab active" data-target="skillsPanel">Skills</button>
+    <button type="button" class="tab" data-target="groupsPanel">Groups</button>
+    <button type="button" class="tab" data-target="recommendationsPanel">Recommendations</button>
   </div>
 
   <!-- Skills Panel -->
@@ -101,19 +66,44 @@
     <label>Subject:
       <select id="recSubjectSelect"></select>
     </label>
+    <label>Target group size: <select id="targetGroupSize"><option>3</option><option>4</option><option selected>5</option></select></label>
+    <p><label>Student IDs (comma separated; blank includes all profiles):
+      <input id="candidateIds" placeholder="1, 2, 3, 4, 5"></label></p>
+    <button id="loadProfilesBtn">Load Skill Profiles</button>
+    <a href="http://localhost:5006" target="_blank" rel="noopener">Manage Skill Profiles</a>
+    <pre id="profilesOutput" aria-live="polite"></pre>
     <button id="getRecBtn">Get Recommendations</button>
-    <pre id="recommendationOutput"></pre>
+    <pre id="recommendationOutput" aria-live="polite"></pre>
 
-    <pre id="recOutput"></pre>
+    <button id="saveRecommendationBtn" disabled>Save to History</button>
+    <p id="saveRecommendationStatus" role="status"></p>
+    <hr>
+    <h2>Recommendation History</h2>
+    <label>Filter by subject:
+      <input id="historySubject" placeholder="Blank shows all subjects">
+    </label>
+    <button id="refreshHistoryBtn">Load History</button>
+    <p id="historyStatus" role="status"></p>
+    <table>
+      <thead><tr><th>ID</th><th>Subject</th><th>Saved</th><th>Groups</th><th>Actions</th></tr></thead>
+      <tbody id="historyRows"></tbody>
+    </table>
+    <section id="historyDetails" hidden>
+      <h3 id="historyDetailsTitle">Saved Recommendation</h3>
+      <button id="closeHistoryBtn">Close Details</button>
+      <pre id="historyDetailsOutput"></pre>
+    </section>
   </div>
 
+  </main>
+
   <!-- Modal -->
-  <div id="modalBackdrop" class="modal-backdrop">
+  <div id="modalBackdrop" class="modal-backdrop" hidden>
     <div class="modal" id="modalContent"></div>
   </div>
 
   <!-- Toast -->
-  <div id="toast"></div>
+  <div id="toast" role="status" hidden></div>
 
 <script>
   const backend = "http://localhost:5000";
@@ -131,18 +121,18 @@
   /* ---------------------- MODAL ---------------------- */
   function openModal(html) {
     document.getElementById("modalContent").innerHTML = html;
-    document.getElementById("modalBackdrop").style.display = "flex";
+    document.getElementById("modalBackdrop").hidden = false;
   }
   function closeModal() {
-    document.getElementById("modalBackdrop").style.display = "none";
+    document.getElementById("modalBackdrop").hidden = true;
   }
 
   /* ---------------------- TOAST ---------------------- */
   function showToast(message) {
     const toast = document.getElementById("toast");
     toast.textContent = message;
-    toast.style.display = "block";
-    setTimeout(() => toast.style.display = "none", 2000);
+    toast.hidden = false;
+    setTimeout(() => toast.hidden = true, 2000);
   }
 
   /* ---------------------- SUBJECTS ---------------------- */
@@ -165,7 +155,7 @@
   /* ---------------------- SKILLS ---------------------- */
   async function loadRequirements() {
     const subject = document.getElementById("skillsSubjectSelect").value;
-    const res = await fetch(`${backend}/ui/skills/${subject}?t=${Date.now()}`);
+    const res = await fetch(`${backend}/ui/skills/${encodeURIComponent(subject)}?t=${Date.now()}`);
     const data = await res.json();
 
     const tbody = document.querySelector("#skillsTable tbody");
@@ -177,17 +167,16 @@
     }
 
     Object.entries(data).forEach(([skill, info]) => {
-      tbody.innerHTML += `
-        <tr>
-          <td>${skill}</td>
-          <td>${info.level}</td>
-          <td>${info.amount}</td>
-          <td>
-            <button onclick="editSkill('${skill}', '${info.level}', '${info.amount}')">Edit</button>
-            <button onclick="deleteSkill('${skill}')">Delete</button>
-          </td>
-        </tr>
-      `;
+      const row = tbody.insertRow();
+      [skill, info.level, info.amount].forEach(value => { row.insertCell().textContent = value; });
+      const actions = row.insertCell();
+      const edit = document.createElement('button');
+      edit.textContent = 'Edit';
+      edit.addEventListener('click', () => editSkill(skill, info.level, info.amount));
+      const remove = document.createElement('button');
+      remove.textContent = 'Delete';
+      remove.addEventListener('click', () => deleteSkill(skill));
+      actions.append(edit, remove);
     });
   }
 
@@ -195,15 +184,7 @@
     const html = `
       <h3>Add Skill</h3>
       <label>Skill:
-        <select id="modalSkillName">
-          <option value="python">Python</option>
-          <option value="java">Java</option>
-          <option value="c++">C++</option>
-          <option value="documentation">Documentation</option>
-          <option value="research">Research</option>
-          <option value="diagramming">Diagramming</option>
-          <option value="referencing">Referencing</option>
-        </select>
+        <input id="modalSkillName" placeholder="e.g. Python, SQL, React">
       </label><br>
       <label>Level:
         <select id="modalSkillLevel">
@@ -226,42 +207,17 @@
   }
 
   function editSkill(skill, level, amount) {
-    const html = `
-      <h3>Edit Skill '${skill}'</h3>
-      <label>Skill:
-        <select id="modalSkillName">
-          <option value="python" ${skill==="python"?"selected":""}>Python</option>
-          <option value="java" ${skill==="java"?"selected":""}>Java</option>
-          <option value="c++" ${skill==="c++"?"selected":""}>C++</option>
-          <option value="documentation" ${skill==="documentation"?"selected":""}>Documentation</option>
-          <option value="research" ${skill==="research"?"selected":""}>Research</option>
-          <option value="diagramming" ${skill==="diagramming"?"selected":""}>Diagramming</option>
-          <option value="referencing" ${skill==="referencing"?"selected":""}>Referencing</option>
-        </select>
-      </label><br>
-      <label>Level:
-        <select id="modalSkillLevel">
-          <option ${level==="beginner"?"selected":""}>beginner</option>
-          <option ${level==="intermediate"?"selected":""}>intermediate</option>
-          <option ${level==="expert"?"selected":""}>expert</option>
-        </select>
-      </label><br>
-      <label>Amount:
-        <select id="modalSkillAmount">
-          <option ${amount==="little"?"selected":""}>little</option>
-          <option ${amount==="moderate"?"selected":""}>moderate</option>
-          <option ${amount==="extensive"?"selected":""}>extensive</option>
-        </select>
-      </label><br><br>
-      <button onclick="saveSkill()">Save</button>
-      <button onclick="closeModal()">Cancel</button>
-    `;
-    openModal(html);
+    openSkillModal();
+    document.getElementById('modalSkillName').value = skill;
+    document.getElementById('modalSkillName').disabled = true;
+    document.getElementById('modalSkillLevel').value = level;
+    document.getElementById('modalSkillAmount').value = amount;
   }
 
   async function saveSkill() {
     const subject = document.getElementById("skillsSubjectSelect").value;
-    const skill = document.getElementById("modalSkillName").value;
+    const skill = document.getElementById("modalSkillName").value.trim().toLowerCase();
+    if (!subject || !skill) { showToast("Select a subject and enter a skill."); return; }
     const level = document.getElementById("modalSkillLevel").value;
     const amount = document.getElementById("modalSkillAmount").value;
 
@@ -287,7 +243,7 @@
 
   async function deleteSkill(skill) {
     const subject = document.getElementById("skillsSubjectSelect").value;
-    const res = await fetch(`${backend}/ui/skills/delete/${subject}/${skill}`, {
+    const res = await fetch(`${backend}/ui/skills/delete/${encodeURIComponent(subject)}/${encodeURIComponent(skill)}`, {
       method: "DELETE"
     });
     const result = await res.json();
@@ -398,37 +354,58 @@
   }
 
   /* ---------------------- RECOMMENDATIONS ---------------------- */
-async function getRecommendation() {
-    const subject = document.getElementById("subjectDropdown").value;
-
-    if (!subject) {
-        alert("Please select a subject first.");
-        return;
-    }
-
+async function loadProfiles() {
+    const output = document.getElementById('profilesOutput');
+    output.textContent = 'Loading current skill profiles...';
     try {
-        const res = await fetch(`${backend}/ai/group-recommendation`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ subject })
-        });
+      const res = await fetch(`${backend}/ai/profiles`);
+      const profiles = await res.json();
+      if (!res.ok) throw new Error(profiles.error || 'Could not load profiles.');
+      output.textContent = profiles.length ? profiles.map(p =>
+        `${p.name} (profile ${p.profile_id}): ${p.skill_details.map(s => `${s.skill_name}: ${s.skill_level}`).join(', ') || 'No skills'}`
+      ).join('\n') : 'No profiles found. Create profiles using Manage Skill Profiles.';
+    } catch (error) { output.textContent = error.message; }
+  }
 
-        const data = await res.json();
-
-        // Display recommendation
-        document.getElementById("recommendationOutput").innerText =
-            JSON.stringify(data.recommendation, null, 2);
-
-    } catch (err) {
-        console.error("Recommendation error:", err);
-        alert("Failed to get recommendation.");
+  async function getRecommendation() {
+    const subject = document.getElementById('recSubjectSelect').value;
+    const output = document.getElementById('recommendationOutput');
+    const button = document.getElementById('getRecBtn');
+    if (!subject) { output.textContent = 'Select a subject first.'; return; }
+    const payload = { subject, group_size: Number(document.getElementById('targetGroupSize').value) };
+    const raw = document.getElementById('candidateIds').value.trim();
+    if (raw) {
+      const parts = raw.split(',').map(s => s.trim());
+      if (parts.some(s => !/^[1-9][0-9]*$/.test(s))) {
+        output.textContent = 'Enter positive student IDs separated by commas.'; return;
+      }
+      payload.student_ids = parts.map(Number);
     }
-}
+    button.disabled = true;
+    recommendationHistory.generationStarted();
+    output.textContent = 'Reading live profiles and asking Ollama to form balanced groups. This can take several minutes...';
+    try {
+      const res = await fetch(`${backend}/ai/group-recommendation`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload)
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Recommendation failed.');
+      recommendationHistory.generationSucceeded(data);
+      output.textContent = data.recommendation.groups.map(g =>
+        `${g.group_name}: ${g.members.join(', ')}\n${g.reasoning}\nWeighted skill score: ${g.weighted_skill_score}\n` +
+        g.coverage.map(c => `${c.skill} (${c.required_level}): ${c.met ? 'covered by student IDs ' + c.qualified_student_ids.join(', ') : 'GAP'}`).join('\n')
+      ).join('\n\n') + '\n\n' + data.recommendation.warnings.join('\n') + '\n' + data.note;
+    } catch (error) { output.textContent = error.message; }
+    finally { button.disabled = false; }
+  }
 
+  document.getElementById('getRecBtn').addEventListener('click', getRecommendation);
+  document.getElementById('loadProfilesBtn').addEventListener('click', loadProfiles);
 
   /* ---------------------- INIT ---------------------- */
   loadSubjects();
 </script>
 
+<script src="js/recommendation-history.js"></script>
 </body>
 </html>

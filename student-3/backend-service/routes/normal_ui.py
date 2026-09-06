@@ -1,7 +1,8 @@
 import os
 import requests
 from flask import Blueprint, request, jsonify
-from llm_client import ask_llm
+from routes.ai_mode import group_recommendation
+from urllib.parse import quote
 
 ui_bp = Blueprint("ui", __name__)
 
@@ -36,10 +37,13 @@ def read_requirements(subject):
     return jsonify(res.json()), res.status_code
 
 
-@ui_bp.delete("/skills/delete/<subject>/<skill>")
+@ui_bp.delete("/skills/delete/<subject>/<path:skill>")
 def delete_requirement(subject, skill):
-    # DB-service returns updated requirements JSON
-    res = requests.delete(f"{DB_URL}/requirements/{subject}/{skill}")
+    res = requests.delete(
+        f"{DB_URL}/requirements/"
+        f"{quote(subject, safe='')}/{quote(skill, safe='')}",
+        timeout=15,
+    )
     return jsonify(res.json()), res.status_code
 
 
@@ -63,23 +67,4 @@ def delete_group(group_name):
     return jsonify(res.json()), res.status_code
 
 
-# ---------------- AI RECOMMENDATION (simple) ----------------
-@ui_bp.post("/ai/group-recommendation")
-def ai_group_recommendation():
-    data = request.get_json(force=True)
-    subject = data["subject"]
-
-    req_res = requests.get(f"{DB_URL}/requirements/{subject}")
-    requirements = req_res.json()
-
-    prompt = f"""
-You are an AI assistant helping form groups for subject '{subject}'.
-
-Project requirements:
-{requirements}
-
-Return a JSON structure describing recommended groups.
-"""
-
-    answer = ask_llm(prompt)
-    return jsonify({"recommendation": answer}), 200
+ui_bp.add_url_rule('/ai/group-recommendation', view_func=group_recommendation, methods=['POST'])

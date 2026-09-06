@@ -8,4 +8,4 @@ RUN pip install --no-cache-dir flask flask-cors sqlalchemy
 
 EXPOSE 6000
 
-CMD ["python", "app.py"]
+CMD ["sh", "-c", "python init_db.py && python app.py"]
