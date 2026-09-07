@@ -43,7 +43,7 @@ services:
       - "3001:80"
 
     depends_on:
-      - backend-service
+      - student-1-backend-service
 
     restart: unless-stopped
 
