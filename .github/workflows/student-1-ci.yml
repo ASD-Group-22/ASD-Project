@@ -95,8 +95,8 @@ jobs:
           }
 
           check_url "http://localhost:3001/"
-          check_url "http://localhost:5001/"
-          check_url "http://localhost:6001/"
+          check_url "http://localhost:5001/health"
+          check_url "http://localhost:6001/health"
 
       - name: Run Student 1 smoke test
         shell: pwsh
