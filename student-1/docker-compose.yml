@@ -23,13 +23,13 @@ services:
       - "5001:5001"
 
     environment:
-      DATABASE_SERVICE_URL: http://database-service:6001
+      DATABASE_SERVICE_URL: http://student-1-database-service:6001
       OLLAMA_BASE_URL: ${OLLAMA_BASE_URL}
       OLLAMA_MODEL: ${OLLAMA_MODEL}
       OLLAMA_REVIEW_MODEL: ${OLLAMA_REVIEW_MODEL}
 
     depends_on:
-      - database-service
+      - student-1-database-service
 
     restart: unless-stopped
 
