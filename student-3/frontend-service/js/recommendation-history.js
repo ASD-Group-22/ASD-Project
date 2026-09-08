@@ -36,7 +36,7 @@ const recommendationHistory = (() => {
     latest = JSON.parse(JSON.stringify(result));
     saved = false;
    
-    el('saveRecommendationStatus').textContent = 'Review this result, then save it to history if you want to keep it.';
+    el('saveRecommendationStatus').textContent = 'Decision made. Save this result to history to keep it.';
     updateSaveButton();
   }
 
@@ -134,6 +134,8 @@ const recommendationHistory = (() => {
       lines.push(typeof result === 'string' ? result : JSON.stringify(result, null, 2));
     }
     
+    if (snapshot.human_decision) lines.push('', `Human decision: ${snapshot.human_decision}`, `Reason: ${snapshot.decision_reason || '-'}`);
+    if (snapshot.loop) lines.push('', 'Agentic loop:', JSON.stringify(snapshot.loop, null, 2));
     if (snapshot.note) lines.push('', String(snapshot.note));
     
     if (snapshot.requirements) lines.push('', 'Requirements at the time:', JSON.stringify(snapshot.requirements, null, 2));

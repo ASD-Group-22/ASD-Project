@@ -9,7 +9,7 @@ def profiles():
     try:
         return jsonify(load_profiles()), 200
     except RecommendationError as exc:
-        return jsonify({'error': str(exc)}), exc.status
+        return jsonify({'error': str(exc), 'loop': getattr(exc, 'loop', None)}), exc.status
 
 
 @ai_bp.post('/group-recommendation')
@@ -17,4 +17,4 @@ def group_recommendation():
     try:
         return jsonify(recommend(request.get_json(silent=True))), 200
     except RecommendationError as exc:
-        return jsonify({'error': str(exc)}), exc.status
+        return jsonify({'error': str(exc), 'loop': getattr(exc, 'loop', None)}), exc.status

@@ -1,115 +1,338 @@
 import importlib.util
-import os
+import json
 from pathlib import Path
 import sys
-import tempfile
-import unittest
+from unittest.mock import Mock
+
+import pytest
+import requests
+
+ROOT = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(ROOT / "student-3/backend-service"))
+
+import group_recommendations as service
+from app import create_app
 
 
-class RecommendationHistoryTests(unittest.TestCase):
-    @classmethod
-    def setUpClass(cls):
-        cls.temporary = tempfile.TemporaryDirectory()
-        cls.old_url = os.environ.get('DATABASE_URL')
-        os.environ['DATABASE_URL'] = 'sqlite:///' + str(Path(cls.temporary.name) / 'history.db')
-        cls.saved_modules = {name: value for name, value in sys.modules.items()
-                             if name == 'services' or name.startswith('services.')
-                             or name == 'models' or name.startswith('models.')}
-        for name in cls.saved_modules:
-            del sys.modules[name]
-        cls.database_dir = Path(__file__).resolve().parents[1] / 'database-service'
-        sys.path.insert(0, str(cls.database_dir))
-        spec = importlib.util.spec_from_file_location('history_database_app', cls.database_dir / 'app.py')
-        cls.database = importlib.util.module_from_spec(spec)
-        spec.loader.exec_module(cls.database)
-        cls.database.app.config['TESTING'] = True
-
-    @classmethod
-    def tearDownClass(cls):
-        cls.database.engine.dispose()
-        for name in list(sys.modules):
-            if name == 'services' or name.startswith('services.') or name == 'models' or name.startswith('models.'):
-                del sys.modules[name]
-        sys.modules.update(cls.saved_modules)
-        sys.path.remove(str(cls.database_dir))
-        if cls.old_url is None:
-            os.environ.pop('DATABASE_URL', None)
-        else:
-            os.environ['DATABASE_URL'] = cls.old_url
-        cls.temporary.cleanup()
-
-    def setUp(self):
-        self.client = self.database.app.test_client()
-        db = self.database.SessionLocal()
-        try:
-            db.query(self.database.Recommendation).delete()
-            db.commit()
-        finally:
-            db.close()
-
-    def sample(self, subject='ASD'):
-        return {
-            'subject': subject,
-            'recommendation': {'groups': [{'student_ids': [1, 2, 3], 'reasoning': 'Complementary skills.'}], 'warnings': []},
-            'students': [{'student_id': 1, 'skills': {'python': 3}}],
-            'requirements': {'python': {'level': 'intermediate'}},
-            'model': 'llama3.1:8b',
+def profiles(count=10):
+    return [
+        {
+            "student_id": i,
+            "profile_id": i,
+            "skills": [
+                {
+                    "skill_name": " Python ",
+                    "skill_level": "Advanced" if i % 2 else "Beginner",
+                    "strength": "Problem solving",
+                    "weakness": "Testing",
+                }
+            ],
         }
-
-    def test_save_list_read_delete_and_no_update(self):
-        payload = self.sample()
-        created = self.client.post('/recommendations', json=payload)
-        self.assertEqual(created.status_code, 201)
-        record = created.json
-        self.assertTrue(record['saved_at'])
-        self.assertEqual(record['snapshot'], payload)
-        record_id = record['id']
-        history = self.client.get('/recommendations').json
-        self.assertEqual(history[0]['id'], record_id)
-        self.assertEqual(history[0]['group_count'], 1)
-        self.assertNotIn('snapshot', history[0])
-        self.assertEqual(self.client.get(f'/recommendations/history/{record_id}').json['snapshot'], payload)
-        for method in ('put', 'patch'):
-            self.assertEqual(getattr(self.client, method)(f'/recommendations/history/{record_id}', json=payload).status_code, 405)
-        self.assertEqual(self.client.delete(f'/recommendations/history/{record_id}').status_code, 200)
-        self.assertEqual(self.client.get('/recommendations').json, [])
-        self.assertEqual(self.client.get(f'/recommendations/history/{record_id}').status_code, 404)
-        self.assertEqual(self.client.delete(f'/recommendations/history/{record_id}').status_code, 404)
-
-    def test_newest_first_filter_and_latest_compatibility(self):
-        first = self.client.post('/recommendations', json=self.sample()).json
-        second_payload = self.sample()
-        second_payload['recommendation']['warnings'] = ['Second attempt']
-        second = self.client.post('/recommendations', json=second_payload).json
-        third = self.client.post('/recommendations', json=self.sample('AI')).json
-        self.assertEqual([r['id'] for r in self.client.get('/recommendations').json], [third['id'], second['id'], first['id']])
-        self.assertEqual([r['id'] for r in self.client.get('/recommendations?subject=ASD').json], [second['id'], first['id']])
-        self.assertEqual(self.client.get('/recommendations/ASD').json, second_payload['recommendation'])
-        self.assertEqual(self.client.get('/recommendations?subject=missing').json, [])
-
-    def test_older_rows_are_readable_without_migration(self):
-        db = self.database.SessionLocal()
-        try:
-            old = self.database.Recommendation(subject='ASD', recommendation='Legacy explanation')
-            db.add(old)
-            db.commit()
-            record_id = old.id
-        finally:
-            db.close()
-        record = self.client.get(f'/recommendations/history/{record_id}').json
-        self.assertIsNone(record['saved_at'])
-        self.assertEqual(record['snapshot']['recommendation'], 'Legacy explanation')
-        self.assertEqual(self.client.get('/recommendations/ASD').json, 'Legacy explanation')
-
-    def test_invalid_saves_do_not_create_rows(self):
-        for payload in (None, [], {}, {'subject': ' ', 'recommendation': 'x'},
-                        {'subject': 'ASD', 'recommendation': ''},
-                        {'subject': 'ASD', 'recommendation': {}},
-                        {'subject': 'ASD', 'recommendation': 12}):
-            with self.subTest(payload=payload):
-                self.assertEqual(self.client.post('/recommendations', json=payload).status_code, 400)
-        self.assertEqual(self.client.get('/recommendations').json, [])
+        for i in range(1, count + 1)
+    ]
 
 
-if __name__ == '__main__':
-    unittest.main()
+def answer(ids=None):
+    if ids is None:
+        ids = [list(range(1, 6)), list(range(6, 11))]
+
+    return {
+        "groups": [
+            {
+                "student_ids": group,
+                "reasoning": "Complementary recorded skills.",
+            }
+            for group in ids
+        ]
+    }
+
+
+@pytest.fixture
+def client(monkeypatch):
+    def get(url):
+        if "/requirements/" in url:
+            return {
+                "python": {
+                    "level": "intermediate",
+                    "amount": "extensive",
+                },
+                "sql": {
+                    "level": "beginner",
+                    "amount": "little",
+                },
+            }
+        return profiles()
+
+    monkeypatch.setattr(service, "get_json", get)
+    return create_app().test_client()
+
+
+def ollama(monkeypatch, *responses):
+    proposals = iter(responses)
+    def reply(*args, **kwargs):
+        messages = kwargs['json']['messages']
+        if messages[0]['content'].startswith('You review'):
+            data = {'approved': True, 'reason': 'Supported by the supplied profiles.', 'issues': []}
+        else:
+            data = next(proposals)
+        return Mock(json=Mock(return_value={'message': {'content': json.dumps(data)}}))
+    post = Mock(side_effect=reply)
+    monkeypatch.setattr(service.requests, 'post', post)
+    return post
+
+
+@pytest.mark.parametrize(
+    "route",
+    [
+        "/ai/group-recommendation",
+        "/ui/ai/group-recommendation",
+    ],
+)
+
+def test_live_profiles_and_coverage(client, monkeypatch, route):
+    post = ollama(monkeypatch, answer())
+    response = client.post(route, json={"subject": "ASD"})
+
+    assert response.status_code == 200
+
+    data = response.get_json()
+
+    assert len(data["students"]) == 10
+    assert data["students"][0]["skills"] == {"python": 3}
+    assert (
+        data["recommendation"]["groups"][0]["unmet_requirements"]
+        == ["sql"]
+    )
+
+    assert len(data["recommendation"]["warnings"]) == 2
+    context = json.loads(
+        post.call_args.kwargs["json"]["messages"][1]["content"]
+    )
+
+    assert (
+        context["students"][0]["skill_details"][0]["strength"]
+        == "Problem solving"
+    )
+
+    assert context["group_sizes"] == [5, 5]
+
+
+def test_duplicate_ids_fail_without_retry(client, monkeypatch):
+    invalid = answer(
+        [[1, 1, 3, 4, 5], [6, 7, 8, 9, 10]]
+    )
+
+    post = ollama(monkeypatch, invalid, answer())
+    response = client.post(
+        "/ai/group-recommendation",
+        json={"subject": "ASD"},
+    )
+
+    assert response.status_code == 502
+    assert response.json["loop"]["attempts"] == 1
+    assert post.call_count == 1
+
+
+@pytest.mark.parametrize(
+    "bad",
+    [
+        answer([[1, 2, 3, 4, 99], [6, 7, 8, 9, 10]]),
+        answer([[1, 2, 3], [4, 5, 6]]),
+        answer([[True, 2, 3, 4, 5], [6, 7, 8, 9, 10]]),
+        {"groups": []},
+        {"groups": [None, None]},
+        answer([[1, 2, 3, 4], [5, 6, 7, 8, 9, 10]]),
+    ],
+)
+def test_invalid_groups_never_succeed(client, monkeypatch, bad):
+    ollama(monkeypatch, bad, bad, bad)
+
+    response = client.post(
+        "/ai/group-recommendation",
+        json={"subject": "ASD"},
+    )
+
+    assert response.status_code == 502
+
+
+def test_candidate_selection(client, monkeypatch):
+    post = ollama(monkeypatch, answer([[2, 4, 8]]))
+
+    response = client.post(
+        "/ai/group-recommendation",
+        json={
+            "subject": "ASD",
+            "student_ids": [2, 4, 8],
+        },
+    )
+
+    assert response.status_code == 200
+    assert [
+        student["student_id"]
+        for student in response.json["students"]
+    ] == [2, 4, 8]
+
+    context = json.loads(
+        post.call_args.kwargs["json"]["messages"][1]["content"]
+    )
+
+    assert len(context["students"]) == 3
+
+
+@pytest.mark.parametrize(
+    "data,status",
+    [
+        (None, 400),
+        ({}, 400),
+        ({"subject": "ASD", "group_size": True}, 400),
+        ({"subject": "ASD", "group_size": 6}, 400),
+        ({"subject": "ASD", "student_ids": [999]}, 422),
+        ({"subject": "ASD", "student_ids": [1, 1, 2]}, 400),
+        ({"subject": "ASD", "student_ids": [1, 2]}, 422),
+    ],
+)
+
+def test_input_validation(client, data, status):
+    response = client.post(
+        "/ai/group-recommendation",
+        json=data,
+    )
+
+    assert response.status_code == status
+
+
+def test_ollama_unavailable(client, monkeypatch):
+    monkeypatch.setattr(
+        service.requests,
+        "post",
+        Mock(side_effect=requests.Timeout()),
+    )
+
+    response = client.post(
+        "/ai/group-recommendation",
+        json={"subject": "ASD"},
+    )
+
+    assert response.status_code == 503
+
+
+def test_profile_service_unavailable(monkeypatch):
+    monkeypatch.setattr(
+        service.requests,
+        "get",
+        Mock(side_effect=requests.ConnectionError()),
+    )
+
+    response = create_app().test_client().get("/ai/profiles")
+
+    assert response.status_code == 503
+
+
+def test_empty_requirements(client, monkeypatch):
+    monkeypatch.setattr(service, "get_json", lambda url: {})
+
+    response = client.post(
+        "/ai/group-recommendation",
+        json={"subject": "ASD"},
+    )
+
+    assert response.status_code == 422
+
+
+def test_group_sizes_include_every_student():
+    for count in range(3, 101):
+        for target in (3, 4, 5):
+            sizes = service.group_sizes(count, target)
+
+            assert sum(sizes) == count
+            assert min(sizes) >= 3
+            assert max(sizes) <= 5
+            assert max(sizes) - min(sizes) <= 1
+
+
+def test_latest_profile_list_uses_real_sqlite(
+    tmp_path,
+    monkeypatch,
+):
+
+    spec = importlib.util.spec_from_file_location(
+        "skill_db_app",
+        ROOT / "student-4/database/app.py",
+    )
+
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    spec = importlib.util.spec_from_file_location(
+        "skill_db_init",
+        ROOT / "student-4/database/init_db.py",
+    )
+
+    init = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(init)
+    db_path = str(tmp_path / "profiles.db")
+
+    monkeypatch.setattr(init, "DATABASE_PATH", db_path)
+    monkeypatch.setattr(init, "DATA_DIR", str(tmp_path))
+    monkeypatch.setattr(module, "DATABASE_PATH", db_path)
+
+    init.init_db()
+    client = module.app.test_client()
+
+    assert len(client.get("/profiles").json) == 10
+
+    created = client.post(
+        "/profiles",
+        json={
+            "student_id": 1,
+            "skills": [
+                {
+                    "skill_name": "SQL",
+                    "skill_level": "Advanced",
+                }
+            ],
+        },
+    )
+
+    assert created.status_code == 201
+
+    listed = client.get("/profiles").json
+
+    assert len(listed) == 10
+
+    # Find Student 1 by identity, not position in the list.
+    matches = [
+        profile
+        for profile in listed
+        if profile["student_id"] == 1
+    ]
+
+    assert len(matches) == 1
+    student_one = matches[0]
+
+    assert student_one["profile_id"] == created.json["profile_id"]
+    assert student_one["skills"][0]["skill_name"] == "SQL"
+    assert client.get("/profiles/student/1").json == student_one
+
+    updated_response = client.put(
+        f'/profiles/{created.json["profile_id"]}',
+        json={
+            "skills": [
+                {
+                    "skill_name": "Git",
+                    "skill_level": "Beginner",
+                }
+            ]
+        },
+    )
+
+    assert updated_response.status_code == 200
+
+    updated_profiles = client.get("/profiles").json
+    updated = next(
+        profile
+        for profile in updated_profiles
+        if profile["student_id"] == 1
+    )
+
+    assert updated["profile_id"] == created.json["profile_id"]
+    assert updated["skills"][0]["skill_name"] == "Git"

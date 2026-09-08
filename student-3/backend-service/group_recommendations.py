@@ -5,6 +5,7 @@ import os
 from pathlib import Path
 from urllib.parse import quote
 import requests
+from agentic_loop import run_loop, LoopError
 
 LEVELS = {'beginner': 1, 'intermediate': 2, 'advanced': 3, 'expert': 3}
 WEIGHTS = {'little': 1, 'moderate': 2, 'extensive': 3}
@@ -14,6 +15,39 @@ class RecommendationError(Exception):
     def __init__(self, message, status=400):
         super().__init__(message)
         self.status = status
+
+
+def ollama_payload(model, role, messages, students, sizes):
+    if role == 'proposer':
+        schema = {'type': 'object', 'additionalProperties': False,
+                  'required': ['groups'], 'properties': {'groups': {
+                      'type': 'array', 'minItems': len(sizes), 'maxItems': len(sizes),
+                      'items': {'type': 'object', 'additionalProperties': False,
+                                'required': ['student_ids', 'reasoning'], 'properties': {
+                                    'student_ids': {'type': 'array', 'minItems': 3, 'maxItems': 5,
+                                                    'items': {'type': 'integer', 'enum': [s['student_id'] for s in students]}},
+                                    'reasoning': {'type': 'string', 'maxLength': 240}}}}}}
+    else:
+        schema = {'type': 'object', 'additionalProperties': False,
+                  'required': ['approved', 'reason', 'issues'], 'properties': {
+                      'approved': {'type': 'boolean'},
+                      'reason': {'type': 'string', 'maxLength': 500},
+                      'issues': {'type': 'array', 'maxItems': 5,
+                                 'items': {'type': 'string', 'maxLength': 240}}}}
+    # Preserve the original messages while grounding generation in the same schema.
+    grounded = [dict(m) for m in messages]
+    grounded[0]['content'] += '\nReturn compact JSON matching this schema: ' + json.dumps(schema)
+    return {'model': model, 'messages': grounded, 'format': schema, 'stream': False,
+            'options': {'temperature': 0, 'num_predict': 4096}}
+
+
+def ollama_content(payload):
+    if payload.get('done_reason') == 'length':
+        raise ValueError('Ollama reached its output token limit before finishing. No complete proposal/review is available.')
+    raw = payload['message']['content']
+    if not isinstance(raw, str) or not raw.strip():
+        raise ValueError('Ollama returned empty content.')
+    return raw
 
 
 def get_json(url):
@@ -122,7 +156,7 @@ def validate_result(result, students, sizes, requirements):
         reasoning = group.get('reasoning')
 
         if not isinstance(reasoning, str) or not reasoning.strip():
-            raise ValueError('Include reasoning for each group.')
+            reasoning = 'No explanation supplied by the model. Review the calculated skill coverage below.'
 
         assigned.extend(ids)
         actual_sizes.append(len(ids))
@@ -138,8 +172,8 @@ def validate_result(result, students, sizes, requirements):
                          'members': [by_id[sid]['name'] for sid in ids], 'reasoning': reasoning.strip(),
                          'coverage': coverage, 'unmet_requirements': [c['skill'] for c in coverage if not c['met']],
                          'weighted_skill_score': score})
-    if sorted(actual_sizes) != sorted(sizes):
-        raise ValueError(f'Group sizes must be {sizes}.')
+    if any(size < 3 or size > 5 for size in actual_sizes):
+        raise ValueError('Each group must contain 3 to 5 students.')
 
     if len(assigned) != len(set(assigned)) or set(assigned) != set(by_id):
         raise ValueError('Assign every supplied student exactly once, without duplicates or omissions.')
@@ -205,36 +239,44 @@ def recommend(data):
             503,
         ) from exc
     
-    messages = [{'role': 'system', 'content': system}, {'role': 'user', 'content': json.dumps(context)}]
-    model = os.getenv('OLLAMA_MODEL', 'llama3.1:8b')
+    review_file = prompt_root / 'group_service' / 'review' / 'group_review_prompt.txt'
+    try:
+        review_prompt = review_file.read_text(encoding='utf-8')
+    except (OSError, UnicodeError) as exc:
+        raise RecommendationError('Could not read the Llama review prompt.', 503) from exc
+    # Dedicated defaults work with the current shared Compose file unchanged.
+    proposal_model = os.getenv('GROUP_PROPOSAL_MODEL', 'qwen2.5:0.5b')
+    review_model = os.getenv('GROUP_REVIEW_MODEL', 'llama3.1:8b')
     ollama_url = os.getenv('OLLAMA_URL', 'http://host.docker.internal:11434').rstrip('/')
 
-    for attempt in range(2):
+    def call(model, role, messages, attempt):
         try:
-            response = requests.post(f'{ollama_url}/api/chat', json={
-                'model': model, 'messages': messages, 'format': 'json', 'stream': False,
-                'options': {'temperature': 0.2}}, timeout=(10, 180))
+            response = requests.post(f'{ollama_url}/api/chat',
+                json=ollama_payload(model, role, messages, students, sizes), timeout=(10, 180))
             response.raise_for_status()
-        except requests.RequestException as exc:
-            raise RecommendationError(f'Ollama is unavailable or model {model} is not installed. Check Ollama and pull the configured model.', 503) from exc
+            raw = ollama_content(response.json())
+        except (requests.RequestException, ValueError, KeyError, TypeError) as exc:
+            raise RecommendationError(f'{role.capitalize()} call failed for {model}: {exc}', 503) from exc
+        return raw
 
-        text = ''
-
-        try:
-            text = response.json()['message']['content']
-            groups = validate_result(json.loads(text), students, sizes, requirements)
-            break
-        except (ValueError, KeyError, TypeError) as exc:
-            if attempt == 1:
-                raise RecommendationError('Ollama returned invalid groups after a repair attempt. No groups were saved; try again or use a more capable model.', 502) from exc
-
-            messages.extend([{'role': 'assistant', 'content': text if isinstance(text, str) else ''},
-                             {'role': 'user', 'content': f'Validation failed: {exc}. Correct the JSON using the original profiles and constraints.'}])
-
+    try:
+        groups, loop = run_loop(context, system, review_prompt,
+            lambda messages, attempt: call(proposal_model, 'proposer', messages, attempt),
+            lambda messages, attempt: call(review_model, 'reviewer', messages, attempt),
+            validate_result)
+    except LoopError as exc:
+        error = RecommendationError(str(exc), exc.status)
+        error.loop = exc.loop
+        raise error from exc
     warnings = [f'{g["group_name"]} lacks the required level for: {", ".join(g["unmet_requirements"])}.'
                 for g in groups if g['unmet_requirements']]
-
+    if not loop['review']['approved']:
+        warnings.append('Llama has concerns or its review is unavailable. This is advisory; you can still accept or reject.')
+    if not loop['quality']['criteria_met']:
+        warnings.append('Suggested Python quality targets are not fully met. You can still accept or reject.')
     return {'subject': subject, 'requirements': requirements, 'students': students,
-            'recommendation': {'groups': groups, 'warnings': warnings}, 'model': model,
-            'profile_source': 'student-4', 'attempts': attempt + 1,
-            'note': 'AI proposal for review. Coverage is checked against recorded skills; balance is a heuristic, not an optimality guarantee.'}
+            'recommendation': {'groups': groups, 'warnings': warnings}, 'model': proposal_model,
+            'review_model': review_model, 'profile_source': 'student-4', 'attempts': loop['attempts'],
+            'loop': loop, 'human_decision': 'pending',
+            'note': 'Awaiting human Accept/Reject. Accept selects this proposal; save to history to keep your decision; it does not automatically finalise groups.'}
+

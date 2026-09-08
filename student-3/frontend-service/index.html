@@ -7,16 +7,19 @@
   <link rel="stylesheet" href="css/styles.css">
 </head>
 <body>
-  <main>
-
-  <h1>Group Formation Dashboard</h1>
-
-  <div class="tabs">
+  <header class="app-header">
+    <div class="header-content">
+      <h1>Project Group Formation</h1>
+      <p>Form student groups using project requirements, skill profiles and AI-assisted recommendations.</p>
+    </div>
+  </header>
+<nav class="tabs" aria-label="Application tabs">
     <button type="button" class="tab active" data-target="skillsPanel">Skills</button>
     <button type="button" class="tab" data-target="groupsPanel">Groups</button>
     <button type="button" class="tab" data-target="recommendationsPanel">Recommendations</button>
-  </div>
+  </nav>
 
+  <main class="container">
   <!-- Skills Panel -->
   <div id="skillsPanel" class="panel active">
     <h2>Project Skill Requirements</h2>
@@ -27,7 +30,7 @@
     <button onclick="loadRequirements()">Load Requirements</button>
     <button onclick="openSkillModal()">Add Skill</button>
 
-    <table id="skillsTable">
+    <div class="table-scroll" tabindex="0" role="region" aria-label="Scrollable data table"><table id="skillsTable">
       <thead>
         <tr>
           <th>Skill</th>
@@ -37,7 +40,7 @@
         </tr>
       </thead>
       <tbody></tbody>
-    </table>
+    </table></div>
   </div>
 
   <!-- Groups Panel -->
@@ -47,7 +50,7 @@
     <button onclick="loadGroups()">Load Groups</button>
     <button onclick="openGroupCreateModal()">Create Group</button>
 
-    <table id="groupsTable">
+    <div class="table-scroll" tabindex="0" role="region" aria-label="Scrollable data table"><table id="groupsTable">
       <thead>
         <tr>
           <th>Group Name</th>
@@ -56,7 +59,7 @@
         </tr>
       </thead>
       <tbody></tbody>
-    </table>
+    </table></div>
   </div>
 
   <!-- Recommendations Panel -->
@@ -75,6 +78,15 @@
     <button id="getRecBtn">Get Recommendations</button>
     <pre id="recommendationOutput" aria-live="polite"></pre>
 
+    <h3>Agentic Loop and Human Review</h3>
+    <p id="loopStatus" role="status"></p>
+    <pre id="loopOutput"></pre>
+    <label>Decision reason (optional):
+      <input id="decisionReason" maxlength="2000" placeholder="Why you accept or reject this proposal">
+    </label>
+    <button id="acceptRunBtn" disabled>Accept Proposal</button>
+    <button id="rejectRunBtn" disabled>Reject Proposal</button>
+    <p>Accept or reject, then Save to History to keep the result and decision. Acceptance does not create groups. Unsaved decisions are lost when you reload.</p>
     <button id="saveRecommendationBtn" disabled>Save to History</button>
     <p id="saveRecommendationStatus" role="status"></p>
     <hr>
@@ -84,10 +96,10 @@
     </label>
     <button id="refreshHistoryBtn">Load History</button>
     <p id="historyStatus" role="status"></p>
-    <table>
+    <div class="table-scroll" tabindex="0" role="region" aria-label="Scrollable data table"><table>
       <thead><tr><th>ID</th><th>Subject</th><th>Saved</th><th>Groups</th><th>Actions</th></tr></thead>
       <tbody id="historyRows"></tbody>
-    </table>
+    </table></div>
     <section id="historyDetails" hidden>
       <h3 id="historyDetailsTitle">Saved Recommendation</h3>
       <button id="closeHistoryBtn">Close Details</button>
@@ -95,6 +107,7 @@
     </section>
   </div>
 
+    <footer class="footer">ASD Group 22 · Release 0 · Project Group Formation</footer>
   </main>
 
   <!-- Modal -->
@@ -383,19 +396,24 @@ async function loadProfiles() {
     }
     button.disabled = true;
     recommendationHistory.generationStarted();
-    output.textContent = 'Reading live profiles and asking Ollama to form balanced groups. This can take several minutes...';
+    agenticReview.started();
+    output.textContent = 'Qwen is proposing groups and Llama is reviewing them. One proposal and one advisory review; this can take several minutes...';
     try {
       const res = await fetch(`${backend}/ai/group-recommendation`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload)
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Recommendation failed.');
-      recommendationHistory.generationSucceeded(data);
+      if (!res.ok) {
+        const failure = new Error(data.error || 'Recommendation failed.');
+        failure.loop = data.loop;
+        throw failure;
+      }
+      agenticReview.received(data);
       output.textContent = data.recommendation.groups.map(g =>
         `${g.group_name}: ${g.members.join(', ')}\n${g.reasoning}\nWeighted skill score: ${g.weighted_skill_score}\n` +
         g.coverage.map(c => `${c.skill} (${c.required_level}): ${c.met ? 'covered by student IDs ' + c.qualified_student_ids.join(', ') : 'GAP'}`).join('\n')
       ).join('\n\n') + '\n\n' + data.recommendation.warnings.join('\n') + '\n' + data.note;
-    } catch (error) { output.textContent = error.message; }
+    } catch (error) { output.textContent = error.message; agenticReview.failed(error.message, error.loop); }
     finally { button.disabled = false; }
   }
 
@@ -407,5 +425,6 @@ async function loadProfiles() {
 </script>
 
 <script src="js/recommendation-history.js"></script>
+<script src="js/agentic-review.js?v=single-attempt-1"></script>
 </body>
 </html>
