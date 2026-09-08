@@ -39,7 +39,8 @@ jobs:
       - name: Run database tests
         run: |
           if [ -d student-5/database/tests ]; then
-            pytest -q student-5/database/tests
+          cd student-5/database
+          pytest -q tests
           else
             echo "No database tests directory found"
           fi
