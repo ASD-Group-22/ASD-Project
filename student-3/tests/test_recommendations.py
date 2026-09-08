@@ -68,19 +68,16 @@ def client(monkeypatch):
 
 
 def ollama(monkeypatch, *responses):
-    post = Mock(
-        side_effect=[
-            Mock(
-                json=Mock(
-                    return_value={
-                        "message": {"content": json.dumps(response)}
-                    }
-                )
-            )
-            for response in responses
-        ]
-    )
-    monkeypatch.setattr(service.requests, "post", post)
+    proposals = iter(responses)
+    def reply(*args, **kwargs):
+        messages = kwargs['json']['messages']
+        if messages[0]['content'].startswith('You review'):
+            data = {'approved': True, 'reason': 'Supported by the supplied profiles.', 'issues': []}
+        else:
+            data = next(proposals)
+        return Mock(json=Mock(return_value={'message': {'content': json.dumps(data)}}))
+    post = Mock(side_effect=reply)
+    monkeypatch.setattr(service.requests, 'post', post)
     return post
 
 
@@ -133,7 +130,7 @@ def test_duplicate_ids_trigger_repair(client, monkeypatch):
 
     assert response.status_code == 200
     assert response.json["attempts"] == 2
-    assert post.call_count == 2
+    assert post.call_count == 3
 
 
 @pytest.mark.parametrize(
@@ -148,7 +145,7 @@ def test_duplicate_ids_trigger_repair(client, monkeypatch):
     ],
 )
 def test_invalid_groups_never_succeed(client, monkeypatch, bad):
-    ollama(monkeypatch, bad, bad)
+    ollama(monkeypatch, bad, bad, bad)
 
     response = client.post(
         "/ai/group-recommendation",

@@ -55,14 +55,16 @@ def test_services_over_http(tmp_path):
             payload = json.loads(self.rfile.read(int(self.headers['Content-Length'])))
             captured.append(payload)
             context = json.loads(payload['messages'][1]['content'])
-            ids = [s['student_id'] for s in context['students']]
-            groups, offset = [], 0
-
-            for size in context['group_sizes']:
-                groups.append({'student_ids': ids[offset:offset+size], 'reasoning': 'Test model response using supplied profiles.'})
-                offset += size
-
-            body = json.dumps({'message': {'content': json.dumps({'groups': groups})}}).encode()
+            if 'proposal' in context:
+                result = {'approved': True, 'reason': 'Supported proposal.', 'issues': []}
+            else:
+                ids = [s['student_id'] for s in context['students']]
+                groups, offset = [], 0
+                for size in context['group_sizes']:
+                    groups.append({'student_ids': ids[offset:offset+size], 'reasoning': 'Test model response using supplied profiles.'})
+                    offset += size
+                result = {'groups': groups}
+            body = json.dumps({'message': {'content': json.dumps(result)}}).encode()
             self.send_response(200)
             self.send_header('Content-Type', 'application/json')
             self.end_headers()
@@ -103,14 +105,16 @@ def test_services_over_http(tmp_path):
         assert requests.put(skill_api + f'/api/profiles/{profile_id}', json={
             'skills': [{'skill_name':'Python', 'skill_level':'Advanced', 'strength':'Updated live'}]}, timeout=5).status_code == 200
 
-        response = requests.post(group_api + '/ai/group-recommendation', json={'subject':'ASD'}, timeout=390)
+        response = requests.post(group_api + '/ai/group-recommendation', json={'subject':'ASD'}, timeout=1200)
         assert response.status_code == 200, response.text
         data = response.json()
 
         assert data['students'][0]['skills']['python'] == 3
         assert data['students'][0]['skill_details'][0]['strength'] == 'Updated live'
         assert sorted(s for g in data['recommendation']['groups'] for s in g['student_ids']) == list(range(1, 11))
-        assert len(captured) == (0 if os.getenv('LIVE_OLLAMA_URL') else 1)
+        assert len(captured) == (0 if os.getenv('LIVE_OLLAMA_URL') else 2 * data['attempts'])
+        assert data['human_decision'] == 'pending'
+        assert data['loop']['requires_human_review'] is True
         assert requests.get(group_db + '/groups', timeout=5).json() == []
 
     finally:

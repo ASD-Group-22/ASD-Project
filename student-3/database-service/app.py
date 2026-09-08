@@ -177,7 +177,7 @@ def create_recommendation():
         return jsonify({'error': 'Recommendation text cannot be blank.'}), 400
 
     snapshot = {key: data[key] for key in (
-        'recommendation', 'requirements', 'students', 'model', 'profile_source', 'attempts', 'note'
+        'recommendation', 'requirements', 'students', 'model', 'profile_source', 'attempts', 'note', 'loop', 'review_model', 'human_decision', 'decision_reason'
     ) if key in data}
 
     snapshot['subject'] = subject.strip()
