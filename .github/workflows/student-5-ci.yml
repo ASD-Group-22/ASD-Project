@@ -40,6 +40,13 @@ jobs:
         working-directory: student-5/database
         run: python -m pytest -q tests  
 
+      - name: Install backend dependencies
+        run: |
+          if [ -f student-5/backend/requirements.txt ]; then
+          pip install -r student-5/backend/requirements.txt
+          fi
+          pip install pytest
+
       - name: Run backend tests
         working-directory: student-5/backend
         run: python -m pytest -q tests
