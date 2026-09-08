@@ -37,28 +37,12 @@ jobs:
           pip install pytest
 
       - name: Run database tests
-        run: |
-          if [ -d student-5/database/tests ]; then
-            pytest -q student-5/database/tests
-          else
-            echo "No database tests directory found"
-          fi
-
-      - name: Install backend dependencies
-        run: |
-          if [ -f student-5/backend/requirements.txt ]; then
-            pip install -r student-5/backend/requirements.txt
-          fi
-          pip install pytest
+        working-directory: student-5/database
+        run: python -m pytest -q tests  
 
       - name: Run backend tests
-        run: |
-          if [ -d student-5/backend/tests ]; then
-          cd student-5/backend
-          pytest -q tests
-          else
-            echo "No backend tests directory found"
-          fi
+        working-directory: student-5/backend
+        run: python -m pytest -q tests
 
       - name: Validate Docker Compose configuration
         run: docker compose config --quiet
