@@ -1,0 +1,5 @@
+The following data comes from the student's saved Skill Profile.
+
+Use the student's skill names, proficiency levels, strengths and weaknesses as the main context for your analysis.
+
+Base recommendations on areas that logically follow from the student's existing skills and weaknesses.

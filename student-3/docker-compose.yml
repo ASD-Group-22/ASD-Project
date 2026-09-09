@@ -1,0 +1,48 @@
+services:
+  ollama:
+    image: ollama/ollama:latest
+    container_name: ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_models:/root/.ollama
+
+  database-service:
+    build: ./database-service
+    container_name: database-service
+    restart: unless-stopped
+    volumes:
+      - ./database-service/data:/app/data
+    ports:
+      - "6000:6000"
+
+  backend-service:
+    build: ./backend-service
+    container_name: backend-service
+    restart: unless-stopped
+    depends_on:
+      - database-service
+      - ollama
+    volumes:
+      - ./backend-service:/app
+      - ./prompts:/prompts
+      - ./scripts:/scripts
+    ports:
+      - "5000:5000"
+    environment:
+      OLLAMA_URL: "http://host.docker.internal:11434"
+      DB_URL: "http://database-service:6000"
+
+  frontend-service:
+    build: ./frontend-service
+    container_name: frontend-service
+    restart: unless-stopped
+    depends_on:
+      - backend-service
+    volumes:
+      - ./frontend-service:/app
+    ports:
+      - "8000:8000"
+
+volumes:
+  ollama_models:

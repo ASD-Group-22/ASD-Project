@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>University Management Platform</title>
+
+    <style>
+        :root {
+            --page-bg: #f4f6f8;
+            --header: #1f2937;
+            --header-dark: #111827;
+
+            --surface: #ffffff;
+            --text: #111827;
+            --text-secondary: #374151;
+            --muted: #6b7280;
+
+            --border: #e5e7eb;
+
+            --shadow:
+                0 2px 8px rgba(0, 0, 0, 0.04);
+
+            --shadow-hover:
+                0 10px 28px rgba(17, 24, 39, 0.10);
+        }
+
+
+        * {
+            box-sizing: border-box;
+        }
+
+
+        html,
+        body {
+            margin: 0;
+            padding: 0;
+            min-height: 100%;
+        }
+
+
+        body {
+            min-height: 100vh;
+
+            font-family:
+                "Segoe UI",
+                Arial,
+                Helvetica,
+                sans-serif;
+
+            color: var(--text);
+            background: var(--page-bg);
+        }
+
+
+        /* Header */
+
+        .app-header {
+            padding: 34px 6vw;
+
+            color: white;
+            background: var(--header);
+
+            border-bottom: 1px solid var(--header-dark);
+        }
+
+
+        .header-content {
+            width: 100%;
+            max-width: 1180px;
+
+            margin: 0 auto;
+        }
+
+
+        .app-header h1 {
+            margin: 0 0 8px;
+
+            font-size: 32px;
+            font-weight: 700;
+        }
+
+
+        .app-header p {
+            max-width: 760px;
+
+            margin: 0;
+
+            color: #d1d5db;
+
+            font-size: 16px;
+            line-height: 1.5;
+        }
+
+
+        /* Main content */
+
+        .container {
+            width: 100%;
+            max-width: 1180px;
+
+            margin: 0 auto;
+            padding: 44px 24px 70px;
+        }
+
+
+        .section-heading {
+            margin-bottom: 26px;
+        }
+
+
+        .release-label {
+            display: inline-block;
+
+            margin-bottom: 8px;
+
+            color: var(--muted);
+
+            font-size: 13px;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+
+            text-transform: uppercase;
+        }
+
+
+        .section-heading h2 {
+            margin: 0 0 8px;
+
+            font-size: 27px;
+        }
+
+
+        .section-heading p {
+            max-width: 760px;
+
+            margin: 0;
+
+            color: var(--muted);
+
+            line-height: 1.6;
+        }
+
+
+        /* Feature cards */
+
+        .feature-grid {
+            display: grid;
+
+            grid-template-columns:
+                repeat(2, minmax(0, 1fr));
+
+            gap: 18px;
+        }
+
+
+        .feature-card {
+            display: flex;
+            flex-direction: column;
+
+            min-height: 210px;
+            padding: 24px;
+
+            color: inherit;
+            background: var(--surface);
+
+            border: 1px solid var(--border);
+            border-radius: 12px;
+
+            box-shadow: var(--shadow);
+
+            text-decoration: none;
+
+            transition:
+                transform 0.15s ease,
+                box-shadow 0.15s ease,
+                border-color 0.15s ease;
+        }
+
+
+        .feature-card:hover {
+            transform: translateY(-2px);
+
+            border-color: #d1d5db;
+
+            box-shadow: var(--shadow-hover);
+        }
+
+
+        .feature-number {
+            margin-bottom: 18px;
+
+            color: var(--muted);
+
+            font-size: 13px;
+            font-weight: 700;
+
+            letter-spacing: 0.06em;
+        }
+
+
+        .feature-card h3 {
+            margin: 0 0 10px;
+
+            font-size: 21px;
+        }
+
+
+        .feature-card p {
+            flex: 1;
+
+            margin: 0 0 22px;
+
+            color: var(--muted);
+
+            font-size: 15px;
+            line-height: 1.55;
+        }
+
+
+        .open-feature {
+            display: inline-flex;
+            align-items: center;
+
+            width: fit-content;
+
+            padding: 9px 14px;
+
+            color: white;
+            background: var(--header);
+
+            border-radius: 7px;
+
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+
+        .feature-card:hover .open-feature {
+            background: var(--header-dark);
+        }
+
+
+        /* Final card spans row on larger displays */
+
+        .feature-card:last-child {
+            grid-column: 1 / -1;
+        }
+
+
+        /* Footer */
+
+        .footer {
+            margin-top: 34px;
+            padding-top: 22px;
+
+            color: var(--muted);
+
+            border-top: 1px solid var(--border);
+
+            font-size: 13px;
+        }
+
+
+        /* Responsive */
+
+        @media (max-width: 760px) {
+
+            .app-header {
+                padding: 28px 24px;
+            }
+
+
+            .app-header h1 {
+                font-size: 27px;
+            }
+
+
+            .container {
+                padding:
+                    32px
+                    18px
+                    50px;
+            }
+
+
+            .feature-grid {
+                grid-template-columns: 1fr;
+            }
+
+
+            .feature-card:last-child {
+                grid-column: auto;
+            }
+        }
+    </style>
+</head>
+
+
+<body>
+
+    <header class="app-header">
+
+        <div class="header-content">
+
+            <h1>
+                University Management Platform
+            </h1>
+
+            <p>
+                An integrated AI-assisted university management application
+                combining five independently developed microservice features.
+            </p>
+
+        </div>
+
+    </header>
+
+
+    <main class="container">
+
+        <section class="section-heading">
+
+            <span class="release-label">
+                Release 0
+            </span>
+
+            <h2>
+                Integrated Services
+            </h2>
+
+            <p>
+                Select a feature below to open its frontend.
+                Each service operates as part of the shared Docker Compose
+                application and provides its own frontend, backend/API and
+                database functionality.
+            </p>
+
+        </section>
+
+
+        <section class="feature-grid">
+
+            <a
+                class="feature-card"
+                href="http://localhost:3001"
+            >
+
+                <span class="feature-number">
+                    SERVICE 01
+                </span>
+
+                <h3>
+                    Project Management
+                </h3>
+
+                <p>
+                    Create and manage university projects, tasks and
+                    related project information with AI assistance.
+                </p>
+
+                <span class="open-feature">
+                    Open Feature →
+                </span>
+
+            </a>
+
+
+            <a
+                class="feature-card"
+                href="http://localhost:8202"
+            >
+
+                <span class="feature-number">
+                    SERVICE 02
+                </span>
+
+                <h3>
+                    Skill Exchange
+                </h3>
+
+                <p>
+                    Advertise offered and wanted skills, find compatible
+                    exchange partners and receive AI-assisted recommendations.
+                </p>
+
+                <span class="open-feature">
+                    Open Feature →
+                </span>
+
+            </a>
+
+
+            <a
+                class="feature-card"
+                href="http://localhost:8000"
+            >
+
+                <span class="feature-number">
+                    SERVICE 03
+                </span>
+
+                <h3>
+                    Project Group Formation
+                </h3>
+
+                <p>
+                    Form student groups using project requirements,
+                    student skill profiles and AI-assisted recommendations.
+                </p>
+
+                <span class="open-feature">
+                    Open Feature →
+                </span>
+
+            </a>
+
+
+            <a
+                class="feature-card"
+                href="http://localhost:5006"
+            >
+
+                <span class="feature-number">
+                    SERVICE 04
+                </span>
+
+                <h3>
+                    Skill Profile
+                </h3>
+
+                <p>
+                    Manage student skill profiles and generate AI-assisted
+                    analysis of strengths, weaknesses and development areas.
+                </p>
+
+                <span class="open-feature">
+                    Open Feature →
+                </span>
+
+            </a>
+
+
+            <a
+                class="feature-card"
+                href="http://localhost:8005"
+            >
+
+                <span class="feature-number">
+                    SERVICE 05
+                </span>
+
+                <h3>
+                    AI Campus Space Finder
+                </h3>
+
+                <p>
+                    Search campus spaces and receive AI-assisted
+                    recommendations based on study and activity requirements.
+                </p>
+
+                <span class="open-feature">
+                    Open Feature →
+                </span>
+
+            </a>
+
+        </section>
+
+
+        <footer class="footer">
+            ASD Group 22 · Release 0 · Agentic AI Foundations,
+            Microservices & DevOps
+        </footer>
+
+    </main>
+
+</body>
+
+</html>

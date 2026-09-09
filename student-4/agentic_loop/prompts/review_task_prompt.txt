@@ -1,0 +1,12 @@
+Review the following recommendation.
+
+REVIEW TARGET:
+{{REVIEW_TARGET}}
+
+EVIDENCE:
+{{EVIDENCE}}
+
+IMPLEMENTATION AGENT RESPONSE:
+{{IMPLEMENTATION_RESPONSE}}
+
+Determine whether the recommendation should be accepted, partially accepted, or rejected.

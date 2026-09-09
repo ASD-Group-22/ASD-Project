@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Group Formation Dashboard</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <header class="app-header">
+    <div class="header-content">
+      <h1>Project Group Formation</h1>
+      <p>Form student groups using project requirements, skill profiles and AI-assisted recommendations.</p>
+    </div>
+  </header>
+<nav class="tabs" aria-label="Application tabs">
+    <button type="button" class="tab active" data-target="skillsPanel">Skills</button>
+    <button type="button" class="tab" data-target="groupsPanel">Groups</button>
+    <button type="button" class="tab" data-target="recommendationsPanel">Recommendations</button>
+  </nav>
+
+  <main class="container">
+  <!-- Skills Panel -->
+  <div id="skillsPanel" class="panel active">
+    <h2>Project Skill Requirements</h2>
+
+    <label>Subject:
+      <select id="skillsSubjectSelect"></select>
+    </label>
+    <button onclick="loadRequirements()">Load Requirements</button>
+    <button onclick="openSkillModal()">Add Skill</button>
+
+    <div class="table-scroll" tabindex="0" role="region" aria-label="Scrollable data table"><table id="skillsTable">
+      <thead>
+        <tr>
+          <th>Skill</th>
+          <th>Level</th>
+          <th>Amount</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table></div>
+  </div>
+
+  <!-- Groups Panel -->
+  <div id="groupsPanel" class="panel">
+    <h2>Finalised Groups</h2>
+
+    <button onclick="loadGroups()">Load Groups</button>
+    <button onclick="openGroupCreateModal()">Create Group</button>
+
+    <div class="table-scroll" tabindex="0" role="region" aria-label="Scrollable data table"><table id="groupsTable">
+      <thead>
+        <tr>
+          <th>Group Name</th>
+          <th>Members</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table></div>
+  </div>
+
+  <!-- Recommendations Panel -->
+  <div id="recommendationsPanel" class="panel">
+    <h2>AI Group Recommendations</h2>
+
+    <label>Subject:
+      <select id="recSubjectSelect"></select>
+    </label>
+    <label>Target group size: <select id="targetGroupSize"><option>3</option><option>4</option><option selected>5</option></select></label>
+    <p><label>Student IDs (comma separated; blank includes all profiles):
+      <input id="candidateIds" placeholder="1, 2, 3, 4, 5"></label></p>
+    <button id="loadProfilesBtn">Load Skill Profiles</button>
+    <a href="http://localhost:5006" target="_blank" rel="noopener">Manage Skill Profiles</a>
+    <pre id="profilesOutput" aria-live="polite"></pre>
+    <button id="getRecBtn">Get Recommendations</button>
+    <pre id="recommendationOutput" aria-live="polite"></pre>
+
+    <h3>Agentic Loop and Human Review</h3>
+    <p id="loopStatus" role="status"></p>
+    <pre id="loopOutput"></pre>
+    <label>Decision reason (optional):
+      <input id="decisionReason" maxlength="2000" placeholder="Why you accept or reject this proposal">
+    </label>
+    <button id="acceptRunBtn" disabled>Accept Proposal</button>
+    <button id="rejectRunBtn" disabled>Reject Proposal</button>
+    <p>Accept or reject, then Save to History to keep the result and decision. Acceptance does not create groups. Unsaved decisions are lost when you reload.</p>
+    <button id="saveRecommendationBtn" disabled>Save to History</button>
+    <p id="saveRecommendationStatus" role="status"></p>
+    <hr>
+    <h2>Recommendation History</h2>
+    <label>Filter by subject:
+      <input id="historySubject" placeholder="Blank shows all subjects">
+    </label>
+    <button id="refreshHistoryBtn">Load History</button>
+    <p id="historyStatus" role="status"></p>
+    <div class="table-scroll" tabindex="0" role="region" aria-label="Scrollable data table"><table>
+      <thead><tr><th>ID</th><th>Subject</th><th>Saved</th><th>Groups</th><th>Actions</th></tr></thead>
+      <tbody id="historyRows"></tbody>
+    </table></div>
+    <section id="historyDetails" hidden>
+      <h3 id="historyDetailsTitle">Saved Recommendation</h3>
+      <button id="closeHistoryBtn">Close Details</button>
+      <pre id="historyDetailsOutput"></pre>
+    </section>
+  </div>
+
+    <footer class="footer">ASD Group 22 · Release 0 · Project Group Formation</footer>
+  </main>
+
+  <!-- Modal -->
+  <div id="modalBackdrop" class="modal-backdrop" hidden>
+    <div class="modal" id="modalContent"></div>
+  </div>
+
+  <!-- Toast -->
+  <div id="toast" role="status" hidden></div>
+
+<script>
+  const backend = "http://localhost:5000";
+
+  /* ---------------------- TABS ---------------------- */
+  document.querySelectorAll(".tab").forEach(tab => {
+    tab.addEventListener("click", () => {
+      document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
+      document.querySelectorAll(".panel").forEach(p => p.classList.remove("active"));
+      tab.classList.add("active");
+      document.getElementById(tab.dataset.target).classList.add("active");
+    });
+  });
+
+  /* ---------------------- MODAL ---------------------- */
+  function openModal(html) {
+    document.getElementById("modalContent").innerHTML = html;
+    document.getElementById("modalBackdrop").hidden = false;
+  }
+  function closeModal() {
+    document.getElementById("modalBackdrop").hidden = true;
+  }
+
+  /* ---------------------- TOAST ---------------------- */
+  function showToast(message) {
+    const toast = document.getElementById("toast");
+    toast.textContent = message;
+    toast.hidden = false;
+    setTimeout(() => toast.hidden = true, 2000);
+  }
+
+  /* ---------------------- SUBJECTS ---------------------- */
+  async function loadSubjects() {
+    const res = await fetch(`${backend}/ui/subjects?t=${Date.now()}`);
+    const subjects = await res.json();
+
+    const skillsSelect = document.getElementById("skillsSubjectSelect");
+    const recSelect = document.getElementById("recSubjectSelect");
+
+    skillsSelect.innerHTML = "";
+    recSelect.innerHTML = "";
+
+    subjects.forEach(s => {
+      skillsSelect.innerHTML += `<option value="${s}">${s}</option>`;
+      recSelect.innerHTML += `<option value="${s}">${s}</option>`;
+    });
+  }
+
+  /* ---------------------- SKILLS ---------------------- */
+  async function loadRequirements() {
+    const subject = document.getElementById("skillsSubjectSelect").value;
+    const res = await fetch(`${backend}/ui/skills/${encodeURIComponent(subject)}?t=${Date.now()}`);
+    const data = await res.json();
+
+    const tbody = document.querySelector("#skillsTable tbody");
+    tbody.innerHTML = "";
+
+    if (!data || data.message || Object.keys(data).length === 0) {
+      tbody.innerHTML = `<tr><td colspan="4">No skills found.</td></tr>`;
+      return;
+    }
+
+    Object.entries(data).forEach(([skill, info]) => {
+      const row = tbody.insertRow();
+      [skill, info.level, info.amount].forEach(value => { row.insertCell().textContent = value; });
+      const actions = row.insertCell();
+      const edit = document.createElement('button');
+      edit.textContent = 'Edit';
+      edit.addEventListener('click', () => editSkill(skill, info.level, info.amount));
+      const remove = document.createElement('button');
+      remove.textContent = 'Delete';
+      remove.addEventListener('click', () => deleteSkill(skill));
+      actions.append(edit, remove);
+    });
+  }
+
+  function openSkillModal() {
+    const html = `
+      <h3>Add Skill</h3>
+      <label>Skill:
+        <input id="modalSkillName" placeholder="e.g. Python, SQL, React">
+      </label><br>
+      <label>Level:
+        <select id="modalSkillLevel">
+          <option>beginner</option>
+          <option>intermediate</option>
+          <option>expert</option>
+        </select>
+      </label><br>
+      <label>Amount:
+        <select id="modalSkillAmount">
+          <option>little</option>
+          <option>moderate</option>
+          <option>extensive</option>
+        </select>
+      </label><br><br>
+      <button onclick="saveSkill()">Save</button>
+      <button onclick="closeModal()">Cancel</button>
+    `;
+    openModal(html);
+  }
+
+  function editSkill(skill, level, amount) {
+    openSkillModal();
+    document.getElementById('modalSkillName').value = skill;
+    document.getElementById('modalSkillName').disabled = true;
+    document.getElementById('modalSkillLevel').value = level;
+    document.getElementById('modalSkillAmount').value = amount;
+  }
+
+  async function saveSkill() {
+    const subject = document.getElementById("skillsSubjectSelect").value;
+    const skill = document.getElementById("modalSkillName").value.trim().toLowerCase();
+    if (!subject || !skill) { showToast("Select a subject and enter a skill."); return; }
+    const level = document.getElementById("modalSkillLevel").value;
+    const amount = document.getElementById("modalSkillAmount").value;
+
+    const payload = {
+      subject,
+      requirements: {
+        [skill]: { level, amount }
+      }
+    };
+
+    const res = await fetch(`${backend}/ui/skills/create`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    });
+
+    const result = await res.json();
+
+    closeModal();
+    await loadRequirements();
+    showToast(result.message || "Skill saved.");
+  }
+
+  async function deleteSkill(skill) {
+    const subject = document.getElementById("skillsSubjectSelect").value;
+    const res = await fetch(`${backend}/ui/skills/delete/${encodeURIComponent(subject)}/${encodeURIComponent(skill)}`, {
+      method: "DELETE"
+    });
+    const result = await res.json();
+    await loadRequirements();
+    showToast(result.message || "Skill deleted.");
+  }
+
+  /* ---------------------- GROUPS ---------------------- */
+  async function loadGroups() {
+    const res = await fetch(`${backend}/ui/groups?t=${Date.now()}`);
+    const data = await res.json();
+
+    const tbody = document.querySelector("#groupsTable tbody");
+    tbody.innerHTML = "";
+
+    if (!data || data.message || data.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="3">No groups found.</td></tr>`;
+      return;
+    }
+
+    data.forEach(g => {
+      tbody.innerHTML += `
+        <tr>
+          <td>${g.group_name}</td>
+          <td>${g.members.join(", ")}</td>
+          <td>
+            <button onclick="openGroupEditModal('${g.group_name}', '${g.members.join(", ")}')">Edit</button>
+            <button onclick="deleteGroup('${g.group_name}')">Delete</button>
+          </td>
+        </tr>
+      `;
+    });
+  }
+
+  function openGroupCreateModal() {
+    const html = `
+      <h3>Create Group</h3>
+      <label>Group Name:
+        <input type="text" id="modalGroupName">
+      </label><br>
+      <label>Members (comma separated):
+        <input type="text" id="modalGroupMembers">
+      </label><br><br>
+      <button onclick="saveGroup()">Save</button>
+      <button onclick="closeModal()">Cancel</button>
+    `;
+    openModal(html);
+  }
+
+  function openGroupEditModal(name, membersStr) {
+    const html = `
+      <h3>Edit Group '${name}'</h3>
+      <label>Members (comma separated):
+        <input type="text" id="modalGroupMembers" value="${membersStr}">
+      </label><br><br>
+      <button onclick="saveGroupMembers('${name}')">Save</button>
+      <button onclick="closeModal()">Cancel</button>
+    `;
+    openModal(html);
+  }
+
+  async function saveGroup() {
+    const name = document.getElementById("modalGroupName").value;
+    const members = document.getElementById("modalGroupMembers").value
+      .split(",").map(m => m.trim()).filter(m => m);
+
+    const payload = { group_name: name, members };
+
+    const res = await fetch(`${backend}/ui/groups/finalise`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    });
+
+    const result = await res.json();
+    closeModal();
+    await loadGroups();
+    showToast(result.message || "Group saved.");
+  }
+
+  async function saveGroupMembers(name) {
+    const members = document.getElementById("modalGroupMembers").value
+      .split(",").map(m => m.trim()).filter(m => m);
+
+    await fetch(`${backend}/ui/groups/delete/${name}`, { method: "DELETE" });
+
+    const payload = { group_name: name, members };
+
+    const res = await fetch(`${backend}/ui/groups/finalise`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    });
+
+    const result = await res.json();
+    closeModal();
+    await loadGroups();
+    showToast(result.message || "Group updated.");
+  }
+
+  async function deleteGroup(name) {
+    const res = await fetch(`${backend}/ui/groups/delete/${name}`, {
+      method: "DELETE"
+    });
+    const result = await res.json();
+    await loadGroups();
+    showToast(result.message || "Group deleted.");
+  }
+
+  /* ---------------------- RECOMMENDATIONS ---------------------- */
+async function loadProfiles() {
+    const output = document.getElementById('profilesOutput');
+    output.textContent = 'Loading current skill profiles...';
+    try {
+      const res = await fetch(`${backend}/ai/profiles`);
+      const profiles = await res.json();
+      if (!res.ok) throw new Error(profiles.error || 'Could not load profiles.');
+      output.textContent = profiles.length ? profiles.map(p =>
+        `${p.name} (profile ${p.profile_id}): ${p.skill_details.map(s => `${s.skill_name}: ${s.skill_level}`).join(', ') || 'No skills'}`
+      ).join('\n') : 'No profiles found. Create profiles using Manage Skill Profiles.';
+    } catch (error) { output.textContent = error.message; }
+  }
+
+  async function getRecommendation() {
+    const subject = document.getElementById('recSubjectSelect').value;
+    const output = document.getElementById('recommendationOutput');
+    const button = document.getElementById('getRecBtn');
+    if (!subject) { output.textContent = 'Select a subject first.'; return; }
+    const payload = { subject, group_size: Number(document.getElementById('targetGroupSize').value) };
+    const raw = document.getElementById('candidateIds').value.trim();
+    if (raw) {
+      const parts = raw.split(',').map(s => s.trim());
+      if (parts.some(s => !/^[1-9][0-9]*$/.test(s))) {
+        output.textContent = 'Enter positive student IDs separated by commas.'; return;
+      }
+      payload.student_ids = parts.map(Number);
+    }
+    button.disabled = true;
+    recommendationHistory.generationStarted();
+    agenticReview.started();
+    output.textContent = 'Qwen is proposing groups and Llama is reviewing them. One proposal and one advisory review; this can take several minutes...';
+    try {
+      const res = await fetch(`${backend}/ai/group-recommendation`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload)
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        const failure = new Error(data.error || 'Recommendation failed.');
+        failure.loop = data.loop;
+        throw failure;
+      }
+      agenticReview.received(data);
+      output.textContent = data.recommendation.groups.map(g =>
+        `${g.group_name}: ${g.members.join(', ')}\n${g.reasoning}\nWeighted skill score: ${g.weighted_skill_score}\n` +
+        g.coverage.map(c => `${c.skill} (${c.required_level}): ${c.met ? 'covered by student IDs ' + c.qualified_student_ids.join(', ') : 'GAP'}`).join('\n')
+      ).join('\n\n') + '\n\n' + data.recommendation.warnings.join('\n') + '\n' + data.note;
+    } catch (error) { output.textContent = error.message; agenticReview.failed(error.message, error.loop); }
+    finally { button.disabled = false; }
+  }
+
+  document.getElementById('getRecBtn').addEventListener('click', getRecommendation);
+  document.getElementById('loadProfilesBtn').addEventListener('click', loadProfiles);
+
+  /* ---------------------- INIT ---------------------- */
+  loadSubjects();
+</script>
+
+<script src="js/recommendation-history.js"></script>
+<script src="js/agentic-review.js?v=single-attempt-1"></script>
+</body>
+</html>

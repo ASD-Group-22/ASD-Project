@@ -1,0 +1,5 @@
+# PLAN
+# ACT
+# OBSERVE
+# ADAPT
+# EVIDENCE

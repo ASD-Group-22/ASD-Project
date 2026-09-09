@@ -1,0 +1,102 @@
+name: Student 3 - Group Formation CI
+
+on:
+  push:
+    paths:
+      - "student-3/**"
+      - "student-4/**"
+      - "docker-compose.yml"
+      - ".github/workflows/student-3-ci.yml"
+  pull_request:
+    paths:
+      - "student-3/**"
+      - "student-4/**"
+      - "docker-compose.yml"
+      - ".github/workflows/student-3-ci.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: student-3-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  COMPOSE_FILE: docker-compose.yml
+  COMPOSE_PROJECT_NAME: student3-ci
+  PYTHONDONTWRITEBYTECODE: "1"
+
+jobs:
+  test-and-build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install test dependencies
+        run: python -m pip install -r student-3/backend-service/requirements.txt pytest
+
+      - name: Run tests with simulated Ollama
+        run: |
+          mkdir -p reports
+          python -m pytest student-3/tests -v --junitxml=reports/student-3-tests.xml
+
+      - name: Validate shared Compose configuration
+        run: docker compose config -q
+
+      - name: Build and start group and profile services
+        run: |
+          docker compose up -d --build student-3-frontend student-4-frontend
+
+      - name: Check dashboards and live profile access
+        shell: bash
+        run: |
+          set -euo pipefail
+          for url in http://localhost:8000/ http://localhost:5006/ http://localhost:5000/ai/profiles; do
+            ready=false
+            for attempt in {1..30}; do
+              if curl --fail --silent --max-time 5 "$url" > /dev/null; then
+                ready=true
+                break
+              fi
+              sleep 2
+            done
+            if [ "$ready" != true ]; then
+              echo "Service did not become ready: $url"
+              exit 1
+            fi
+          done
+          python - <<'PY'
+          import requests
+          response = requests.get("http://localhost:5000/ai/profiles", timeout=15)
+          response.raise_for_status()
+          profiles = response.json()
+          assert isinstance(profiles, list) and profiles, "No live profiles returned"
+          assert all("student_id" in p and "skills" in p for p in profiles)
+          print(f"Retrieved {len(profiles)} live skill profiles through the group backend")
+          PY
+
+      - name: Collect container logs
+        if: always()
+        run: |
+          mkdir -p reports
+          docker compose ps -a > reports/containers.txt 2>&1 || true
+          docker compose logs --no-color > reports/containers.log 2>&1 || true
+
+      - name: Upload test results and logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: student-3-ci-${{ github.run_id }}
+          path: reports/
+          retention-days: 14
+
+      - name: Stop CI containers
+        if: always()
+        run: docker compose down

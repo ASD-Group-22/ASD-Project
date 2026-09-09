@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0">
+
+    <title>Project Management</title>
+
+    <link
+        rel="stylesheet"
+        href="css/styles.css">
+
+</head>
+
+<body>
+
+<main class="app-shell">
+
+    <header class="app-header">
+
+        <h1>
+            Project Management
+        </h1>
+
+        <p>
+            Create and manage projects with AI assistance
+        </p>
+
+    </header>
+
+    <section class="tab-shell">
+
+        <nav
+            class="tab-nav"
+            aria-label="Application tabs">
+
+            <button
+                class="tab-btn is-active"
+                data-tab="create-project"
+                type="button">
+
+                Create Project
+
+            </button>
+
+            <button
+                class="tab-btn"
+                data-tab="manage-projects"
+                type="button">
+
+                Manage Projects
+
+            </button>
+
+        </nav>
+
+        <div class="tab-content">
+
+            <iframe
+                id="tab-frame-create-project"
+                class="tab-frame is-active"
+                src="tabs/create-project.html"
+                title="Create Project">
+            </iframe>
+
+            <iframe
+                id="tab-frame-manage-projects"
+                class="tab-frame"
+                src="tabs/manage-projects.html"
+                title="Manage Projects">
+            </iframe>
+
+        </div>
+
+    </section>
+
+</main>
+
+<script>
+
+const tabButtons = Array.from(
+    document.querySelectorAll(".tab-btn")
+);
+
+const tabFrames = {
+
+    "create-project":
+        document.getElementById(
+            "tab-frame-create-project"
+        ),
+
+    "manage-projects":
+        document.getElementById(
+            "tab-frame-manage-projects"
+        )
+
+};
+
+function activateTab(tabName) {
+
+    tabButtons.forEach((button) => {
+
+        button.classList.toggle(
+            "is-active",
+            button.dataset.tab === tabName
+        );
+
+    });
+
+    Object.entries(tabFrames).forEach(
+        ([name, frame]) => {
+
+            frame.classList.toggle(
+                "is-active",
+                name === tabName
+            );
+
+        }
+    );
+
+    window.location.hash = tabName;
+
+}
+
+tabButtons.forEach((button) => {
+
+    button.addEventListener(
+        "click",
+        () => {
+            activateTab(button.dataset.tab);
+        }
+    );
+
+});
+
+const hashTab =
+    window.location.hash.replace("#", "");
+
+if (
+    hashTab &&
+    tabFrames[hashTab]
+) {
+
+    activateTab(hashTab);
+
+} else {
+
+    activateTab("create-project");
+
+}
+
+</script>
+
+</body>
+
+</html>

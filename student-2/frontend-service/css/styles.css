@@ -1,0 +1,685 @@
+:root {
+    --page-bg: #f4f6f8;
+    --header: #1f2937;
+    --header-dark: #111827;
+
+    --surface: #ffffff;
+    --surface-soft: #f9fafb;
+
+    --text: #111827;
+    --text-secondary: #374151;
+    --muted: #6b7280;
+
+    --border: #e5e7eb;
+    --border-strong: #d1d5db;
+
+    --primary: #1f2937;
+    --primary-hover: #111827;
+
+    --danger: #b42318;
+    --danger-bg: #fef3f2;
+
+    --success: #027a48;
+    --success-bg: #ecfdf3;
+
+    --radius: 10px;
+    --radius-large: 12px;
+}
+
+
+/* =========================================================
+   GLOBAL
+   ========================================================= */
+
+* {
+    box-sizing: border-box;
+}
+
+html,
+body {
+    margin: 0;
+    padding: 0;
+    min-height: 100%;
+}
+
+body {
+    min-height: 100vh;
+
+    font-family:
+        "Segoe UI",
+        Arial,
+        Helvetica,
+        sans-serif;
+
+    line-height: 1.5;
+
+    color: var(--text);
+    background: var(--page-bg);
+}
+
+button,
+input,
+textarea,
+select {
+    font-family: inherit;
+}
+
+button {
+    cursor: pointer;
+}
+
+button:disabled {
+    cursor: not-allowed;
+    opacity: 0.6;
+}
+
+
+/* =========================================================
+   MAIN APPLICATION SHELL
+   ========================================================= */
+
+.app-shell {
+    min-height: 100vh;
+    padding: 0;
+}
+
+
+/* =========================================================
+   HEADER
+   ========================================================= */
+
+.app-header {
+    margin: 0;
+    padding: 28px 40px;
+
+    color: white;
+    background: var(--header);
+
+    border-bottom: 1px solid var(--header-dark);
+}
+
+.app-header h1 {
+    margin: 0 0 6px;
+
+    font-size: 28px;
+    font-weight: 700;
+}
+
+.app-header p {
+    margin: 0;
+
+    color: #d1d5db;
+    font-size: 15px;
+}
+
+
+/* =========================================================
+   OUTER TAB AREA
+   ========================================================= */
+
+.tab-shell {
+    width: 100%;
+    max-width: none;
+
+    margin: 0;
+    padding: 0;
+
+    background: transparent;
+
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+}
+
+.tab-nav {
+    display: flex;
+    gap: 0;
+
+    margin: 0;
+    padding: 0 30px;
+
+    background: white;
+
+    border-bottom: 1px solid var(--border-strong);
+}
+
+.tab-btn {
+    padding: 17px 24px;
+
+    color: var(--muted);
+    background: transparent;
+
+    border: none;
+    border-bottom: 3px solid transparent;
+    border-radius: 0;
+
+    font-size: 15px;
+    font-weight: 600;
+
+    transition:
+        color 0.2s ease,
+        border-color 0.2s ease,
+        background 0.2s ease;
+}
+
+.tab-btn:hover {
+    color: var(--text);
+    background: var(--surface-soft);
+}
+
+.tab-btn.is-active {
+    color: var(--text);
+    background: transparent;
+
+    border-bottom-color: var(--header-dark);
+}
+
+
+/* =========================================================
+   TAB CONTENT / IFRAMES
+   ========================================================= */
+
+.tab-content {
+    width: 100%;
+}
+
+.tab-frame {
+    display: none;
+
+    width: 100%;
+    height: calc(100vh - 150px);
+    min-height: 760px;
+
+    border: none;
+
+    background: var(--page-bg);
+}
+
+.tab-frame.is-active {
+    display: block;
+}
+
+
+/* =========================================================
+   EMBEDDED NORMAL / AI PAGES
+   ========================================================= */
+
+.embedded-body {
+    min-height: 100vh;
+    margin: 0;
+
+    background: var(--page-bg);
+}
+
+.embedded-shell {
+    width: 100%;
+    max-width: 1180px;
+
+    margin: 0 auto;
+    padding: 36px 30px 60px;
+}
+
+
+/* =========================================================
+   CARDS / PANELS
+   ========================================================= */
+
+.card {
+    margin: 0 0 20px;
+    padding: 26px;
+
+    background: var(--surface);
+
+    border: 1px solid var(--border);
+    border-radius: var(--radius-large);
+
+    box-shadow:
+        0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.card h2 {
+    margin: 0 0 8px;
+
+    color: var(--text);
+
+    font-size: 23px;
+    font-weight: 700;
+}
+
+.card h3 {
+    color: var(--text);
+}
+
+.card p {
+    line-height: 1.55;
+}
+
+.muted {
+    color: var(--muted);
+}
+
+
+/* =========================================================
+   SECTION HEADINGS
+   ========================================================= */
+
+.section-heading,
+.listing-title-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    gap: 16px;
+}
+
+.section-heading {
+    margin-bottom: 22px;
+}
+
+.section-heading h2 {
+    margin-bottom: 6px;
+}
+
+.section-heading p {
+    margin: 0;
+}
+
+
+/* =========================================================
+   FORM CONTROLS
+   ========================================================= */
+
+label {
+    color: var(--text-secondary);
+
+    font-size: 14px;
+    font-weight: 600;
+}
+
+input,
+textarea,
+select {
+    width: 100%;
+
+    margin-top: 6px;
+    padding: 10px 12px;
+
+    color: var(--text);
+    background: white;
+
+    border: 1px solid var(--border-strong);
+    border-radius: 7px;
+
+    font-size: 14px;
+
+    outline: none;
+
+    transition:
+        border-color 0.2s ease,
+        box-shadow 0.2s ease;
+}
+
+input:focus,
+textarea:focus,
+select:focus {
+    border-color: #6b7280;
+
+    box-shadow:
+        0 0 0 2px rgba(107, 114, 128, 0.15);
+}
+
+textarea {
+    resize: vertical;
+}
+
+
+/* =========================================================
+   FORM LAYOUT
+   ========================================================= */
+
+.grid-form {
+    display: grid;
+
+    grid-template-columns:
+        repeat(2, minmax(0, 1fr));
+
+    gap: 18px;
+}
+
+.span-2 {
+    grid-column: 1 / -1;
+}
+
+.action-row,
+.search-row {
+    display: flex;
+    align-items: center;
+
+    gap: 10px;
+}
+
+.search-row input {
+    flex: 1;
+
+    margin-top: 0;
+}
+
+
+/* =========================================================
+   BUTTONS
+   ========================================================= */
+
+button {
+    padding: 10px 15px;
+
+    color: white;
+    background: var(--primary);
+
+    border: 1px solid transparent;
+    border-radius: 7px;
+
+    font-size: 13px;
+    font-weight: 600;
+
+    transition:
+        background 0.2s ease,
+        border-color 0.2s ease,
+        transform 0.1s ease;
+}
+
+button:hover {
+    background: var(--primary-hover);
+}
+
+button:active {
+    transform: translateY(1px);
+}
+
+button.secondary {
+    color: var(--text-secondary);
+    background: white;
+
+    border-color: var(--border-strong);
+}
+
+button.secondary:hover {
+    background: #f3f4f6;
+    border-color: #9ca3af;
+}
+
+button.danger {
+    color: var(--danger);
+    background: var(--danger-bg);
+
+    border-color: #fecdca;
+}
+
+button.danger:hover {
+    color: #912018;
+    background: #fee4e2;
+
+    border-color: #fda29b;
+}
+
+
+/* =========================================================
+   RESULTS PANEL
+   ========================================================= */
+
+.panel {
+    margin-top: 14px;
+    padding: 14px;
+
+    color: var(--text);
+    background: var(--surface-soft);
+
+    border: 1px solid var(--border);
+    border-radius: 9px;
+}
+
+
+/* =========================================================
+   LISTINGS / CANDIDATES
+   ========================================================= */
+
+.listing-card,
+.candidate-row {
+    margin-bottom: 12px;
+    padding: 16px;
+
+    color: var(--text);
+    background: white;
+
+    border: 1px solid var(--border);
+    border-radius: 9px;
+}
+
+.listing-card:last-child,
+.candidate-row:last-child {
+    margin-bottom: 0;
+}
+
+.listing-title-row strong {
+    color: var(--text);
+}
+
+.exchange-flow {
+    display: flex;
+    flex-wrap: wrap;
+
+    gap: 7px;
+
+    margin: 10px 0;
+
+    color: var(--text-secondary);
+
+    font-weight: 600;
+}
+
+.arrow {
+    color: var(--muted);
+
+    font-weight: 400;
+}
+
+.candidate-row {
+    display: grid;
+
+    gap: 4px;
+}
+
+
+/* =========================================================
+   BADGES
+   ========================================================= */
+
+.badge {
+    display: inline-flex;
+    align-items: center;
+
+    padding: 4px 9px;
+
+    border-radius: 999px;
+
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.badge-active {
+    color: var(--success);
+    background: var(--success-bg);
+}
+
+.badge-inactive {
+    color: var(--danger);
+    background: var(--danger-bg);
+}
+
+
+/* =========================================================
+   AGENTIC WORKFLOW
+   ========================================================= */
+
+.workflow-grid {
+    display: grid;
+
+    grid-template-columns:
+        repeat(4, minmax(0, 1fr));
+
+    gap: 12px;
+
+    margin-top: 18px;
+}
+
+.workflow-grid > div {
+    padding: 16px;
+
+    background: var(--surface-soft);
+
+    border: 1px solid var(--border);
+    border-radius: 9px;
+}
+
+.workflow-grid strong {
+    display: block;
+
+    margin-bottom: 6px;
+
+    color: var(--text-secondary);
+}
+
+.workflow-grid span {
+    display: block;
+
+    color: var(--muted);
+
+    font-size: 13px;
+    line-height: 1.5;
+}
+
+.workflow-log-row {
+    display: grid;
+
+    grid-template-columns:
+        90px 1fr;
+
+    gap: 12px;
+
+    padding: 10px 0;
+
+    border-bottom: 1px solid var(--border);
+}
+
+.workflow-log-row:last-child {
+    border-bottom: none;
+}
+
+
+/* =========================================================
+   HUMAN REVIEW
+   ========================================================= */
+
+.human-review {
+    margin-top: 22px;
+    padding-top: 20px;
+
+    border-top: 1px solid var(--border);
+}
+
+.human-decision {
+    margin-top: 14px;
+    padding: 14px;
+
+    color: var(--muted);
+    background: var(--surface-soft);
+
+    border: 1px solid var(--border);
+    border-radius: 8px;
+}
+
+.decision-accepted {
+    color: var(--success);
+    background: var(--success-bg);
+
+    border-color: #abefc6;
+}
+
+.decision-rejected {
+    color: var(--danger);
+    background: var(--danger-bg);
+
+    border-color: #fecdca;
+}
+
+
+/* =========================================================
+   ERROR MESSAGES
+   ========================================================= */
+
+.error {
+    color: var(--danger);
+
+    font-weight: 600;
+}
+
+
+/* =========================================================
+   RESPONSIVE
+   ========================================================= */
+
+@media (max-width: 900px) {
+
+    .app-header {
+        padding: 24px;
+    }
+
+    .embedded-shell {
+        padding:
+            28px
+            20px
+            50px;
+    }
+
+    .workflow-grid {
+        grid-template-columns:
+            repeat(2, 1fr);
+    }
+}
+
+
+@media (max-width: 760px) {
+
+    .tab-nav {
+        padding: 0;
+    }
+
+    .tab-btn {
+        flex: 1;
+
+        padding: 14px 10px;
+    }
+
+    .grid-form,
+    .workflow-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .span-2 {
+        grid-column: auto;
+    }
+
+    .search-row,
+    .section-heading {
+        flex-direction: column;
+
+        align-items: stretch;
+    }
+
+    .action-row {
+        flex-wrap: wrap;
+    }
+
+    .card {
+        padding: 20px;
+    }
+}

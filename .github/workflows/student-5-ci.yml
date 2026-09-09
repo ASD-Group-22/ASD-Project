@@ -1,0 +1,59 @@
+name: Student 5 - Campus Space Finder CI
+
+on:
+  push:
+    paths:
+      - 'student-5/**'
+      - '.github/workflows/student-5-ci.yml'
+      - 'docker-compose.yml'
+  pull_request:
+    paths:
+      - 'student-5/**'
+      - '.github/workflows/student-5-ci.yml'
+      - 'docker-compose.yml'
+  workflow_dispatch:
+
+jobs:
+  test-and-build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Upgrade pip
+        run: python -m pip install --upgrade pip
+
+      - name: Install database dependencies
+        run: |
+          if [ -f student-5/database/requirements.txt ]; then
+            pip install -r student-5/database/requirements.txt
+          fi
+          pip install pytest
+
+      - name: Run database tests
+        working-directory: student-5/database
+        run: python -m pytest -q tests  
+
+      - name: Install backend dependencies
+        run: |
+          if [ -f student-5/backend/requirements.txt ]; then
+          pip install -r student-5/backend/requirements.txt
+          fi
+          pip install pytest
+
+      - name: Run backend tests
+        working-directory: student-5/backend
+        run: python -m pytest -q tests
+
+      - name: Validate Docker Compose configuration
+        run: docker compose config --quiet
+
+      - name: Build Student 5 Docker images
+        run: |
+          docker compose build             student-5-database             student-5-backend             student-5-frontend
