@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1"
+    >
+
+    <title>Skill Exchange RAG Mode</title>
+
+    <link
+        rel="stylesheet"
+        href="/css/styles.css"
+    >
+
+    <script
+        src="/js/htmx.min.js"
+        defer
+    ></script>
+</head>
+
+<body class="embedded-body">
+
+<main class="embedded-shell">
+
+    <section class="card">
+
+        <h2>RAG Mode</h2>
+
+        <p class="muted">
+            Retrieve trusted Skill Exchange context and
+            generate grounded AI answers with citations
+            and confidence.
+        </p>
+
+        <div
+            id="rag-status"
+            class="panel"
+            hx-get="/api/htmx/rag/status"
+            hx-trigger="load"
+            hx-swap="innerHTML"
+        >
+            Checking RAG service status...
+        </div>
+
+    </section>
+
+
+    <section class="card">
+
+        <h2>Refresh Corpus</h2>
+
+        <p class="muted">
+            Rebuild the shared RAG index from current
+            Skill Exchange application data.
+        </p>
+
+        <button
+            type="button"
+            hx-post="/api/htmx/rag/refresh"
+            hx-target="#rag-refresh-result"
+            hx-swap="innerHTML"
+            hx-indicator="#rag-refresh-indicator"
+        >
+            Refresh Corpus
+        </button>
+
+        <span
+            id="rag-refresh-indicator"
+            class="htmx-indicator muted"
+        >
+            Refreshing...
+        </span>
+
+        <div
+            id="rag-refresh-result"
+            class="panel"
+        >
+            The corpus has not been refreshed from this page yet.
+        </div>
+
+    </section>
+
+
+    <section class="card">
+
+        <h2>Retrieve Context</h2>
+
+        <p class="muted">
+            Search the shared vector index without asking
+            the LLM to generate an answer.
+        </p>
+
+        <form
+            class="grid-form"
+            hx-post="/api/htmx/rag/retrieve"
+            hx-target="#rag-result"
+            hx-swap="innerHTML"
+            hx-indicator="#rag-retrieve-indicator"
+        >
+
+            <label>
+                Query
+
+                <input
+                    name="query"
+                    type="text"
+                    required
+                    value="Who wants Java?"
+                >
+            </label>
+
+            <label>
+                Maximum Results
+
+                <select name="k">
+                    <option value="3">
+                        3
+                    </option>
+
+                    <option
+                        value="5"
+                        selected
+                    >
+                        5
+                    </option>
+
+                    <option value="10">
+                        10
+                    </option>
+                </select>
+            </label>
+
+            <div class="span-2 action-row">
+
+                <button type="submit">
+                    Retrieve Context
+                </button>
+
+                <span
+                    id="rag-retrieve-indicator"
+                    class="htmx-indicator muted"
+                >
+                    Retrieving...
+                </span>
+
+            </div>
+
+        </form>
+
+    </section>
+
+
+    <section class="card">
+
+        <h2>Grounded Answer</h2>
+
+        <p class="muted">
+            Ask a question using only retrieved
+            Skill Exchange evidence.
+        </p>
+
+        <form
+            class="grid-form"
+            hx-post="/api/htmx/rag/answer"
+            hx-target="#rag-result"
+            hx-swap="innerHTML"
+            hx-indicator="#rag-answer-indicator"
+        >
+
+            <label class="span-2">
+                Question
+
+                <textarea
+                    name="query"
+                    rows="3"
+                    required
+                >Who offers Python?</textarea>
+            </label>
+
+            <label>
+                Maximum Context Results
+
+                <select name="k">
+                    <option value="3">
+                        3
+                    </option>
+
+                    <option
+                        value="5"
+                        selected
+                    >
+                        5
+                    </option>
+
+                    <option value="10">
+                        10
+                    </option>
+                </select>
+            </label>
+
+            <div class="span-2 action-row">
+
+                <button type="submit">
+                    Generate Grounded Answer
+                </button>
+
+                <span
+                    id="rag-answer-indicator"
+                    class="htmx-indicator muted"
+                >
+                    Generating...
+                </span>
+
+            </div>
+
+        </form>
+
+    </section>
+
+
+    <section class="card">
+
+        <h2>RAG Result</h2>
+
+        <div
+            id="rag-result"
+            class="panel"
+        >
+            Run retrieval or generate a grounded answer
+            to view the result.
+        </div>
+
+    </section>
+
+
+    <section class="card">
+
+        <h2>Release 1 RAG Request Flow</h2>
+
+        <div class="workflow-grid">
+
+            <div>
+                <strong>1 · HTMX Frontend</strong>
+
+                <span>
+                    The user submits a retrieval or
+                    grounded-answer request.
+                </span>
+            </div>
+
+            <div>
+                <strong>2 · Student 2 Backend</strong>
+
+                <span>
+                    The backend validates the request and
+                    forwards it to the shared RAG service.
+                </span>
+            </div>
+
+            <div>
+                <strong>3 · Shared RAG</strong>
+
+                <span>
+                    Trusted application context is retrieved
+                    from the shared index.
+                </span>
+            </div>
+
+            <div>
+                <strong>4 · Grounded Response</strong>
+
+                <span>
+                    The result includes retrieved evidence,
+                    citations and confidence information.
+                </span>
+            </div>
+
+        </div>
+
+        <p class="muted">
+            The RAG server runs locally outside Docker.
+            The backend reaches it through
+            <code>host.docker.internal:5003</code>.
+        </p>
+
+    </section>
+
+</main>
+
+</body>
+</html>

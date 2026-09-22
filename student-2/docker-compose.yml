@@ -24,6 +24,11 @@ services:
       OLLAMA_REVIEW_MODEL: ${OLLAMA_REVIEW_MODEL:-llama3.1:8b}
       ENABLE_REVIEW_MODEL: ${ENABLE_REVIEW_MODEL:-true}
       SKILL_PROFILE_SERVICE_URL: ${SKILL_PROFILE_SERVICE_URL:-}
+      AI_ENABLED: ${AI_ENABLED:-true}
+      MCP_ENABLED: ${MCP_ENABLED:-true}
+      MCP_URL: ${MCP_URL:-http://host.docker.internal:5100/mcp}
+      RAG_ENABLED: ${RAG_ENABLED:-true}
+      RAG_SERVICE_URL: ${RAG_SERVICE_URL:-http://host.docker.internal:5003}
     extra_hosts:
       - "host.docker.internal:host-gateway"
     depends_on:

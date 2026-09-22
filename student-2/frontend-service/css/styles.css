@@ -683,3 +683,68 @@ button.danger:hover {
         padding: 20px;
     }
 }
+/* ==========================================================
+   Release 1 HTMX / MCP / RAG presentation
+   ========================================================== */
+
+.htmx-result {
+    margin-top: 0.75rem;
+}
+
+.htmx-indicator {
+    display: none;
+}
+
+.htmx-request .htmx-indicator,
+.htmx-request.htmx-indicator {
+    display: inline-block;
+}
+
+.status-ok {
+    margin: 0;
+    font-weight: 600;
+}
+
+.rag-output {
+    margin-top: 0.75rem;
+    padding: 1rem;
+    overflow-x: auto;
+    white-space: pre-wrap;
+    word-break: break-word;
+    border-radius: 8px;
+    background: #111827;
+    color: #f9fafb;
+}
+
+.rag-answer {
+    margin-bottom: 1rem;
+    line-height: 1.6;
+}
+
+.rag-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin: 0.75rem 0;
+}
+
+.rag-badge {
+    display: inline-block;
+    padding: 0.35rem 0.65rem;
+    border-radius: 999px;
+    background: #e5e7eb;
+    color: #111827;
+    font-size: 0.9rem;
+}
+
+.citation-card {
+    margin: 0.75rem 0;
+    padding: 0.85rem;
+    border-left: 4px solid #6b7280;
+    border-radius: 6px;
+    background: #f9fafb;
+}
+
+.citation-card p {
+    margin: 0.35rem 0;
+}
