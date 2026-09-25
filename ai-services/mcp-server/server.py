@@ -22,7 +22,7 @@ from tools.student1 import (
 )
 
 
-mcp = FastMCP("Student Project Management MCP")
+mcp = FastMCP("University Management MCP")
 
 
 AVAILABLE_TOOLS = [
@@ -54,7 +54,7 @@ def search_tasks(
 
 
 if __name__ == "__main__":
-    print("Starting Student Project Management MCP Server...")
+    print("Starting University Management MCP Server...")
     print("Server status: RUNNING")
     print("Interact with MCP tools from a second terminal.")
     print("Available tools:")
