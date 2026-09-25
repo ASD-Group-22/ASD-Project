@@ -7,6 +7,8 @@ from routes import (
     ai_bp
 )
 
+from routes.mcp_mode import mcp_bp
+
 
 app = Flask(__name__)
 
@@ -17,6 +19,7 @@ CORS(app)
 app.register_blueprint(projects_bp)
 app.register_blueprint(tasks_bp)
 app.register_blueprint(ai_bp)
+app.register_blueprint(mcp_bp)
 
 
 # ============================================================

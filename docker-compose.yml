@@ -120,7 +120,7 @@ services:
   student-3-backend:
     build: ./student-3/backend-service
     ports:
-      - "5000:5000"
+      - "5009:5000"
     volumes:
       - ./student-3/prompts:/prompts:ro
     environment:
