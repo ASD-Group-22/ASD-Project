@@ -11,8 +11,86 @@ Tools should:
 - avoid direct access to another feature's database
 """
 
+import os
+import requests
 
-def register_tools(mcp):
-    """Register Student 1 MCP tools with the shared MCP server."""
-    # Student 1 feature-specific MCP tools are added here.
-    return None
+
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
+BACKEND_URL = os.getenv(
+    "STUDENT1_BACKEND_URL",
+    "http://localhost:5001"
+)
+
+
+def get_project_details(project_id: int):
+    if not project_id:
+        return {"error": "project_id is required"}
+
+    response = requests.get(
+        f"{BACKEND_URL}/projects/{project_id}",
+        timeout=5,
+    )
+
+    response.raise_for_status()
+
+    project = response.json()
+
+    tasks_response = requests.get(
+        f"{BACKEND_URL}/projects/{project_id}/tasks",
+        timeout=5,
+    )
+
+    tasks_response.raise_for_status()
+
+    tasks = tasks_response.json()
+
+    return {
+        "project": project,
+        "tasks": tasks,
+    }
+
+
+def get_project_tasks(project_id: int):
+    if not project_id:
+        return {"error": "project_id is required"}
+
+    response = requests.get(
+        f"{BACKEND_URL}/projects/{project_id}/tasks",
+        timeout=5,
+    )
+
+    response.raise_for_status()
+
+    return response.json()
+
+
+def search_project_tasks(
+    project_id: int,
+    search_term: str
+):
+    term = (search_term or "").strip().lower()
+
+    if not term:
+        return {"error": "search_term is required"}
+
+    response = requests.get(
+        f"{BACKEND_URL}/projects/{project_id}/tasks",
+        timeout=5,
+    )
+
+    response.raise_for_status()
+
+    tasks = response.json()
+
+    matches = []
+
+    for task in tasks:
+        task_text = str(
+            task.get("task", "")
+        )
+
+        if term in task_text.lower():
+            matches.append(task)
+
+    return matches
