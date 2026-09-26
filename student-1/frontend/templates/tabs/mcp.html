@@ -1,190 +1,524 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
+
 <head>
-    <meta charset="utf-8">
-    <title>MCP</title>
-    <link rel="stylesheet" href="/css/styles.css">
-    <script src="https://unpkg.com/htmx.org@1.9.12"></script>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0">
+
+    <title>MCP Mode</title>
+
+    <link
+        rel="stylesheet"
+        href="/css/styles.css">
+
+    <script
+        src="https://unpkg.com/htmx.org@1.9.12">
+    </script>
+
     <style>
-        body { margin: 0; min-height: auto; background: transparent; }
-        .app-shell { max-width: none; padding: 0; }
+
+        body {
+            margin: 0;
+            min-height: auto;
+            background: transparent;
+        }
+
+        .app-shell {
+            max-width: none;
+            padding: 0;
+        }
+
     </style>
+
 </head>
+
 <body>
+
 <main class="app-shell">
-    <section class="card">
-        <h2>MCP Mode</h2>
 
-        <div class="feature-toggle-row">
-            <label class="toggle-switch" for="mcp-mode-toggle">
-                <input id="mcp-mode-toggle" type="checkbox" checked>
-                <span class="toggle-label">MCP Enabled</span>
-            </label>
-            <span id="mcp-mode-state" class="feature-state feature-on">ON</span>
+    <div class="mcp-container">
+
+        <div class="mcp-header">
+
+            <h2>
+                MCP Mode
+            </h2>
+
+            <p>
+                Run project management tools through the
+                Model Context Protocol.
+            </p>
+
         </div>
 
-        <h2>MCP Tools</h2>
 
-        <!-- Project Details -->
-        <form
-            id="mcp-project-details-form"
-            class="feature-form"
-            hx-post="http://localhost:5001/mcp/project-details"
-            hx-target="#mcp-result"
-            hx-swap="innerHTML"
-        >
-            <label for="mcp_project_id">MCP: Project Details</label>
+        <!-- MCP MODE TOGGLE -->
 
-            <input
-                id="mcp_project_id"
-                name="project_id"
-                type="number"
-                placeholder="Example: 1"
-                required
-            >
+        <section class="mcp-tool-section">
 
-            <button type="submit" class="mcp-action">Run Tool</button>
-        </form>
+            <div class="section-header">
 
-        <!-- Project Tasks -->
-        <form
-            id="mcp-project-tasks-form"
-            class="feature-form"
-            hx-post="http://localhost:5001/mcp/project-tasks"
-            hx-target="#mcp-result"
-            hx-swap="innerHTML"
-        >
-            <label for="mcp_tasks_project_id">MCP: Project Tasks</label>
+                <div>
 
-            <input
-                id="mcp_tasks_project_id"
-                name="project_id"
-                type="number"
-                placeholder="Example: 1"
-                required
-            >
+                    <h3>
+                        MCP Mode
+                    </h3>
 
-            <button type="submit" class="mcp-action">Run Tool</button>
-        </form>
+                    <p>
+                        Enable or disable MCP tool access.
+                    </p>
 
-        <!-- Search Tasks -->
-        <form
-            id="mcp-search-tasks-form"
-            class="feature-form"
-            hx-post="http://localhost:5001/mcp/search-tasks"
-            hx-target="#mcp-result"
-            hx-swap="innerHTML"
-        >
-            <label for="mcp_search_project_id">MCP: Search Tasks</label>
+                </div>
 
-            <input
-                id="mcp_search_project_id"
-                name="project_id"
-                type="number"
-                placeholder="Project ID"
-                required
-            >
+                <div class="feature-toggle-row">
 
-            <input
-                id="mcp_search_term"
-                name="search_term"
-                type="text"
-                placeholder="Example: database"
-                required
-            >
+                    <label
+                        class="toggle-switch"
+                        for="mcp-mode-toggle">
 
-            <button type="submit" class="mcp-action">Run Tool</button>
-        </form>
+                        <input
+                            id="mcp-mode-toggle"
+                            type="checkbox"
+                            checked>
 
-        <div id="mcp-result" class="panel panel-mcp">
-            MCP tool responses will appear here.
-        </div>
-    </section>
+                        <span class="toggle-label">
+                            MCP Enabled
+                        </span>
+
+                    </label>
+
+                    <span
+                        id="mcp-mode-state"
+                        class="feature-state feature-on">
+
+                        ON
+
+                    </span>
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <!-- MCP TOOLS -->
+
+        <section class="mcp-tool-section">
+
+            <div class="section-header">
+
+                <div>
+
+                    <h3>
+                        MCP Tools
+                    </h3>
+
+                    <p>
+                        Select a tool and provide the required
+                        project information.
+                    </p>
+
+                </div>
+
+            </div>
+
+
+            <!-- PROJECT DETAILS -->
+
+            <form
+                id="mcp-project-details-form"
+                class="mcp-feature-form"
+                hx-post="http://localhost:5001/mcp/project-details"
+                hx-target="#mcp-result"
+                hx-swap="innerHTML">
+
+                <div class="form-group">
+
+                    <label for="mcp_project_id">
+                        Project ID
+                    </label>
+
+                    <input
+                        id="mcp_project_id"
+                        name="project_id"
+                        type="number"
+                        placeholder="Example: 1"
+                        required>
+
+                </div>
+
+                <div class="mcp-form-header">
+
+                    <div>
+
+                        <h4>
+                            Project Details
+                        </h4>
+
+                        <p>
+                            Retrieve the details of a project.
+                        </p>
+
+                    </div>
+
+                    <button
+                        type="submit"
+                        class="action-button mcp-action">
+
+                        Run Tool
+
+                    </button>
+
+                </div>
+
+            </form>
+
+
+            <!-- PROJECT TASKS -->
+
+            <form
+                id="mcp-project-tasks-form"
+                class="mcp-feature-form"
+                hx-post="http://localhost:5001/mcp/project-tasks"
+                hx-target="#mcp-result"
+                hx-swap="innerHTML">
+
+                <div class="form-group">
+
+                    <label for="mcp_tasks_project_id">
+                        Project ID
+                    </label>
+
+                    <input
+                        id="mcp_tasks_project_id"
+                        name="project_id"
+                        type="number"
+                        placeholder="Example: 1"
+                        required>
+
+                </div>
+
+                <div class="mcp-form-header">
+
+                    <div>
+
+                        <h4>
+                            Project Tasks
+                        </h4>
+
+                        <p>
+                            Retrieve all tasks belonging to a project.
+                        </p>
+
+                    </div>
+
+                    <button
+                        type="submit"
+                        class="action-button mcp-action">
+
+                        Run Tool
+
+                    </button>
+
+                </div>
+
+            </form>
+
+
+            <!-- SEARCH TASKS -->
+
+            <form
+                id="mcp-search-tasks-form"
+                class="mcp-feature-form"
+                hx-post="http://localhost:5001/mcp/search-tasks"
+                hx-target="#mcp-result"
+                hx-swap="innerHTML">
+
+                <div class="form-row">
+
+                    <div class="form-group">
+
+                        <label for="mcp_search_project_id">
+                            Project ID
+                        </label>
+
+                        <input
+                            id="mcp_search_project_id"
+                            name="project_id"
+                            type="number"
+                            placeholder="Example: 1"
+                            required>
+
+                    </div>
+
+                    <div class="form-group">
+
+                        <label for="mcp_search_term">
+                            Search Term
+                        </label>
+
+                        <input
+                            id="mcp_search_term"
+                            name="search_term"
+                            type="text"
+                            placeholder="Example: database"
+                            required>
+
+                    </div>
+
+                </div>
+
+                <div class="mcp-form-header">
+
+                    <div>
+
+                        <h4>
+                            Search Tasks
+                        </h4>
+
+                        <p>
+                            Search for tasks within a project.
+                        </p>
+
+                    </div>
+
+                    <button
+                        type="submit"
+                        class="action-button mcp-action">
+
+                        Run Tool
+
+                    </button>
+
+                </div>
+
+            </form>
+
+        </section>
+
+
+        <!-- RESULT -->
+
+        <section class="mcp-tool-section">
+
+            <div class="section-header">
+
+                <div>
+
+                    <h3>
+                        Tool Result
+                    </h3>
+
+                    <p>
+                        MCP tool responses will appear here.
+                    </p>
+
+                </div>
+
+            </div>
+
+            <div
+                id="mcp-result"
+                class="mcp-result">
+
+                <p>
+                    MCP tool responses will appear here.
+                </p>
+
+            </div>
+
+        </section>
+
+    </div>
+
 </main>
 
-<script>
-const mcpModeToggle = document.getElementById("mcp-mode-toggle");
-const mcpModeState = document.getElementById("mcp-mode-state");
-const mcpResultPanel = document.getElementById("mcp-result");
 
-const MCP_STORAGE_KEY = "mcp_mode_enabled";
+<script>
+
+const mcpModeToggle =
+    document.getElementById("mcp-mode-toggle");
+
+const mcpModeState =
+    document.getElementById("mcp-mode-state");
+
+const mcpResultPanel =
+    document.getElementById("mcp-result");
+
+const MCP_STORAGE_KEY =
+    "mcp_mode_enabled";
+
 
 function isMcpEnabled() {
+
     return mcpModeToggle.checked;
+
 }
+
 
 function renderMcpState() {
+
     if (isMcpEnabled()) {
+
         mcpModeState.textContent = "ON";
-        mcpModeState.classList.add("feature-on");
-        mcpModeState.classList.remove("feature-off");
+
+        mcpModeState.classList.add(
+            "feature-on"
+        );
+
+        mcpModeState.classList.remove(
+            "feature-off"
+        );
+
     } else {
+
         mcpModeState.textContent = "OFF";
-        mcpModeState.classList.add("feature-off");
-        mcpModeState.classList.remove("feature-on");
+
+        mcpModeState.classList.add(
+            "feature-off"
+        );
+
+        mcpModeState.classList.remove(
+            "feature-on"
+        );
+
     }
+
 }
+
 
 function renderMcpDisabledMessage() {
+
     mcpResultPanel.innerHTML =
         "<p>MCP Mode is OFF. Enable MCP Mode to run MCP tools.</p>";
+
 }
 
+
 function saveMcpMode() {
+
     localStorage.setItem(
         MCP_STORAGE_KEY,
         String(isMcpEnabled())
     );
+
 }
+
 
 function loadMcpMode() {
-    const persisted = localStorage.getItem(MCP_STORAGE_KEY);
+
+    const persisted =
+        localStorage.getItem(
+            MCP_STORAGE_KEY
+        );
 
     if (persisted === null) {
+
         mcpModeToggle.checked = true;
+
     } else {
-        mcpModeToggle.checked = persisted === "true";
+
+        mcpModeToggle.checked =
+            persisted === "true";
+
     }
 
     renderMcpState();
+
 }
 
-mcpModeToggle.addEventListener("change", () => {
-    saveMcpMode();
-    renderMcpState();
 
-    if (!isMcpEnabled()) {
-        renderMcpDisabledMessage();
+mcpModeToggle.addEventListener(
+    "change",
+    () => {
+
+        saveMcpMode();
+
+        renderMcpState();
+
+        if (!isMcpEnabled()) {
+
+            renderMcpDisabledMessage();
+
+        }
+
     }
-});
+);
 
-document.body.addEventListener("htmx:configRequest", (event) => {
-    const trigger = event.detail.elt;
 
-    if (trigger && trigger.classList.contains("mcp-action")) {
-        event.detail.headers["X-MCP-Mode"] =
-            isMcpEnabled() ? "on" : "off";
+document.body.addEventListener(
+    "htmx:configRequest",
+    (event) => {
+
+        const trigger =
+            event.detail.elt;
+
+        if (
+            trigger &&
+            trigger.classList.contains(
+                "mcp-action"
+            )
+        ) {
+
+            event.detail.headers[
+                "X-MCP-Mode"
+            ] =
+                isMcpEnabled()
+                    ? "on"
+                    : "off";
+
+        }
+
     }
-});
+);
 
-document.body.addEventListener("htmx:beforeRequest", (event) => {
-    const trigger = event.detail.elt;
 
-    if (!trigger || !trigger.classList.contains("mcp-action")) {
-        return;
+document.body.addEventListener(
+    "htmx:beforeRequest",
+    (event) => {
+
+        const trigger =
+            event.detail.elt;
+
+        if (
+            !trigger ||
+            !trigger.classList.contains(
+                "mcp-action"
+            )
+        ) {
+
+            return;
+
+        }
+
+        if (!isMcpEnabled()) {
+
+            event.preventDefault();
+
+            renderMcpDisabledMessage();
+
+        }
+
     }
+);
 
-    if (!isMcpEnabled()) {
-        event.preventDefault();
-        renderMcpDisabledMessage();
-    }
-});
 
 loadMcpMode();
 
+
 if (!isMcpEnabled()) {
+
     renderMcpDisabledMessage();
+
 }
+
 </script>
+
 </body>
+
 </html>

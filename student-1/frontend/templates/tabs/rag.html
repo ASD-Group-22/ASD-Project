@@ -1,0 +1,1014 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0">
+
+    <title>RAG Mode</title>
+
+    <link
+        rel="stylesheet"
+        href="/css/styles.css">
+
+</head>
+
+<body>
+
+<div class="rag-container">
+
+    <div class="rag-header">
+
+        <h1>
+            RAG Enterprise Context
+        </h1>
+
+        <p>
+            Refresh the corpus, retrieve enterprise context,
+            and generate grounded answers from Student 1
+            projects and tasks.
+        </p>
+
+    </div>
+
+
+    <!-- RAG MODE -->
+
+    <section class="rag-tool-section">
+
+        <div class="section-header">
+
+            <div>
+
+                <h3>
+                    RAG Mode
+                </h3>
+
+                <p>
+                    Enable or disable RAG functionality.
+                </p>
+
+            </div>
+
+            <div class="feature-toggle-row">
+
+                <label
+                    class="toggle-switch"
+                    for="rag-mode-toggle">
+
+                    <input
+                        id="rag-mode-toggle"
+                        type="checkbox"
+                        checked>
+
+                    <span class="toggle-label">
+                        RAG Enabled
+                    </span>
+
+                </label>
+
+                <span
+                    id="rag-mode-state"
+                    class="feature-state feature-on">
+
+                    ON
+
+                </span>
+
+            </div>
+
+        </div>
+
+    </section>
+
+
+    <!-- CORPUS -->
+
+    <section class="rag-tool-section">
+
+        <div class="section-header">
+
+            <div>
+
+                <h3>
+                    Corpus
+                </h3>
+
+                <p>
+                    Rebuild the RAG corpus from the latest
+                    Student 1 project and task data.
+                </p>
+
+            </div>
+
+        </div>
+
+        <div class="rag-buttons">
+
+            <button
+                id="rag-refresh-button"
+                type="button"
+                class="action-button"
+                onclick="refreshCorpus()">
+
+                Refresh Corpus
+
+            </button>
+
+        </div>
+
+    </section>
+
+
+    <!-- QUERY -->
+
+    <section class="rag-tool-section">
+
+        <div class="section-header">
+
+            <div>
+
+                <h3>
+                    Ask RAG
+                </h3>
+
+                <p>
+                    Ask a question using the shared RAG service.
+                </p>
+
+            </div>
+
+        </div>
+
+        <div class="form-group">
+
+            <label for="rag-query">
+                Question
+            </label>
+
+            <textarea
+                id="rag-query"
+                rows="4"
+                placeholder="e.g. What pending tasks are there?"></textarea>
+
+        </div>
+
+        <div class="form-group">
+
+            <label for="rag-k">
+                Number of results
+            </label>
+
+            <input
+                type="number"
+                id="rag-k"
+                value="5"
+                min="1"
+                max="10">
+
+        </div>
+
+        <div class="rag-buttons">
+
+            <button
+                type="button"
+                class="action-button"
+                onclick="askRAG()">
+
+                Ask RAG
+
+            </button>
+
+            <button
+                type="button"
+                class="ai-button"
+                onclick="retrieveRAG()">
+
+                Retrieve Context
+
+            </button>
+
+        </div>
+
+    </section>
+
+
+    <!-- STATUS -->
+
+    <div
+        id="rag-status"
+        class="status">
+    </div>
+
+
+    <!-- ANSWER -->
+
+    <div id="rag-answer"></div>
+
+
+    <!-- RESULTS -->
+
+    <div id="rag-results"></div>
+
+</div>
+
+
+<script>
+
+const RAG_URL =
+    "http://localhost:5003";
+
+const RAG_STORAGE_KEY =
+    "rag_mode_enabled";
+
+
+/* =========================================================
+   RAG MODE
+   ========================================================= */
+
+const ragModeToggle =
+    document.getElementById(
+        "rag-mode-toggle"
+    );
+
+const ragModeState =
+    document.getElementById(
+        "rag-mode-state"
+    );
+
+
+function isRagEnabled() {
+
+    return ragModeToggle.checked;
+
+}
+
+
+function renderRagState() {
+
+    if (isRagEnabled()) {
+
+        ragModeState.textContent =
+            "ON";
+
+        ragModeState.classList.add(
+            "feature-on"
+        );
+
+        ragModeState.classList.remove(
+            "feature-off"
+        );
+
+    } else {
+
+        ragModeState.textContent =
+            "OFF";
+
+        ragModeState.classList.add(
+            "feature-off"
+        );
+
+        ragModeState.classList.remove(
+            "feature-on"
+        );
+
+    }
+
+}
+
+
+function saveRagMode() {
+
+    localStorage.setItem(
+        RAG_STORAGE_KEY,
+        String(isRagEnabled())
+    );
+
+}
+
+
+function loadRagMode() {
+
+    const persisted =
+        localStorage.getItem(
+            RAG_STORAGE_KEY
+        );
+
+    if (persisted === null) {
+
+        ragModeToggle.checked = true;
+
+    } else {
+
+        ragModeToggle.checked =
+            persisted === "true";
+
+    }
+
+    renderRagState();
+
+}
+
+
+function renderRagDisabledMessage() {
+
+    document.getElementById(
+        "rag-results"
+    ).innerHTML = `
+
+        <div class="rag-empty">
+
+            <p>
+                RAG Mode is OFF. Enable RAG Mode
+                to run RAG tools.
+            </p>
+
+        </div>
+
+    `;
+
+}
+
+
+ragModeToggle.addEventListener(
+    "change",
+    () => {
+
+        saveRagMode();
+
+        renderRagState();
+
+        if (!isRagEnabled()) {
+
+            renderRagDisabledMessage();
+
+        }
+
+    }
+);
+
+
+/* =========================================================
+   CORPUS REFRESH
+   ========================================================= */
+
+async function refreshCorpus() {
+
+    if (!isRagEnabled()) {
+
+        renderRagDisabledMessage();
+
+        return;
+
+    }
+
+    showStatus(
+        "Refreshing corpus..."
+    );
+
+
+    const button =
+        document.getElementById(
+            "rag-refresh-button"
+        );
+
+    button.disabled = true;
+
+
+    try {
+
+        const response =
+            await fetch(
+                `${RAG_URL}/refresh`,
+                {
+                    method: "POST",
+
+                    headers: {
+                        "Content-Type":
+                            "application/json"
+                    },
+
+                    body: JSON.stringify({
+                        caller: "student1"
+                    })
+                }
+            );
+
+
+        const data =
+            await response.json();
+
+
+        if (!response.ok) {
+
+            throw new Error(
+                data.error ||
+                "Corpus refresh failed"
+            );
+
+        }
+
+
+        displayCorpusResult(data);
+
+        showStatus(
+            "Corpus refreshed successfully."
+        );
+
+
+    } catch (error) {
+
+        showStatus(
+            `Error: ${error.message}`
+        );
+
+    } finally {
+
+        button.disabled = false;
+
+    }
+
+}
+
+
+/* =========================================================
+   ASK RAG
+   ========================================================= */
+
+async function askRAG() {
+
+    if (!isRagEnabled()) {
+
+        renderRagDisabledMessage();
+
+        return;
+
+    }
+
+
+    const query =
+        document
+            .getElementById("rag-query")
+            .value
+            .trim();
+
+    const k =
+        parseInt(
+            document
+                .getElementById("rag-k")
+                .value
+        );
+
+
+    if (!query) {
+
+        showStatus(
+            "Please enter a question."
+        );
+
+        return;
+
+    }
+
+
+    showStatus(
+        "Generating answer..."
+    );
+
+
+    try {
+
+        const response =
+            await fetch(
+                `${RAG_URL}/answer`,
+                {
+                    method: "POST",
+
+                    headers: {
+                        "Content-Type":
+                            "application/json"
+                    },
+
+                    body: JSON.stringify({
+
+                        query: query,
+
+                        k: k,
+
+                        caller: "student1"
+
+                    })
+                }
+            );
+
+
+        const data =
+            await response.json();
+
+
+        if (!response.ok) {
+
+            throw new Error(
+                data.error ||
+                "RAG request failed"
+            );
+
+        }
+
+
+        displayAnswer(data);
+
+        showStatus(
+            "RAG answer generated."
+        );
+
+
+    } catch (error) {
+
+        showStatus(
+            `Error: ${error.message}`
+        );
+
+    }
+
+}
+
+
+/* =========================================================
+   RETRIEVE CONTEXT
+   ========================================================= */
+
+async function retrieveRAG() {
+
+    if (!isRagEnabled()) {
+
+        renderRagDisabledMessage();
+
+        return;
+
+    }
+
+
+    const query =
+        document
+            .getElementById("rag-query")
+            .value
+            .trim();
+
+    const k =
+        parseInt(
+            document
+                .getElementById("rag-k")
+                .value
+        );
+
+
+    if (!query) {
+
+        showStatus(
+            "Please enter a query."
+        );
+
+        return;
+
+    }
+
+
+    showStatus(
+        "Retrieving context..."
+    );
+
+
+    try {
+
+        const response =
+            await fetch(
+                `${RAG_URL}/retrieve`,
+                {
+                    method: "POST",
+
+                    headers: {
+                        "Content-Type":
+                            "application/json"
+                    },
+
+                    body: JSON.stringify({
+
+                        query: query,
+
+                        k: k,
+
+                        caller: "student1"
+
+                    })
+                }
+            );
+
+
+        const data =
+            await response.json();
+
+
+        if (!response.ok) {
+
+            throw new Error(
+                data.error ||
+                "Retrieval failed"
+            );
+
+        }
+
+
+        displayResults(data);
+
+        showStatus(
+            "Context retrieved."
+        );
+
+
+    } catch (error) {
+
+        showStatus(
+            `Error: ${error.message}`
+        );
+
+    }
+
+}
+
+
+/* =========================================================
+   DISPLAY CORPUS RESULT
+   ========================================================= */
+
+function displayCorpusResult(data) {
+
+    const resultsDiv =
+        document.getElementById(
+            "rag-results"
+        );
+
+
+    resultsDiv.innerHTML = `
+
+        <div class="rag-results-header">
+
+            <h2>
+                Corpus Refresh
+            </h2>
+
+            <p>
+                The shared RAG corpus has been rebuilt.
+            </p>
+
+        </div>
+
+        <div class="rag-result-card">
+
+            <pre>${escapeHtml(
+                JSON.stringify(
+                    data,
+                    null,
+                    2
+                )
+            )}</pre>
+
+        </div>
+
+    `;
+
+}
+
+
+/* =========================================================
+   DISPLAY ANSWER
+   ========================================================= */
+
+function displayAnswer(data) {
+
+    const answerDiv =
+        document.getElementById(
+            "rag-answer"
+        );
+
+    const resultsDiv =
+        document.getElementById(
+            "rag-results"
+        );
+
+
+    answerDiv.innerHTML = `
+
+        <div class="rag-answer-card">
+
+            <h2>
+                Answer
+            </h2>
+
+            <p>
+                ${escapeHtml(
+                    data.answer ||
+                    "No answer returned."
+                )}
+            </p>
+
+            <div class="rag-meta">
+
+                <strong>
+                    Confidence:
+                </strong>
+
+                ${escapeHtml(
+                    data.confidence ||
+                    data.confidence_category ||
+                    "Unknown"
+                )}
+
+            </div>
+
+            <div class="rag-meta">
+
+                <strong>
+                    Retrieval mode:
+                </strong>
+
+                ${escapeHtml(
+                    data.retrieval_mode ||
+                    "Unknown"
+                )}
+
+            </div>
+
+        </div>
+
+    `;
+
+
+    resultsDiv.innerHTML = "";
+
+
+    if (data.citations) {
+
+        displayCitations(
+            data.citations
+        );
+
+    }
+
+}
+
+
+/* =========================================================
+   DISPLAY RETRIEVED RESULTS
+   ========================================================= */
+
+function displayResults(data) {
+
+    document.getElementById(
+        "rag-answer"
+    ).innerHTML = "";
+
+
+    const resultsDiv =
+        document.getElementById(
+            "rag-results"
+        );
+
+
+    resultsDiv.innerHTML = `
+
+        <div class="rag-results-header">
+
+            <h2>
+                Retrieved Context
+            </h2>
+
+            <p>
+                Context returned by the shared RAG service.
+            </p>
+
+        </div>
+
+    `;
+
+
+    if (
+        !data.results ||
+        data.results.length === 0
+    ) {
+
+        resultsDiv.innerHTML += `
+
+            <div class="rag-empty">
+
+                <p>
+                    No relevant context found.
+                </p>
+
+            </div>
+
+        `;
+
+        return;
+
+    }
+
+
+    data.results.forEach(
+        result => {
+
+            const card =
+                document.createElement(
+                    "div"
+                );
+
+
+            card.className =
+                "rag-result-card";
+
+
+            card.innerHTML = `
+
+                <h3>
+                    Result ${result.rank}
+                </h3>
+
+                <p>
+                    ${escapeHtml(
+                        result.text
+                    )}
+                </p>
+
+                <div class="rag-result-meta">
+
+                    <strong>
+                        Chunk:
+                    </strong>
+
+                    ${escapeHtml(
+                        result.chunk_id
+                    )}
+
+                    <br>
+
+                    <strong>
+                        Source:
+                    </strong>
+
+                    ${escapeHtml(
+                        result.source_id
+                    )}
+
+                    <br>
+
+                    <strong>
+                        Distance:
+                    </strong>
+
+                    ${result.distance}
+
+                </div>
+
+            `;
+
+
+            resultsDiv.appendChild(
+                card
+            );
+
+        }
+    );
+
+}
+
+
+/* =========================================================
+   DISPLAY CITATIONS
+   ========================================================= */
+
+function displayCitations(
+    citations
+) {
+
+    const resultsDiv =
+        document.getElementById(
+            "rag-results"
+        );
+
+
+    if (
+        !Array.isArray(citations) ||
+        citations.length === 0
+    ) {
+
+        return;
+
+    }
+
+
+    resultsDiv.innerHTML += `
+
+        <div class="rag-results-header">
+
+            <h2>
+                Citations
+            </h2>
+
+        </div>
+
+    `;
+
+
+    citations.forEach(
+        citation => {
+
+            const card =
+                document.createElement(
+                    "div"
+                );
+
+
+            card.className =
+                "rag-result-card";
+
+
+            card.innerHTML = `
+
+                <p>
+                    ${escapeHtml(
+                        typeof citation === "string"
+                            ? citation
+                            : JSON.stringify(
+                                citation
+                            )
+                    )}
+                </p>
+
+            `;
+
+
+            resultsDiv.appendChild(
+                card
+            );
+
+        }
+    );
+
+}
+
+
+/* =========================================================
+   STATUS
+   ========================================================= */
+
+function showStatus(message) {
+
+    document.getElementById(
+        "rag-status"
+    ).innerText =
+        message;
+
+}
+
+
+/* =========================================================
+   HTML ESCAPING
+   ========================================================= */
+
+function escapeHtml(value) {
+
+    const div =
+        document.createElement(
+            "div"
+        );
+
+    div.textContent =
+        value ?? "";
+
+    return div.innerHTML;
+
+}
+
+
+/* =========================================================
+   INITIALISE
+   ========================================================= */
+
+loadRagMode();
+
+
+if (!isRagEnabled()) {
+
+    renderRagDisabledMessage();
+
+}
+
+</script>
+
+</body>
+
+</html>

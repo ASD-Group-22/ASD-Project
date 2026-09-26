@@ -66,6 +66,14 @@
 
             </button>
 
+            <button
+                class="tab-btn"
+                data-tab="rag"
+                type="button">
+
+                RAG Mode
+
+            </button>
         </nav>
 
         <div class="tab-content">
@@ -89,6 +97,13 @@
                 class="tab-frame"
                 src="tabs/mcp.html"
                 title="MCP Mode">
+            </iframe>
+
+            <iframe
+                id="tab-frame-rag"
+                class="tab-frame"
+                src="/tabs/rag.html"
+                title="RAG Mode">
             </iframe>
 
         </div>
@@ -118,7 +133,12 @@ const tabFrames = {
     "mcp":
         document.getElementById(
             "tab-frame-mcp"
-        )
+        ),
+
+    "rag":
+    document.getElementById(
+        "tab-frame-rag"
+    )
 
 };
 

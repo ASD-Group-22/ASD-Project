@@ -893,3 +893,318 @@ textarea {
         width: 100%;
     }
 }
+
+/* =========================================================
+   MCP / RAG HEADERS
+   ========================================================= */
+
+.mcp-header,
+.rag-header {
+    margin-bottom: 22px;
+}
+
+.mcp-header h2,
+.rag-header h1 {
+    margin: 0 0 8px 0;
+
+    font-size: 25px;
+
+    color: #111827;
+}
+
+.mcp-header p,
+.rag-header p {
+    margin: 0;
+
+    color: #6b7280;
+
+    font-size: 14px;
+
+    line-height: 1.5;
+}
+
+
+/* =========================================================
+   MCP FORMS
+   ========================================================= */
+
+.mcp-feature-form {
+    padding:
+        22px
+        0;
+
+    border-bottom:
+        1px solid #e5e7eb;
+}
+
+.mcp-feature-form:first-of-type {
+    padding-top: 0;
+}
+
+.mcp-feature-form:last-of-type {
+    padding-bottom: 0;
+
+    border-bottom: none;
+}
+
+.mcp-feature-form h4 {
+    margin: 0 0 6px 0;
+
+    font-size: 15px;
+
+    color: #374151;
+}
+
+.mcp-feature-form p {
+    margin: 0;
+
+    color: #6b7280;
+
+    font-size: 13px;
+
+    line-height: 1.5;
+}
+
+.mcp-form-header {
+    display: flex;
+
+    justify-content:
+        space-between;
+
+    align-items: center;
+
+    gap: 20px;
+}
+
+.mcp-form-header .action-button {
+    flex-shrink: 0;
+}
+
+
+/* =========================================================
+   MCP RESULT
+   ========================================================= */
+
+.mcp-result {
+    min-height: 55px;
+
+    padding: 18px;
+
+    background: #f9fafb;
+
+    border:
+        1px solid #e5e7eb;
+
+    border-radius: 7px;
+
+    color: #374151;
+
+    font-size: 14px;
+
+    line-height: 1.6;
+
+    overflow-x: auto;
+}
+
+.mcp-result p {
+    margin: 0;
+}
+
+
+/* =========================================================
+   RAG TOOL SECTIONS
+   ========================================================= */
+
+.rag-tool-section {
+    background: white;
+
+    border:
+        1px solid #e5e7eb;
+
+    border-radius: 10px;
+
+    padding: 25px;
+
+    margin-bottom: 20px;
+
+    box-shadow:
+        0 2px 8px
+        rgba(
+            0,
+            0,
+            0,
+            0.04
+        );
+}
+
+.rag-tool-section h3 {
+    margin:
+        0 0 6px 0;
+
+    font-size: 19px;
+
+    color: #111827;
+}
+
+.rag-tool-section .section-header p {
+    margin: 0;
+
+    color: #6b7280;
+
+    font-size: 14px;
+}
+
+
+/* =========================================================
+   RAG RESULTS
+   ========================================================= */
+
+.rag-results-header {
+    margin:
+        25px 0 15px 0;
+}
+
+.rag-results-header h2 {
+    margin:
+        0 0 6px 0;
+
+    font-size: 19px;
+
+    color: #111827;
+}
+
+.rag-results-header p {
+    margin: 0;
+
+    color: #6b7280;
+
+    font-size: 14px;
+}
+
+.rag-empty {
+    background: white;
+
+    border:
+        1px solid #e5e7eb;
+
+    border-radius: 8px;
+
+    padding: 20px;
+}
+
+.rag-empty p {
+    margin: 0;
+
+    color: #6b7280;
+
+    font-size: 14px;
+}
+
+
+/* =========================================================
+   MCP / RAG RESPONSIVE
+   ========================================================= */
+
+@media (max-width: 650px) {
+
+    .mcp-form-header {
+        flex-direction: column;
+
+        align-items: stretch;
+
+        gap: 15px;
+    }
+
+    .mcp-form-header .action-button {
+        width: 100%;
+    }
+
+}
+
+/* =========================================================
+   FEATURE TOGGLES
+   ========================================================= */
+
+.feature-toggle-row {
+    display: flex;
+
+    align-items: center;
+
+    gap: 12px;
+}
+
+.toggle-switch {
+    display: flex;
+
+    align-items: center;
+
+    gap: 9px;
+
+    cursor: pointer;
+
+    color: #374151;
+
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.toggle-switch input {
+    width: 18px;
+    height: 18px;
+
+    margin: 0;
+
+    cursor: pointer;
+}
+
+.toggle-label {
+    white-space: nowrap;
+}
+
+.feature-state {
+    display: inline-block;
+
+    padding:
+        4px
+        9px;
+
+    border-radius: 5px;
+
+    font-size: 11px;
+    font-weight: 700;
+
+    line-height: 1;
+}
+
+.feature-on {
+    background: #f3f4f6;
+
+    color: #374151;
+
+    border:
+        1px solid #d1d5db;
+}
+
+.feature-off {
+    background: #fef2f2;
+
+    color: #991b1b;
+
+    border:
+        1px solid #fecaca;
+}
+
+
+/* =========================================================
+   RAG RESPONSIVE TOGGLE
+   ========================================================= */
+
+@media (max-width: 650px) {
+
+    .feature-toggle-row {
+        justify-content: flex-start;
+
+        flex-wrap: wrap;
+    }
+
+}
