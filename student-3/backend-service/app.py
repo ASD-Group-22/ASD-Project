@@ -13,6 +13,9 @@ def create_app():
     app.register_blueprint(ai_bp, url_prefix="/ai")
     app.register_blueprint(rec_bp, url_prefix="/recommendations")
 
+    from routes.release1 import r1_bp
+    app.register_blueprint(r1_bp, url_prefix='/r1')
+
     return app
 
 app = create_app()

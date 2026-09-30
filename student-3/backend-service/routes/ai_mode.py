@@ -1,3 +1,4 @@
+import os
 from flask import Blueprint, request, jsonify
 from group_recommendations import RecommendationError, load_profiles, recommend
 
@@ -14,6 +15,8 @@ def profiles():
 
 @ai_bp.post('/group-recommendation')
 def group_recommendation():
+    if os.getenv('AI_ENABLED', 'true').strip().lower() not in ('1', 'true', 'yes', 'on'):
+        return jsonify({'error': 'AI mode is disabled.'}), 503
     try:
         return jsonify(recommend(request.get_json(silent=True))), 200
     except RecommendationError as exc:
