@@ -129,6 +129,8 @@
     <label>Question:
       <textarea id="r1Query" maxlength="1000" rows="3" placeholder="What skill requirements are recorded for ASD?"></textarea>
     </label>
+    <button id="r1RefreshBtn" type="button">Refresh Shared Corpus</button>
+    <button id="r1RetrieveBtn" type="button">Retrieve Sources</button>
     <button id="r1RagBtn" type="button">Ask with Sources</button>
     <pre id="r1RagOutput" aria-live="polite"></pre>
   </div>
@@ -143,7 +145,7 @@
   <div id="toast" role="status" hidden></div>
 
 <script>
-  const backend = "http://localhost:5000";
+  const backend = "http://localhost:5009";
 
   /* ---------------------- TABS ---------------------- */
   document.querySelectorAll(".tab").forEach(tab => {
@@ -450,6 +452,6 @@ async function loadProfiles() {
 
 <script src="js/recommendation-history.js"></script>
 <script src="js/agentic-review.js?v=single-attempt-1"></script>
-<script src="js/release1.js?v=1"></script>
+<script src="js/release1.js?v=student2-aligned-1"></script>
 </body>
 </html>

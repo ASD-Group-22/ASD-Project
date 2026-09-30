@@ -10,7 +10,7 @@
       });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || 'Request failed.');
-      if (path === 'mcp') {
+      if (path === 'mcp' || path === 'rag/refresh' || path === 'rag/retrieve') {
         output.textContent = JSON.stringify(data, null, 2);
       } else {
         output.textContent = [data.answer, '', `Confidence: ${data.confidence_category}`,
@@ -27,7 +27,11 @@
   el('r1McpBtn').addEventListener('click', () => send('mcp', {
     tool: el('r1Tool').value, subject: el('r1Subject').value
   }, el('r1McpOutput'), el('r1McpBtn')));
-  el('r1RagBtn').addEventListener('click', () => send('rag', {
+  el('r1RagBtn').addEventListener('click', () => send('rag/answer', {
     query: el('r1Query').value, k: 5
   }, el('r1RagOutput'), el('r1RagBtn')));
+  el('r1RetrieveBtn').addEventListener('click', () => send('rag/retrieve', {
+    query: el('r1Query').value, k: 5
+  }, el('r1RagOutput'), el('r1RetrieveBtn')));
+  el('r1RefreshBtn').addEventListener('click', () => send('rag/refresh', {}, el('r1RagOutput'), el('r1RefreshBtn')));
 })();

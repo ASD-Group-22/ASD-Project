@@ -1,6 +1,6 @@
 """Student 3 UI -> backend -> shared host MCP/RAG services."""
 from flask import Blueprint, jsonify, request
-from services.release1_client import enabled, call_mcp, call_rag, ServiceError
+from services.release1_client import enabled, call_mcp, call_rag, rag_request, ServiceError
 
 r1_bp = Blueprint('release1', __name__)
 
@@ -34,6 +34,8 @@ def mcp():
 
 
 @r1_bp.post('/rag')
+@r1_bp.post('/rag/answer')
+@r1_bp.post('/rag/retrieve')
 def rag():
     if not enabled('RAG_ENABLED'):
         return jsonify(error='RAG mode is disabled until shared integration is configured.'), 503
@@ -46,6 +48,16 @@ def rag():
     if type(k) is not int or not 1 <= k <= 10:
         return jsonify(error='k must be an integer from 1 to 10.'), 400
     try:
-        return jsonify(call_rag(query.strip(), k))
+        return jsonify(rag_request('retrieve', query.strip(), k) if request.path.endswith('/retrieve') else call_rag(query.strip(), k))
+    except ServiceError as exc:
+        return jsonify(error=str(exc)), 503
+
+
+@r1_bp.post('/rag/refresh')
+def refresh():
+    if not enabled('RAG_ENABLED'):
+        return jsonify(error='RAG mode is disabled until shared integration is configured.'), 503
+    try:
+        return jsonify(rag_request('refresh'))
     except ServiceError as exc:
         return jsonify(error=str(exc)), 503
