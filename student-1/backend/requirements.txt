@@ -1,3 +1,4 @@
 Flask
 requests
 flask-cors
+mcp>=2,<3
