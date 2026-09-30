@@ -82,17 +82,103 @@ def format_rag_retrieval(payload: dict) -> str:
             '</div>'
         )
 
+    def _extract_between(
+        value: str,
+        start: str,
+        end: str,
+    ) -> str:
+        if not value or start not in value:
+            return ""
+
+        remainder = value.split(
+            start,
+            1,
+        )[1]
+
+        if end and end in remainder:
+            remainder = remainder.split(
+                end,
+                1,
+            )[0]
+
+        return remainder.strip().rstrip(".")
+
     cards = []
 
     for result in results:
+        evidence = str(
+            result.get("text") or ""
+        )
+
+        student_name = (
+            result.get("student_name")
+            or _extract_between(
+                evidence,
+                "Student: ",
+                ". Student ID:",
+            )
+        )
+
+        skill_offered = (
+            result.get("skill_offered")
+            or _extract_between(
+                evidence,
+                "Offers: ",
+                ". Wants:",
+            )
+        )
+
+        skill_wanted = (
+            result.get("skill_wanted")
+            or _extract_between(
+                evidence,
+                "Wants: ",
+                ". Availability:",
+            )
+        )
+
+        chunk_id = (
+            result.get("chunk_id")
+            or "-"
+        )
+
+        if not student_name:
+            if "skill_exchange_catalog" in str(chunk_id):
+                student_name = "Skill Exchange catalogue"
+            else:
+                student_name = "Retrieved context"
+
+        offered_html = ""
+        if skill_offered:
+            offered_html = (
+                '<p>Offered: '
+                f'{_safe(skill_offered)}</p>'
+            )
+
+        wanted_html = ""
+        if skill_wanted:
+            wanted_html = (
+                '<p>Wanted: '
+                f'{_safe(skill_wanted)}</p>'
+            )
+
+        distance_html = ""
+        if result.get("distance") is not None:
+            distance_html = (
+                '<p>Vector distance: '
+                f'{_safe(result.get("distance"))}</p>'
+            )
+
         cards.append(
             '<article class="citation-card">'
             f'<strong>Rank {_safe(result.get("rank", "-"))}</strong>'
-            f'<p>Student: {_safe(result.get("student_name") or "Catalogue")}</p>'
-            f'<p>Offered: {_safe(result.get("skill_offered") or "-")}</p>'
-            f'<p>Wanted: {_safe(result.get("skill_wanted") or "-")}</p>'
+            f'<p>Student: {_safe(student_name)}</p>'
+            f'{offered_html}'
+            f'{wanted_html}'
+            f'<p>Evidence: {_safe(evidence or "-")}</p>'
             f'<p>Source: <code>{_safe(result.get("source_id") or "-")}</code></p>'
-            f'<p>Relevance: {_safe(result.get("relevance") or "-")}</p>'
+            f'<p>Chunk: <code>{_safe(chunk_id)}</code></p>'
+            f'{distance_html}'
             '</article>'
         )
 
@@ -129,13 +215,48 @@ def format_rag_answer(payload: dict) -> str:
         citations,
         start=1,
     ):
+        source_id = str(
+            citation.get("source_id") or ""
+        )
+
+        chunk_id = (
+            citation.get("chunk_id")
+            or "-"
+        )
+
+        listing_id = (
+            citation.get("listing_id")
+            or ""
+        )
+
+        if (
+            not listing_id
+            and source_id.startswith(
+                "student-2:/skill-exchange/"
+            )
+        ):
+            candidate_id = source_id.rsplit(
+                "/",
+                1,
+            )[-1]
+
+            if candidate_id.isdigit():
+                listing_id = candidate_id
+
+        listing_html = ""
+        if listing_id:
+            listing_html = (
+                '<p>Listing: '
+                f'{_safe(listing_id)}</p>'
+            )
+
         citation_cards.append(
             '<article class="citation-card">'
             f'<strong>Citation {index}</strong>'
-            f'<p>Source: <code>{_safe(citation.get("source_id") or "-")}</code></p>'
-            f'<p>Listing: {_safe(citation.get("listing_id") or "-")}</p>'
+            f'<p>Source: <code>{_safe(source_id or "-")}</code></p>'
+            f'{listing_html}'
+            f'<p>Chunk: <code>{_safe(chunk_id)}</code></p>'
             f'<p>Authority: {_safe(citation.get("authority_tier") or "-")}</p>'
-            f'<p>Relevance: {_safe(citation.get("relevance") or "-")}</p>'
             '</article>'
         )
 
@@ -149,11 +270,23 @@ def format_rag_answer(payload: dict) -> str:
         or {}
     )
 
+    answer_text = str(
+        payload.get("answer") or ""
+    ).strip()
+
+    if answer_text.lower().startswith(
+        "answer:"
+    ):
+        answer_text = answer_text.split(
+            ":",
+            1,
+        )[1].strip()
+
     return (
         '<div class="htmx-result">'
         '<div class="rag-answer">'
         '<strong>Answer:</strong> '
-        f'{_safe(payload.get("answer") or "")}'
+        f'{_safe(answer_text)}'
         '</div>'
         '<div class="rag-meta">'
         '<span class="rag-badge">'
