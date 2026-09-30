@@ -18,6 +18,7 @@ each feature source into one shared Chroma collection.
 import hashlib
 import json
 import os
+import re
 import time
 import uuid
 from datetime import datetime, timezone
@@ -757,6 +758,155 @@ def refresh_corpus(
 # LEXICAL FALLBACK
 # =========================================================
 
+RELEVANCE_STOPWORDS = {
+    "who", "what", "where", "when", "why", "how",
+    "is", "are", "was", "were", "be", "been",
+    "the", "a", "an", "of", "to", "for", "and", "or",
+    "in", "on", "with", "do", "does", "can",
+    "please", "show", "find", "tell", "give", "me"
+}
+
+
+def relevance_tokens(
+    text
+):
+
+    return [
+        token
+        for token in re.findall(
+            r"[a-z0-9+#]+",
+            (text or "").lower()
+        )
+        if token not in RELEVANCE_STOPWORDS
+    ]
+
+
+def is_source_error(
+    chunk_id,
+    text,
+    metadata=None
+):
+
+    metadata = metadata or {}
+
+    return (
+        bool(metadata.get("error"))
+        or str(
+            chunk_id or ""
+        ).endswith(
+            "_source_error"
+        )
+        or (
+            "source is currently unavailable"
+            in (text or "").lower()
+        )
+    )
+
+
+def relevance_score(
+    query,
+    text
+):
+
+    query_tokens = relevance_tokens(
+        query
+    )
+
+    text_tokens = relevance_tokens(
+        text
+    )
+
+    if (
+        not query_tokens
+        or not text_tokens
+    ):
+
+        return 0.0
+
+    query_unique = set(
+        query_tokens
+    )
+
+    text_unique = set(
+        text_tokens
+    )
+
+    overlap = len(
+        query_unique
+        & text_unique
+    )
+
+    if overlap == 0:
+
+        return 0.0
+
+    coverage = (
+        overlap
+        / len(query_unique)
+    )
+
+    query_bigrams = set(
+        zip(
+            query_tokens,
+            query_tokens[1:]
+        )
+    )
+
+    text_bigrams = set(
+        zip(
+            text_tokens,
+            text_tokens[1:]
+        )
+    )
+
+    bigram_matches = len(
+        query_bigrams
+        & text_bigrams
+    )
+
+    relationship_terms = {
+        "offers",
+        "wants"
+    }
+
+    relationship_query = any(
+        token in relationship_terms
+        for token in query_tokens
+    )
+
+    # For directional Skill Exchange questions such as
+    # "wants Java" or "offers Python", require that
+    # relationship to occur together rather than merely
+    # finding both words somewhere in the same chunk.
+    if (
+        relationship_query
+        and len(query_tokens) >= 2
+        and bigram_matches == 0
+    ):
+
+        return 0.0
+
+    # For normal multi-term queries, require meaningful
+    # lexical coverage rather than accepting one accidental
+    # shared word.
+    if (
+        len(query_unique) > 1
+        and bigram_matches == 0
+        and (
+            overlap < 2
+            or coverage < 0.5
+        )
+    ):
+
+        return 0.0
+
+    return (
+        overlap
+        + coverage
+        + (3 * bigram_matches)
+    )
+
+
 def lexical_fallback_retrieve(
     query,
     k
@@ -765,12 +915,6 @@ def lexical_fallback_retrieve(
     corpus = (
         _last_corpus_chunks
         or read_corpus()
-    )
-
-    query_tokens = set(
-        (query or "")
-        .lower()
-        .split()
     )
 
     tier_weight = {
@@ -788,14 +932,27 @@ def lexical_fallback_retrieve(
             ""
         )
 
-        text_tokens = set(
-            text.lower().split()
+        metadata = (
+            chunk.get("metadata")
+            or {}
         )
 
-        overlap = len(
-            query_tokens
-            & text_tokens
+        if is_source_error(
+            chunk.get("chunk_id"),
+            text,
+            metadata
+        ):
+
+            continue
+
+        score = relevance_score(
+            query,
+            text
         )
+
+        if score <= 0:
+
+            continue
 
         scored.append({
             "rank": 0,
@@ -810,7 +967,7 @@ def lexical_fallback_retrieve(
             ),
             "distance": None,
             "text": text,
-            "_score": overlap
+            "_score": score
         })
 
     scored.sort(
@@ -892,6 +1049,16 @@ def retrieve_context(
                     get_collection()
                 )
 
+            collection_count = (
+                collection.count()
+            )
+
+            # The shared coursework corpus is small enough to inspect
+            # every indexed chunk before applying relevance filtering.
+            # This prevents weak hash-based vector ranking from hiding
+            # exact lexical matches as more student sources are added.
+            candidate_count = collection_count
+
             query_embedding = (
                 embed_texts(
                     [query]
@@ -900,10 +1067,7 @@ def retrieve_context(
 
             results = collection.query(
                 query_embeddings=query_embedding,
-                n_results=min(
-                    k,
-                    collection.count()
-                )
+                n_results=candidate_count
             )
 
             ids = (
@@ -946,8 +1110,33 @@ def retrieve_context(
                     else {}
                 )
 
+                document = (
+                    documents[index]
+                    if index < len(
+                        documents
+                    )
+                    else ""
+                )
+
+                if is_source_error(
+                    chunk_id,
+                    document,
+                    metadata
+                ):
+
+                    continue
+
+                score = relevance_score(
+                    query,
+                    document
+                )
+
+                if score <= 0:
+
+                    continue
+
                 ranked.append({
-                    "rank": index + 1,
+                    "rank": 0,
 
                     "chunk_id": chunk_id,
 
@@ -969,13 +1158,10 @@ def retrieve_context(
                         else None
                     ),
 
-                    "text": (
-                        documents[index]
-                        if index < len(
-                            documents
-                        )
-                        else ""
-                    )
+                    "text": document,
+
+                    "_relevance_score":
+                        score
                 })
 
             tier_weight = {
@@ -992,6 +1178,12 @@ def retrieve_context(
                         ),
                         0
                     ),
+
+                    row.get(
+                        "_relevance_score",
+                        0
+                    ),
+
                     -(
                         row.get(
                             "distance"
@@ -1007,6 +1199,22 @@ def retrieve_context(
                 ),
                 reverse=True
             )
+
+            ranked = ranked[
+                :max(k, 1)
+            ]
+
+            for index, row in enumerate(
+                ranked,
+                start=1
+            ):
+
+                row["rank"] = index
+
+                row.pop(
+                    "_relevance_score",
+                    None
+                )
 
         except Exception:
 
@@ -1267,6 +1475,40 @@ def answer_question(
         "results",
         []
     )
+
+    if not results:
+
+        output = {
+            "status": "insufficient_context",
+            "query": query,
+            "answer": "Insufficient context.",
+            "citations": [],
+            "confidence_category": "Insufficient",
+            "retrieval_summary": {
+                "k": k,
+                "retrieved_count": 0,
+                "top_chunk": None
+            }
+        }
+
+        append_audit(
+            "answer_question",
+            {
+                "query": query,
+                "k": k,
+                "caller": caller
+            },
+            {
+                "confidence_category":
+                    "Insufficient",
+                "citation_count": 0
+            },
+            "pass",
+            "insufficient_context",
+            start
+        )
+
+        return output
 
     context = "\n\n".join(
         result.get(

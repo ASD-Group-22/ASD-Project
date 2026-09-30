@@ -332,7 +332,10 @@ class RAGHandler(
                     200
                     if result.get(
                         "status"
-                    ) == "success"
+                    ) in {
+                        "success",
+                        "insufficient_context"
+                    }
                     else 500,
                     result
                 )
