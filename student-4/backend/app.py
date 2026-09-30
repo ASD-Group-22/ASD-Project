@@ -1,3 +1,6 @@
+import os
+import requests
+
 from services.llm_client import analyse_profile
 from flask import Flask, request, jsonify
 from services.database_api import (
@@ -132,6 +135,66 @@ def api_analyse_profile(profile_id):
             "error": "AI analysis failed",
             "details": str(error)
         }), 503
+
+# These must point to the shared servers' agreed HTTP endpoints.
+MCP_TOOL_ENDPOINT = os.getenv("MCP_TOOL_ENDPOINT", "")
+RAG_ANSWER_ENDPOINT = os.getenv("RAG_ANSWER_ENDPOINT", "")
+
+
+@app.route("/api/profiles/<int:profile_id>/mcp", methods=["POST"])
+def api_mcp_profile(profile_id):
+    if not MCP_TOOL_ENDPOINT:
+        return jsonify({"error": "Shared MCP endpoint is not configured"}), 503
+
+    try:
+        response = requests.post(
+            MCP_TOOL_ENDPOINT,
+            json={
+                "tool": "student4_get_skill_profile",
+                "arguments": {"profile_id": profile_id},
+            },
+            timeout=30,
+        )
+        return jsonify(response.json()), response.status_code
+
+    except (requests.RequestException, ValueError):
+        return jsonify({"error": "Shared MCP service unavailable"}), 503
+
+
+@app.route("/api/profiles/<int:profile_id>/rag", methods=["POST"])
+def api_rag_profile(profile_id):
+    data = request.get_json(silent=True) or {}
+    question = data.get("question")
+
+    if not isinstance(question, str) or not question.strip():
+        return jsonify({"error": "Question is required"}), 400
+
+    if not RAG_ANSWER_ENDPOINT:
+        return jsonify({"error": "Shared RAG endpoint is not configured"}), 503
+
+    try:
+        response = requests.post(
+            RAG_ANSWER_ENDPOINT,
+            json={
+                "question": question.strip(),
+                "feature": "student4-skill-profile",
+                "profile_id": profile_id,
+            },
+            timeout=90,
+        )
+        result = response.json()
+
+        if response.ok and not all(
+            key in result for key in ("answer", "citations", "confidence")
+        ):
+            return jsonify({
+                "error": "Shared RAG response is missing answer, citations, or confidence"
+            }), 502
+
+        return jsonify(result), response.status_code
+
+    except (requests.RequestException, ValueError):
+        return jsonify({"error": "Shared RAG service unavailable"}), 503
 
 if __name__ == "__main__":
 
