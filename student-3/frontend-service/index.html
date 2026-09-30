@@ -17,6 +17,8 @@
     <button type="button" class="tab active" data-target="skillsPanel">Skills</button>
     <button type="button" class="tab" data-target="groupsPanel">Groups</button>
     <button type="button" class="tab" data-target="recommendationsPanel">Recommendations</button>
+    <button type="button" class="tab" data-target="mcpPanel">MCP</button>
+    <button type="button" class="tab" data-target="ragPanel">RAG</button>
   </nav>
 
   <main class="container">
@@ -108,6 +110,28 @@
   </div>
 
     <footer class="footer">ASD Group 22 · Release 0 · Project Group Formation</footer>
+  <div id="mcpPanel" class="panel">
+    <h2>Group Formation MCP Tools</h2>
+    <p>Read recorded data through the shared local MCP server.</p>
+    <label>Tool:
+      <select id="r1Tool">
+        <option value="student3_group_requirements">Subject skill requirements</option>
+        <option value="student3_list_groups">Finalised groups</option>
+      </select>
+    </label>
+    <label>Subject: <input id="r1Subject" maxlength="100" placeholder="ASD"></label>
+    <button id="r1McpBtn" type="button">Run Tool</button>
+    <pre id="r1McpOutput" aria-live="polite"></pre>
+  </div>
+  <div id="ragPanel" class="panel">
+    <h2>Ask About Group Formation</h2>
+    <p>Answers use the shared RAG corpus. Review the sources and confidence shown with each answer.</p>
+    <label>Question:
+      <textarea id="r1Query" maxlength="1000" rows="3" placeholder="What skill requirements are recorded for ASD?"></textarea>
+    </label>
+    <button id="r1RagBtn" type="button">Ask with Sources</button>
+    <pre id="r1RagOutput" aria-live="polite"></pre>
+  </div>
   </main>
 
   <!-- Modal -->
@@ -426,5 +450,6 @@ async function loadProfiles() {
 
 <script src="js/recommendation-history.js"></script>
 <script src="js/agentic-review.js?v=single-attempt-1"></script>
+<script src="js/release1.js?v=1"></script>
 </body>
 </html>
