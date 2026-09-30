@@ -36,6 +36,10 @@ from sources.student2 import (
     get_documents as get_student2_documents
 )
 
+from sources.student3 import (
+    get_documents as get_student3_documents
+)
+
 
 BASE_DIR = Path(__file__).resolve().parent
 
@@ -471,6 +475,63 @@ def build_corpus():
             )
         )
 
+    # -----------------------------------------------------
+    # Student 3
+    # -----------------------------------------------------
+
+    try:
+
+        student3_documents = (
+            get_student3_documents()
+        )
+
+        if not isinstance(
+            student3_documents,
+            list
+        ):
+
+            raise ValueError(
+                "Student 3 source returned "
+                "an invalid document list"
+            )
+
+        for document in (
+            student3_documents
+        ):
+
+            if not isinstance(
+                document,
+                dict
+            ):
+
+                continue
+
+            if not document.get(
+                "chunk_id"
+            ):
+
+                continue
+
+            if not document.get(
+                "text"
+            ):
+
+                continue
+
+            chunks.append(
+                document
+            )
+
+    except Exception as exc:
+
+        chunks.append(
+            make_source_error_chunk(
+                "student3",
+                "student3_api",
+                str(exc)
+            )
+        )
+
     return chunks
 
 
@@ -696,6 +757,25 @@ def refresh_corpus(
             )
         )
 
+        student3_count = sum(
+            1
+            for chunk in chunks
+            if chunk.get(
+                "metadata",
+                {}
+            ).get(
+                "student"
+            ) == "student3"
+            or str(
+                chunk.get(
+                    "source_id",
+                    ""
+                )
+            ).startswith(
+                "student-3"
+            )
+        )
+
         output = {
             "status": "success",
             "caller": caller,
@@ -704,7 +784,8 @@ def refresh_corpus(
             ),
             "sources": {
                 "student1": student1_count,
-                "student2": student2_count
+                "student2": student2_count,
+                "student3": student3_count
             },
             "collection": COLLECTION_NAME,
             "corpus_path": str(
@@ -1200,6 +1281,34 @@ def retrieve_context(
                 reverse=True
             )
 
+            # Remove substantially weaker lexical matches after
+            # ranking. This keeps equally relevant evidence together while
+            # preventing loosely related records from confusing generation.
+            if ranked:
+
+                best_relevance = max(
+                    row.get(
+                        "_relevance_score",
+                        0
+                    )
+                    for row in ranked
+                )
+
+                if best_relevance > 0:
+
+                    relevance_cutoff = (
+                        best_relevance * 0.75
+                    )
+
+                    ranked = [
+                        row
+                        for row in ranked
+                        if row.get(
+                            "_relevance_score",
+                            0
+                        ) >= relevance_cutoff
+                    ]
+
             ranked = ranked[
                 :max(k, 1)
             ]
@@ -1363,7 +1472,7 @@ def generate_with_ollama(
 
     model_name = os.getenv(
         "OLLAMA_MODEL",
-        "qwen2.5:0.5b"
+        "llama3.1:8b"
     )
 
     ollama_url = os.getenv(
