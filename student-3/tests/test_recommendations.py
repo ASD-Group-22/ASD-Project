@@ -117,20 +117,21 @@ def test_live_profiles_and_coverage(client, monkeypatch, route):
     assert context["group_sizes"] == [5, 5]
 
 
-def test_duplicate_ids_trigger_repair(client, monkeypatch):
-    invalid = answer(
-        [[1, 1, 3, 4, 5], [6, 7, 8, 9, 10]]
-    )
+def test_duplicate_ids_fail_without_retry(client, monkeypatch):
+    invalid = answer([[1, 1, 3, 4, 5], [6, 7, 8, 9, 10]])
+    post = ollama(monkeypatch, invalid)
+    response = client.post('/ai/group-recommendation', json={'subject': 'ASD'})
 
-    post = ollama(monkeypatch, invalid, answer())
-    response = client.post(
-        "/ai/group-recommendation",
-        json={"subject": "ASD"},
-    )
-
-    assert response.status_code == 200
-    assert response.json["attempts"] == 2
-    assert post.call_count == 3
+    assert response.status_code == 502
+    loop = response.json['loop']
+    assert loop['attempts'] == 1
+    assert loop['stop_reason'] == 'invalid_proposal'
+    assert loop['selected_attempt'] is None
+    assert loop['review'] is None
+    assert loop['trace'][0]['status'] == 'invalid'
+    assert 'duplicates' in loop['trace'][0]['feedback'][0]
+    # Only Qwen was called: no retry and no Llama review of invalid membership.
+    assert post.call_count == 1
 
 
 @pytest.mark.parametrize(

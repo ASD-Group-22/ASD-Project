@@ -13,24 +13,32 @@ def enabled(name):
     return os.getenv(name, 'false').strip().lower() in ('true', '1', 'yes', 'on')
 
 
+def decode_tool_result(result):
+    if getattr(result, 'is_error', False):
+        raise ServiceError('The shared MCP tool returned an error.')
+    data = getattr(result, 'structured_content', None)
+    if not isinstance(data, dict):
+        data = None
+        for block in getattr(result, 'content', []):
+            try:
+                candidate = json.loads(getattr(block, 'text', ''))
+                if isinstance(candidate, dict):
+                    data = candidate
+                    break
+            except (ValueError, TypeError):
+                continue
+    if not isinstance(data, dict) or data.get('status') != 'success':
+        raise ServiceError('MCP tool unsuccessful: ' + str((data or {}).get('error', 'invalid structured result')))
+    return data
+
+
 async def _mcp_call(tool, arguments):
-    # Keep imports lazy: disabled modes must start without a running MCP server.
-    from mcp import ClientSession
-    from mcp.client.streamable_http import streamable_http_client
-    url = os.getenv('MCP_SERVER_URL', 'http://host.docker.internal:8100/mcp')
-    async with streamable_http_client(url) as (reader, writer, _):
-        async with ClientSession(reader, writer) as session:
-            await session.initialize()
-            result = await session.call_tool(tool, arguments=arguments)
-            if result.isError:
-                raise ServiceError('The shared MCP tool returned an error.')
-            data = getattr(result, 'structuredContent', None)
-            if data is None:
-                blocks = [c.text for c in result.content if getattr(c, 'type', None) == 'text']
-                data = json.loads('\n'.join(blocks))
-            if not isinstance(data, dict) or data.get('status') != 'success':
-                raise ServiceError('The shared MCP tool did not return a successful structured result.')
-            return data
+    from mcp import Client
+    # Use Student 2's configuration names; accept the earlier names during migration.
+    url = os.getenv('MCP_URL') or os.getenv('MCP_SERVER_URL', 'http://host.docker.internal:5100/mcp')
+    async with Client(url) as client:
+        result = await client.call_tool(tool, {**arguments, 'caller': 'student-3-backend'})
+        return decode_tool_result(result)
 
 
 def call_mcp(tool, arguments):
@@ -39,19 +47,36 @@ def call_mcp(tool, arguments):
     try:
         return asyncio.run(bounded())
     except Exception as exc:
-        raise ServiceError('Shared MCP unavailable. Check registration, HTTP transport and MCP_SERVER_URL.') from exc
+        raise ServiceError('Shared MCP unavailable. Check registration, HTTP transport and MCP_URL.') from exc
 
 
-def call_rag(query, k):
-    url = os.getenv('RAG_SERVER_URL', 'http://host.docker.internal:5003').rstrip('/')
+def rag_request(action, query=None, k=5):
+    if action not in ('answer', 'retrieve', 'refresh'):
+        raise ServiceError('Unsupported RAG operation.')
+    url = (os.getenv('RAG_SERVICE_URL') or os.getenv('RAG_SERVER_URL', 'http://host.docker.internal:5003')).rstrip('/')
+    payload = {'caller': 'student-3-backend'}
+    if action != 'refresh':
+        payload.update(query=query, k=k)
     try:
-        response = requests.post(url + '/answer', json={
-            'query': query, 'k': k, 'caller': 'student3'}, timeout=(5, 150))
+        timeout = float(os.getenv('RAG_TIMEOUT_SECONDS', '180'))
+        if not 1 <= timeout <= 600:
+            raise ValueError('Invalid timeout')
+        response = requests.post(url + '/' + action, json=payload, timeout=(5, timeout))
         response.raise_for_status()
         data = response.json()
     except (requests.RequestException, ValueError) as exc:
-        raise ServiceError('Shared RAG unavailable. Check RAG_SERVER_URL and the local RAG service.') from exc
-    return validate_rag(data)
+        raise ServiceError('Shared RAG unavailable. Check RAG_SERVICE_URL, timeout and the local service.') from exc
+    if action == 'answer':
+        return validate_rag(data)
+    if not isinstance(data, dict) or data.get('status') != 'success':
+        raise ServiceError('Shared RAG operation failed.')
+    if action == 'retrieve' and not isinstance(data.get('results'), list):
+        raise ServiceError('Shared RAG returned invalid retrieval results.')
+    return data
+
+
+def call_rag(query, k):
+    return rag_request('answer', query, k)
 
 
 def validate_rag(data):
@@ -65,13 +90,14 @@ def validate_rag(data):
         raise ServiceError('Shared RAG returned no answer.')
     if answer.lower().startswith('ollama unavailable:'):
         raise ServiceError('The shared RAG model is unavailable.')
-    if confidence not in ('High', 'Medium', 'Low', 'Unknown') or not isinstance(citations, list):
+    if confidence not in ('High', 'Medium', 'Low', 'Unknown', 'Insufficient') or not isinstance(citations, list):
         raise ServiceError('Shared RAG must return citations and a confidence_category.')
     insufficient = (data.get('status') == 'insufficient_context'
+                    or confidence == 'Insufficient'
                     or answer.strip().lower() in ('insufficient evidence.', 'insufficient context.', 'insufficient context'))
     if insufficient or not citations:
-        return {'status': 'insufficient_context', 'answer': 'Insufficient context to answer this question.',
-                'citations': [], 'confidence_category': 'Unknown',
+        return {'status': 'insufficient_context', 'answer': 'Insufficient context.',
+                'citations': [], 'confidence_category': 'Insufficient',
                 'retrieval_summary': data.get('retrieval_summary', {})}
     if any(not isinstance(c, dict) or not c.get('source_id') or not c.get('chunk_id') for c in citations):
         raise ServiceError('Shared RAG returned incomplete citation identifiers.')

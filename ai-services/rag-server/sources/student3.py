@@ -8,7 +8,7 @@ import requests
 
 
 def _get(path):
-    base = os.getenv('STUDENT3_BACKEND_URL', 'http://localhost:5000').rstrip('/')
+    base = os.getenv('STUDENT3_BACKEND_URL', 'http://localhost:5009').rstrip('/')
     response = requests.get(base + path, timeout=10)
     response.raise_for_status()
     return response.json()
@@ -17,7 +17,10 @@ def _get(path):
 def _chunk(kind, key, path, text):
     suffix = hashlib.sha256(key.encode('utf-8')).hexdigest()[:20]
     return {'chunk_id': f'student3_{kind}_{suffix}',
-            'source_id': 'student3:backend:' + path,
+            'source_id': 'student-3:' + path,
+            'feature': 'student-3-group-formation', 'record_type': kind,
+            'subject': key if kind == 'requirements' else '',
+            'group_name': key if kind == 'group' else '',
             'authority_tier': 'tier_1', 'text': text,
             'metadata': {'source_type': 'backend_api', 'student': 'student3',
                          'record_type': kind, 'record_key': key},
