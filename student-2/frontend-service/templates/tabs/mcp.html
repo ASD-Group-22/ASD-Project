@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1"
+    >
+
+    <title>Skill Exchange MCP Mode</title>
+
+    <link
+        rel="stylesheet"
+        href="/css/styles.css"
+    >
+
+    <script
+        src="/js/htmx.min.js"
+        defer
+    ></script>
+</head>
+
+<body class="embedded-body">
+
+<main class="embedded-shell">
+
+    <section class="card">
+
+        <h2>MCP Mode</h2>
+
+        <p class="muted">
+            Requests are sent through the Student 2 backend to the
+            shared local Release 1 MCP server.
+        </p>
+
+        <div
+            id="mcp-status"
+            class="panel"
+            hx-get="/api/htmx/mcp/status"
+            hx-trigger="load"
+            hx-swap="innerHTML"
+        >
+            Checking MCP service status...
+        </div>
+
+    </section>
+
+
+    <section class="card">
+
+        <h2>Search Skill Listings via MCP</h2>
+
+        <p class="muted">
+            Runs the registered
+            <strong>student2_search_skills</strong>
+            MCP tool against verified Skill Exchange data.
+        </p>
+
+        <form
+            class="search-row"
+            hx-post="/api/htmx/mcp/search-skills"
+            hx-target="#mcp-search-result"
+            hx-swap="innerHTML"
+            hx-indicator="#mcp-search-indicator"
+        >
+
+            <input
+                name="skill"
+                type="text"
+                required
+                value="Python"
+                placeholder="Enter a skill, e.g. Python"
+            >
+
+            <button type="submit">
+                Search via MCP
+            </button>
+
+            <span
+                id="mcp-search-indicator"
+                class="htmx-indicator muted"
+            >
+                Calling MCP...
+            </span>
+
+        </form>
+
+        <div
+            id="mcp-search-result"
+            class="panel"
+        >
+            Enter a skill and run the MCP tool.
+        </div>
+
+    </section>
+
+
+    <section class="card">
+
+        <h2>Retrieve Listing via MCP</h2>
+
+        <p class="muted">
+            Runs the registered
+            <strong>student2_get_listing</strong>
+            MCP tool for a specific Skill Exchange listing.
+        </p>
+
+        <form
+            class="search-row"
+            hx-post="/api/htmx/mcp/listing"
+            hx-target="#mcp-listing-result"
+            hx-swap="innerHTML"
+            hx-indicator="#mcp-listing-indicator"
+        >
+
+            <input
+                name="listing_id"
+                type="number"
+                min="1"
+                required
+                value="1"
+            >
+
+            <button type="submit">
+                Get Listing via MCP
+            </button>
+
+            <span
+                id="mcp-listing-indicator"
+                class="htmx-indicator muted"
+            >
+                Calling MCP...
+            </span>
+
+        </form>
+
+        <div
+            id="mcp-listing-result"
+            class="panel"
+        >
+            Enter a listing ID and run the MCP tool.
+        </div>
+
+    </section>
+
+
+    <section class="card">
+
+        <h2>Release 1 MCP Request Flow</h2>
+
+        <div class="workflow-grid">
+
+            <div>
+                <strong>1 · Frontend</strong>
+                <span>
+                    HTMX submits the user's request to the
+                    Student 2 backend.
+                </span>
+            </div>
+
+            <div>
+                <strong>2 · Backend</strong>
+                <span>
+                    The backend validates the request and
+                    calls the shared MCP service.
+                </span>
+            </div>
+
+            <div>
+                <strong>3 · MCP Tool</strong>
+                <span>
+                    The shared MCP server invokes a
+                    registered Student 2 tool.
+                </span>
+            </div>
+
+            <div>
+                <strong>4 · Evidence</strong>
+                <span>
+                    Verified application data is returned
+                    to the user as an HTML fragment.
+                </span>
+            </div>
+
+        </div>
+
+    </section>
+
+</main>
+
+</body>
+</html>
