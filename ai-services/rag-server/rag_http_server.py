@@ -4,6 +4,7 @@ from http.server import (
     BaseHTTPRequestHandler,
     ThreadingHTTPServer
 )
+from urllib.parse import urlparse
 
 from rag_pipeline import (
     answer_question,
@@ -45,6 +46,16 @@ class RAGHandler(
             "*"
         )
 
+        self.send_header(
+            "Access-Control-Allow-Methods",
+            "GET, POST, OPTIONS"
+        )
+
+        self.send_header(
+            "Access-Control-Allow-Headers",
+            "Content-Type"
+        )
+
         self.end_headers()
 
         self.wfile.write(
@@ -60,7 +71,7 @@ class RAGHandler(
             )
         )
 
-        if content_length == 0:
+        if content_length <= 0:
             return {}
 
         raw = self.rfile.read(
@@ -74,9 +85,44 @@ class RAGHandler(
             raw.decode("utf-8")
         )
 
+    def _get_path(self):
+
+        return urlparse(
+            self.path
+        ).path
+
+    def _get_k(self, payload):
+
+        try:
+
+            k = int(
+                payload.get(
+                    "k",
+                    5
+                )
+            )
+
+        except (
+            TypeError,
+            ValueError
+        ):
+
+            raise ValueError(
+                "k must be an integer"
+            )
+
+        if k <= 0:
+            raise ValueError(
+                "k must be greater than 0"
+            )
+
+        return k
+
     def do_OPTIONS(self):
 
-        self.send_response(204)
+        self.send_response(
+            204
+        )
 
         self.send_header(
             "Access-Control-Allow-Origin",
@@ -97,7 +143,13 @@ class RAGHandler(
 
     def do_GET(self):
 
-        if self.path == "/health":
+        path = self._get_path()
+
+        # -------------------------------------------------
+        # Health
+        # -------------------------------------------------
+
+        if path == "/health":
 
             self._send_json(
                 200,
@@ -113,11 +165,18 @@ class RAGHandler(
             404,
             {
                 "status": "error",
-                "error": "not_found"
+                "error": "not_found",
+                "path": path
             }
         )
 
     def do_POST(self):
+
+        path = self._get_path()
+
+        # -------------------------------------------------
+        # Read JSON body
+        # -------------------------------------------------
 
         try:
 
@@ -129,8 +188,7 @@ class RAGHandler(
                 400,
                 {
                     "status": "error",
-                    "error":
-                        f"invalid_json: {exc}"
+                    "error": f"invalid_json: {exc}"
                 }
             )
 
@@ -138,14 +196,21 @@ class RAGHandler(
 
         try:
 
-            if self.path == "/refresh":
+            # -------------------------------------------------
+            # Refresh RAG corpus
+            # -------------------------------------------------
 
-                caller = (
+            if path == "/refresh":
+
+                caller = str(
                     payload.get(
-                        "caller"
+                        "caller",
+                        "student"
                     )
-                    or "student"
                 ).strip()
+
+                if not caller:
+                    caller = "student"
 
                 result = refresh_corpus(
                     caller=caller
@@ -162,13 +227,17 @@ class RAGHandler(
 
                 return
 
-            if self.path == "/retrieve":
+            # -------------------------------------------------
+            # Retrieve context
+            # -------------------------------------------------
 
-                query = (
+            if path == "/retrieve":
+
+                query = str(
                     payload.get(
-                        "query"
+                        "query",
+                        ""
                     )
-                    or ""
                 ).strip()
 
                 if not query:
@@ -177,26 +246,25 @@ class RAGHandler(
                         400,
                         {
                             "status": "error",
-                            "error":
-                                "query is required"
+                            "error": "query is required"
                         }
                     )
 
                     return
 
-                k = int(
-                    payload.get(
-                        "k",
-                        5
-                    )
+                k = self._get_k(
+                    payload
                 )
 
-                caller = (
+                caller = str(
                     payload.get(
-                        "caller"
+                        "caller",
+                        "student"
                     )
-                    or "student"
                 ).strip()
+
+                if not caller:
+                    caller = "student"
 
                 result = retrieve_context(
                     query=query,
@@ -215,13 +283,17 @@ class RAGHandler(
 
                 return
 
-            if self.path == "/answer":
+            # -------------------------------------------------
+            # Answer question using RAG
+            # -------------------------------------------------
 
-                query = (
+            if path == "/answer":
+
+                query = str(
                     payload.get(
-                        "query"
+                        "query",
+                        ""
                     )
-                    or ""
                 ).strip()
 
                 if not query:
@@ -230,26 +302,25 @@ class RAGHandler(
                         400,
                         {
                             "status": "error",
-                            "error":
-                                "query is required"
+                            "error": "query is required"
                         }
                     )
 
                     return
 
-                k = int(
-                    payload.get(
-                        "k",
-                        5
-                    )
+                k = self._get_k(
+                    payload
                 )
 
-                caller = (
+                caller = str(
                     payload.get(
-                        "caller"
+                        "caller",
+                        "student"
                     )
-                    or "student"
                 ).strip()
+
+                if not caller:
+                    caller = "student"
 
                 result = answer_question(
                     query=query,
@@ -268,11 +339,26 @@ class RAGHandler(
 
                 return
 
+            # -------------------------------------------------
+            # Unknown endpoint
+            # -------------------------------------------------
+
             self._send_json(
                 404,
                 {
                     "status": "error",
-                    "error": "not_found"
+                    "error": "not_found",
+                    "path": path
+                }
+            )
+
+        except ValueError as exc:
+
+            self._send_json(
+                400,
+                {
+                    "status": "error",
+                    "error": str(exc)
                 }
             )
 
@@ -286,9 +372,13 @@ class RAGHandler(
                 }
             )
 
+
 def main():
 
-    host = "0.0.0.0"
+    host = os.getenv(
+        "HOST",
+        "0.0.0.0"
+    )
 
     port = int(
         os.getenv(
@@ -308,6 +398,26 @@ def main():
     print(
         f"RAG HTTP server running "
         f"on {host}:{port}"
+    )
+
+    print(
+        "Endpoints:"
+    )
+
+    print(
+        "  GET  /health"
+    )
+
+    print(
+        "  POST /refresh"
+    )
+
+    print(
+        "  POST /retrieve"
+    )
+
+    print(
+        "  POST /answer"
     )
 
     server.serve_forever()
