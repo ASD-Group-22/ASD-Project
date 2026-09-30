@@ -112,6 +112,40 @@ def analyse_profile(profile_id):
             "error": "AI service unavailable"
         }), 503
 
+# MCP SKILL PROFILE TOOL
+@app.route("/profiles/<int:profile_id>/mcp", methods=["POST"])
+def mcp_profile(profile_id):
+    try:
+        response = requests.post(
+            f"{BACKEND_SERVICE_URL}/api/profiles/{profile_id}/mcp",
+            timeout=30,
+        )
+        return jsonify(response.json()), response.status_code
+
+    except (requests.RequestException, ValueError):
+        return jsonify({"error": "MCP backend request failed"}), 503
+
+
+# RAG SKILL PROFILE QUESTION
+@app.route("/profiles/<int:profile_id>/rag", methods=["POST"])
+def rag_profile(profile_id):
+    data = request.get_json(silent=True) or {}
+    question = data.get("question")
+
+    if not isinstance(question, str) or not question.strip():
+        return jsonify({"error": "Question is required"}), 400
+
+    try:
+        response = requests.post(
+            f"{BACKEND_SERVICE_URL}/api/profiles/{profile_id}/rag",
+            json={"question": question.strip()},
+            timeout=90,
+        )
+        return jsonify(response.json()), response.status_code
+
+    except (requests.RequestException, ValueError):
+        return jsonify({"error": "RAG backend request failed"}), 503
+
 if __name__ == "__main__":
 
     app.run(
