@@ -4,12 +4,18 @@ on:
   push:
     paths:
       - "student-3/**"
+      - "ai-services/mcp-server/**"
+      - "ai-services/rag-server/**"
+      - "ai-services/agentic-loop/**"
       - "student-4/**"
       - "docker-compose.yml"
       - ".github/workflows/student-3-ci.yml"
   pull_request:
     paths:
       - "student-3/**"
+      - "ai-services/mcp-server/**"
+      - "ai-services/rag-server/**"
+      - "ai-services/agentic-loop/**"
       - "student-4/**"
       - "docker-compose.yml"
       - ".github/workflows/student-3-ci.yml"
@@ -47,6 +53,21 @@ jobs:
           mkdir -p reports
           python -m pytest student-3/tests -v --junitxml=reports/student-3-tests.xml
 
+      - name: Disable Student 3 AI services in CI containers
+        shell: bash
+        run: |
+          set -euo pipefail
+          override="$RUNNER_TEMP/student-3-ci-override.yml"
+          cat > "$override" <<'YAML'
+          services:
+            student-3-backend:
+              environment:
+                AI_ENABLED: "false"
+                MCP_ENABLED: "false"
+                RAG_ENABLED: "false"
+          YAML
+          echo "COMPOSE_FILE=docker-compose.yml:$override" >> "$GITHUB_ENV"
+
       - name: Validate shared Compose configuration
         run: docker compose config -q
 
@@ -58,7 +79,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          for url in http://localhost:8000/ http://localhost:5006/ http://localhost:5000/ai/profiles; do
+          for url in http://localhost:8000/ http://localhost:5006/ http://localhost:5009/ai/profiles; do
             ready=false
             for attempt in {1..30}; do
               if curl --fail --silent --max-time 5 "$url" > /dev/null; then
@@ -69,17 +90,45 @@ jobs:
             done
             if [ "$ready" != true ]; then
               echo "Service did not become ready: $url"
+              curl --show-error --max-time 5 "$url" || true
               exit 1
             fi
           done
           python - <<'PY'
           import requests
-          response = requests.get("http://localhost:5000/ai/profiles", timeout=15)
+          response = requests.get("http://localhost:5009/ai/profiles", timeout=15)
           response.raise_for_status()
           profiles = response.json()
           assert isinstance(profiles, list) and profiles, "No live profiles returned"
           assert all("student_id" in p and "skills" in p for p in profiles)
           print(f"Retrieved {len(profiles)} live skill profiles through the group backend")
+          PY
+
+      - name: Verify Student 3 AI, MCP and RAG are disabled
+        run: |
+          docker compose exec -T student-3-backend python - <<'PY'
+          import os
+          import requests
+
+          for flag in ("AI_ENABLED", "MCP_ENABLED", "RAG_ENABLED"):
+              assert os.environ.get(flag) == "false", f"{flag} was not disabled"
+
+          base = "http://127.0.0.1:5000"
+          status = requests.get(base + "/r1/status", timeout=5)
+          status.raise_for_status()
+          assert status.json() == {"mcp_enabled": False, "rag_enabled": False}
+          for path, payload in (
+              ("/ai/group-recommendation", {"subject": "ASD"}),
+              ("/ui/ai/group-recommendation", {"subject": "ASD"}),
+              ("/r1/mcp", {"tool": "student3_group_requirements", "subject": "ASD"}),
+              ("/r1/rag/answer", {"query": "What are the ASD requirements?"}),
+              ("/r1/rag/retrieve", {"query": "ASD"}),
+              ("/r1/rag/refresh", {}),
+          ):
+              response = requests.post(base + path, json=payload, timeout=5)
+              assert response.status_code == 503, (path, response.status_code, response.text)
+              assert "disabled" in response.json().get("error", "").lower(), (path, response.text)
+          print("Student 3 AI, MCP and RAG are disabled; profile access was verified separately.")
           PY
 
       - name: Collect container logs

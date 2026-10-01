@@ -24,9 +24,15 @@
   el('r1Tool').addEventListener('change', () => {
     el('r1Subject').disabled = el('r1Tool').value !== 'student3_group_requirements';
   });
-  el('r1McpBtn').addEventListener('click', () => send('mcp', {
-    tool: el('r1Tool').value, subject: el('r1Subject').value
-  }, el('r1McpOutput'), el('r1McpBtn')));
+  el('r1McpBtn').addEventListener('click', () => {
+    const tool = el('r1Tool').value;
+    const subject = el('r1Subject').value;
+    if (tool === 'student3_group_requirements' && !subject) {
+      el('r1McpOutput').textContent = 'No subject is selected. If subjects failed to load, check the backend and reload the page.';
+      return;
+    }
+    send('mcp', {tool, subject}, el('r1McpOutput'), el('r1McpBtn'));
+  });
   el('r1RagBtn').addEventListener('click', () => send('rag/answer', {
     query: el('r1Query').value, k: 5
   }, el('r1RagOutput'), el('r1RagBtn')));

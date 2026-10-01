@@ -118,7 +118,7 @@
         <option value="student3_list_groups">Finalised groups</option>
       </select>
     </label>
-    <label>Subject: <input id="r1Subject" maxlength="100" placeholder="ASD"></label>
+    <label>Subject: <select id="r1Subject"><option value="">Loading subjects...</option></select></label>
     <button id="r1McpBtn" type="button">Run Tool</button>
     <pre id="r1McpOutput" aria-live="polite"></pre>
   </div>
@@ -176,19 +176,26 @@
 
   /* ---------------------- SUBJECTS ---------------------- */
   async function loadSubjects() {
-    const res = await fetch(`${backend}/ui/subjects?t=${Date.now()}`);
-    const subjects = await res.json();
-
-    const skillsSelect = document.getElementById("skillsSubjectSelect");
-    const recSelect = document.getElementById("recSubjectSelect");
-
-    skillsSelect.innerHTML = "";
-    recSelect.innerHTML = "";
-
-    subjects.forEach(s => {
-      skillsSelect.innerHTML += `<option value="${s}">${s}</option>`;
-      recSelect.innerHTML += `<option value="${s}">${s}</option>`;
-    });
+    const selects = ['skillsSubjectSelect', 'recSubjectSelect', 'r1Subject']
+      .map(id => document.getElementById(id));
+    try {
+      const res = await fetch(`${backend}/ui/subjects?t=${Date.now()}`);
+      if (!res.ok) throw new Error('Could not load subjects.');
+      const subjects = await res.json();
+      if (!Array.isArray(subjects) || subjects.some(s => typeof s !== 'string' || !s.trim())) {
+        throw new Error('Invalid subject list returned.');
+      }
+      selects.forEach(select => {
+        const previous = select.value;
+        select.replaceChildren();
+        subjects.forEach(subject => select.add(new Option(subject, subject)));
+        if (!subjects.length) select.add(new Option('No subjects available', ''));
+        else if (subjects.includes(previous)) select.value = previous;
+      });
+    } catch (error) {
+      selects.forEach(select => select.replaceChildren(new Option('Unable to load subjects', '')));
+      showToast(error.message);
+    }
   }
 
   /* ---------------------- SKILLS ---------------------- */
@@ -452,6 +459,6 @@ async function loadProfiles() {
 
 <script src="js/recommendation-history.js"></script>
 <script src="js/agentic-review.js?v=single-attempt-1"></script>
-<script src="js/release1.js?v=student2-aligned-1"></script>
+<script src="js/release1.js?v=subject-dropdown-1"></script>
 </body>
 </html>
