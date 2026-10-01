@@ -432,19 +432,38 @@ def evaluate_expected(
         )
 
         if count is None:
-            listings = data.get(
-                "listings",
-                [],
+            count = data.get(
+                "count"
             )
 
-            count = (
-                len(listings)
-                if isinstance(
-                    listings,
-                    list,
-                )
-                else 0
+        if count is None:
+            listings = data.get(
+                "listings"
             )
+
+            if isinstance(
+                listings,
+                list,
+            ):
+                count = len(
+                    listings
+                )
+
+        if count is None:
+            matches = data.get(
+                "matches"
+            )
+
+            if isinstance(
+                matches,
+                list,
+            ):
+                count = len(
+                    matches
+                )
+
+        if count is None:
+            count = 0
 
         if int(count or 0) < int(
             minimum_result_count
