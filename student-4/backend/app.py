@@ -148,8 +148,9 @@ def api_mcp_profile(profile_id):
     try:
         result = get_profile_via_mcp(profile_id)
         return jsonify(result), 200
-    except (RuntimeError, ValueError, OSError, ConnectionError) as error:
-        return jsonify({"error": str(error)}), 503
+    except Exception:
+        app.logger.exception("Skill Profile MCP request failed")
+        return jsonify({"error": "Shared MCP service unavailable"}), 503
 
 
 @app.route("/api/profiles/<int:profile_id>/rag", methods=["POST"])
