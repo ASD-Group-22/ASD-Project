@@ -75,30 +75,64 @@ checkHealth(); loadSpaces();
 
 
 // Release 1: shared MCP integration through the Student 5 backend.
-$('mcpForm')?.addEventListener('submit', async e=>{
+$('mcpForm')?.addEventListener('submit', async e => {
   e.preventDefault();
-  const message=$('mcpMessage'); const results=$('mcpResults');
-  message.classList.remove('hidden'); message.textContent='Calling shared MCP tool…'; results.innerHTML='';
-  const facilities=$('mcpFacilities').value.split(',').map(x=>x.trim()).filter(Boolean);
-  try{
-    const data=await api('/api/mcp',{method:'POST',body:JSON.stringify({
-      tool:'student5_find_campus_spaces',
-      arguments:{
-        building:$('mcpBuilding').value.trim()||null,
-        noise_level:$('mcpNoise').value||null,
-        min_capacity:$('mcpCapacity').value?Number($('mcpCapacity').value):null,
-        required_facilities:facilities,
-        accessible_only:$('mcpAccessible').checked,
-        limit:5
-      }
-    })});
-    const payload=data.result||{}; const matches=payload.matches||[];
-    message.textContent=`MCP tool returned ${payload.count??matches.length} matching stored space(s).`;
-    results.innerHTML=matches.map(s=>card(s,false,true)).join('') || '<div class="message">No matching stored spaces were returned.</div>';
-  }catch(err){message.textContent=err.message}
-});
 
-document.querySelectorAll('[data-rag-example]').forEach(b=>b.addEventListener('click',()=>{$('ragQuery').value=b.dataset.ragExample}));
+  const message = $('mcpMessage');
+  const results = $('mcpResults');
+
+  message.classList.remove('hidden');
+  results.innerHTML = '';
+
+  try {
+    const rawBuilding = $('mcpBuilding').value.trim();
+    const building = rawBuilding === '' ? null : Number(rawBuilding);
+
+    if (
+      building !== null &&
+      (!Number.isSafeInteger(building) || building < 1)
+    ) {
+      throw new Error('Enter a positive whole building number.');
+    }
+
+    const facilities = $('mcpFacilities').value
+      .split(',')
+      .map(value => value.trim())
+      .filter(Boolean);
+
+    message.textContent = 'Calling shared MCP tool…';
+
+    const data = await api('/api/mcp', {
+      method: 'POST',
+      body: JSON.stringify({
+        tool: 'student5_find_campus_spaces',
+        arguments: {
+          building,
+          noise_level: $('mcpNoise').value || null,
+          min_capacity: $('mcpCapacity').value
+            ? Number($('mcpCapacity').value)
+            : null,
+          required_facilities: facilities,
+          accessible_only: $('mcpAccessible').checked,
+          limit: 5
+        }
+      })
+    });
+
+    const payload = data.result || {};
+    const matches = payload.matches || [];
+
+    message.textContent =
+      `MCP tool returned ${payload.count ?? matches.length} matching stored space(s).`;
+
+    results.innerHTML = matches
+      .map(space => card(space, false, true))
+      .join('') || '<div class="message">No matching stored spaces were returned.</div>';
+
+  } catch (err) {
+    message.textContent = err.message;
+  }
+});
 
 // Release 1: grounded RAG interaction through the Student 5 backend.
 $('ragForm')?.addEventListener('submit', async e=>{
