@@ -18,9 +18,9 @@ from datetime import datetime, timezone
 import requests
 
 
-DATABASE_SERVICE_URL = os.getenv(
-    "STUDENT1_DATABASE_SERVICE_URL",
-    "http://localhost:6001"
+BACKEND_SERVICE_URL = os.getenv(
+    "STUDENT1_BACKEND_URL",
+    "http://localhost:5001"
 )
 
 
@@ -32,7 +32,7 @@ def build_project_chunks():
     chunks = []
 
     response = requests.get(
-        f"{DATABASE_SERVICE_URL}/projects",
+        f"{BACKEND_SERVICE_URL}/projects",
         timeout=10
     )
 
@@ -47,7 +47,7 @@ def build_project_chunks():
         chunks.append({
             "chunk_id": f"student1_project_{project_id}",
             "source_id": (
-                f"student1:database-service:/projects/{project_id}"
+                f"student1:backend-api:/projects/{project_id}"
             ),
             "authority_tier": "tier_1",
             "text": (
@@ -60,7 +60,7 @@ def build_project_chunks():
                 f"status={project.get('status')}."
             ),
             "metadata": {
-                "source_type": "database_service",
+                "source_type": "backend_api",
                 "student": "student1",
                 "table": "projects",
                 "project_id": project_id
@@ -75,7 +75,7 @@ def build_task_chunks():
     chunks = []
 
     response = requests.get(
-        f"{DATABASE_SERVICE_URL}/projects",
+        f"{BACKEND_SERVICE_URL}/projects",
         timeout=10
     )
 
@@ -88,7 +88,7 @@ def build_task_chunks():
         project_id = project.get("id")
 
         task_response = requests.get(
-            f"{DATABASE_SERVICE_URL}/projects/{project_id}/tasks",
+            f"{BACKEND_SERVICE_URL}/projects/{project_id}/tasks",
             timeout=10
         )
 
@@ -106,7 +106,7 @@ def build_task_chunks():
             chunks.append({
                 "chunk_id": f"student1_task_{task_id}",
                 "source_id": (
-                    f"student1:database-service:"
+                    f"student1:backend-api:"
                     f"/projects/{project_id}/tasks"
                 ),
                 "authority_tier": "tier_1",
@@ -119,7 +119,7 @@ def build_task_chunks():
                     f"status={task.get('status')}."
                 ),
                 "metadata": {
-                    "source_type": "database_service",
+                    "source_type": "backend_api",
                     "student": "student1",
                     "table": "tasks",
                     "project_id": project_id,
