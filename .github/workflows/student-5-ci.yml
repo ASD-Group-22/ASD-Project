@@ -64,6 +64,8 @@ jobs:
 
       - name: Run backend tests
         working-directory: student-5/backend
+        env:
+          AGENTIC_LOG_PATH: ${{ runner.temp }}/student-5-logs/agentic-loop.jsonl
         run: python -m pytest -q tests
 
       - name: Check Student 5 Python syntax
