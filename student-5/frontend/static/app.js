@@ -14,7 +14,7 @@ async function checkHealth(){
   catch(e){$('serviceText').textContent='Backend unavailable'}
 }
 
-function card(space, recommendation=false){
+function card(space, recommendation=false, readonly=false){
   const facilities=(space.facilities||[]).map(f=>`<span class="chip">${escapeHtml(f)}</span>`).join('');
   return `<article class="card">
     ${space.image_url?`<img src="${escapeAttr(space.image_url)}" alt="${escapeAttr(space.space_name)}" onerror="this.style.display='none'">`:''}
@@ -24,7 +24,7 @@ function card(space, recommendation=false){
       <div class="meta">Capacity ${space.max_capacity} · ${escapeHtml(space.noise_level)} · ${escapeHtml(space.space_type)}</div>
       <div class="chips">${facilities}</div>
       <div class="meta">${escapeHtml(space.accessibility||'')}</div>
-      ${recommendation?`<div class="reason"><strong>Why:</strong> ${escapeHtml(space.reason||'')}</div>`:`<div class="card-actions"><button class="ghost" onclick="editSpace(${space.space_id})">Edit</button><button class="danger" onclick="deleteSpace(${space.space_id})">Delete</button></div>`}
+      ${recommendation?`<div class="reason"><strong>Why:</strong> ${escapeHtml(space.reason||'')}</div>`:readonly?'':`<div class="card-actions"><button class="ghost" onclick="editSpace(${space.space_id})">Edit</button><button class="danger" onclick="deleteSpace(${space.space_id})">Delete</button></div>`}
     </div></article>`;
 }
 function escapeHtml(v){return String(v??'').replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]))}
@@ -72,3 +72,62 @@ $('spaceForm').addEventListener('submit',async e=>{
 });
 
 checkHealth(); loadSpaces();
+
+
+// Release 1: shared MCP integration through the Student 5 backend.
+$('mcpForm')?.addEventListener('submit', async e=>{
+  e.preventDefault();
+  const message=$('mcpMessage'); const results=$('mcpResults');
+  message.classList.remove('hidden'); message.textContent='Calling shared MCP tool…'; results.innerHTML='';
+  const facilities=$('mcpFacilities').value.split(',').map(x=>x.trim()).filter(Boolean);
+  try{
+    const data=await api('/api/mcp',{method:'POST',body:JSON.stringify({
+      tool:'student5_find_campus_spaces',
+      arguments:{
+        building:$('mcpBuilding').value.trim()||null,
+        noise_level:$('mcpNoise').value||null,
+        min_capacity:$('mcpCapacity').value?Number($('mcpCapacity').value):null,
+        required_facilities:facilities,
+        accessible_only:$('mcpAccessible').checked,
+        limit:5
+      }
+    })});
+    const payload=data.result||{}; const matches=payload.matches||[];
+    message.textContent=`MCP tool returned ${payload.count??matches.length} matching stored space(s).`;
+    results.innerHTML=matches.map(s=>card(s,false,true)).join('') || '<div class="message">No matching stored spaces were returned.</div>';
+  }catch(err){message.textContent=err.message}
+});
+
+document.querySelectorAll('[data-rag-example]').forEach(b=>b.addEventListener('click',()=>{$('ragQuery').value=b.dataset.ragExample}));
+
+// Release 1: grounded RAG interaction through the Student 5 backend.
+$('ragForm')?.addEventListener('submit', async e=>{
+  e.preventDefault(); const query=$('ragQuery').value.trim(); if(!query)return;
+  const result=$('ragResult'); result.classList.remove('hidden'); result.innerHTML='<div class="message">Retrieving trusted context and generating a grounded answer…</div>';
+  try{
+    const data=await api('/api/rag',{method:'POST',body:JSON.stringify({query})});
+    const sourceItems=data.sources||[];
+    const sources=sourceItems.map(source=>`<li><strong>${escapeHtml(source.title||source.source||'Source')}</strong><br><span>${escapeHtml(source.source||source.source_id||'')}</span></li>`).join('');
+
+    // Turn any retrieved campus-space sources into the same visual cards used
+    // by the rest of Student 5. The source_id contract is campus-space-<id>.
+    if (!spaces.length) {
+      try { spaces = await api('/api/spaces'); } catch (_) {}
+    }
+    const seen=new Set();
+    const referencedSpaces=sourceItems
+      .map(source=>{
+        const match=String(source.source_id||'').match(/^campus-space-(\d+)$/);
+        if(!match)return null;
+        const id=Number(match[1]);
+        return spaces.find(space=>Number(space.space_id)===id)||null;
+      })
+      .filter(space=>space && !seen.has(Number(space.space_id)) && seen.add(Number(space.space_id)));
+
+    const cards=referencedSpaces.length
+      ? `<div class="rag-space-results"><h3>Referenced campus spaces</h3><div class="cards">${referencedSpaces.map(space=>card(space,false,true)).join('')}</div></div>`
+      : '';
+
+    result.innerHTML=`<div class="grounded-answer"><p>${escapeHtml(data.answer||'')}</p><div class="confidence"><strong>Confidence:</strong> ${escapeHtml(data.confidence||'')}</div><h3>Sources</h3>${sources?`<ul class="source-list">${sources}</ul>`:'<p>No supporting sources were returned.</p>'}</div>${cards}`;
+  }catch(err){result.innerHTML=`<div class="message">${escapeHtml(err.message)}</div>`}
+});

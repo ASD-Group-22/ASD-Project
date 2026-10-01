@@ -10,8 +10,11 @@ import requests
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 
+from release1 import release1_bp
+
 app = Flask(__name__)
 CORS(app)
+app.register_blueprint(release1_bp)
 
 DATABASE_SERVICE_URL = os.getenv("DATABASE_SERVICE_URL", "http://student-5-database:5000")
 OLLAMA_URL = os.getenv("OLLAMA_URL", "http://ollama:11434")
@@ -152,8 +155,8 @@ def opening_match(space, required_time):
 
 
 def evaluate_space(space, req):
-    facilities = {normalise(f) for f in space.get("facilities", [])}
-    requested_facilities = [str(f) for f in req.get("facilities", [])]
+    facilities = {normalise(f) for f in (space.get("facilities") or [])}
+    requested_facilities = [str(f) for f in (req.get("facilities") or [])]
     missing_facilities = [f for f in requested_facilities if normalise(f) not in facilities]
     hard_failures = []
     soft_failures = []
@@ -221,10 +224,10 @@ def fallback_reason(item, req, mode):
     positives = []
     if req.get("capacity") and s["max_capacity"] >= int(req["capacity"]): positives.append(f"fits at least {req['capacity']} people")
     if req.get("noise_level") and normalise(s["noise_level"]) == normalise(req["noise_level"]): positives.append(f"is {s['noise_level'].lower()}")
-    wanted = {normalise(f) for f in req.get("facilities", [])}
-    got = {normalise(f) for f in s.get("facilities", [])}
+    wanted = {normalise(f) for f in (req.get("facilities") or [])}
+    got = {normalise(f) for f in (s.get("facilities") or [])}
     if wanted:
-        matched = [f for f in req.get("facilities", []) if normalise(f) in got]
+        matched = [f for f in (req.get("facilities") or []) if normalise(f) in got]
         if matched: positives.append("has " + ", ".join(matched))
     reason = "; ".join(positives) or "is one of the closest stored campus-space matches"
     if item["hard_failures"] or item["soft_failures"]:
@@ -259,7 +262,7 @@ def explain(query, req, mode, relaxed, ranked):
 
 @app.get("/health")
 def health():
-    return jsonify({"status": "ok", "service": "student-5-backend", "ai_mode": AI_MODE, "model": OLLAMA_MODEL})
+    return jsonify({"status": "ok", "service": "student-5-backend", "ai_mode": AI_MODE, "mcp_mode": os.getenv("MCP_MODE", "true").lower() == "true", "rag_mode": os.getenv("RAG_MODE", "true").lower() == "true", "model": OLLAMA_MODEL})
 
 
 @app.route("/api/spaces", methods=["GET", "POST"])
