@@ -99,19 +99,61 @@ def list_students():
 def list_groups():
     db = SessionLocal()
     groups = db.query(Group).all()
-    out = [{"group_name": g.name, "members": g.members} for g in groups]
+    out = [{"id": g.id, "group_name": g.name, "members": g.members} for g in groups]
     db.close()
     return jsonify(out), 200
 
-@app.post("/groups")
+def group_payload():
+    data = request.get_json(silent=True)
+    if not isinstance(data, dict):
+        return None
+    name, members = data.get('group_name'), data.get('members')
+    if not isinstance(name, str) or not 1 <= len(name.strip()) <= 100:
+        return None
+    if (not isinstance(members, list) or not members
+            or any(type(m) is not int or m <= 0 for m in members)
+            or len(set(members)) != len(members)):
+        return None
+    return {'name': name.strip(), 'members': members}
+
+
+@app.post('/groups')
 def create_group():
-    data = request.get_json(force=True)
-    group = Group(name=data["group_name"], members=data["members"])
-    db = SessionLocal()
-    db.add(group)
-    db.commit()
-    db.close()
-    return jsonify({"message": "Group created"}), 201
+    data = group_payload()
+    if data is None:
+        return jsonify(error='Provide a nonblank name and unique positive student IDs.'), 400
+    with SessionLocal() as db:
+        group = Group(**data)
+        db.add(group)
+        db.commit()
+        return jsonify(message='Group created', id=group.id), 201
+
+
+@app.put('/groups/by-id/<int:group_id>')
+def update_group_by_id(group_id):
+    data = group_payload()
+    if data is None:
+        return jsonify(error='Provide a nonblank name and unique positive student IDs.'), 400
+    with SessionLocal() as db:
+        group = db.get(Group, group_id)
+        if group is None:
+            return jsonify(error='Group not found'), 404
+        group.name = data['name']
+        group.members = data['members']
+        db.commit()
+        return jsonify(message='Group updated', id=group.id), 200
+
+
+@app.delete('/groups/by-id/<int:group_id>')
+def delete_group_by_id(group_id):
+    with SessionLocal() as db:
+        group = db.get(Group, group_id)
+        if group is None:
+            return jsonify(error='Group not found'), 404
+        db.delete(group)
+        db.commit()
+        return jsonify(message='Group deleted'), 200
+
 
 @app.delete("/groups/<group_name>")
 def delete_group(group_name):

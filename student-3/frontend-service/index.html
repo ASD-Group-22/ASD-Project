@@ -133,7 +133,7 @@
     <button id="r1RagBtn" type="button">Ask with Sources</button>
     <pre id="r1RagOutput" aria-live="polite"></pre>
   </div>
-    <footer class="footer">ASD Group 22 · Release 1 · Project Group Formation</footer>
+    <footer class="footer">ASD Group 22 Â· Release 1 Â· Project Group Formation</footer>
   </main>
 
   <!-- Modal -->
@@ -298,105 +298,84 @@
   }
 
   /* ---------------------- GROUPS ---------------------- */
+  async function groupRequest(path, options) {
+    const response = await fetch(`${backend}/ui/groups${path}`, options);
+    let data;
+    try { data = await response.json(); }
+    catch (_) { throw new Error(`Group request failed (${response.status}).`); }
+    if (!response.ok) throw new Error(data.error || data.message || 'Group request failed.');
+    return data;
+  }
+
   async function loadGroups() {
-    const res = await fetch(`${backend}/ui/groups?t=${Date.now()}`);
-    const data = await res.json();
-
-    const tbody = document.querySelector("#groupsTable tbody");
-    tbody.innerHTML = "";
-
-    if (!data || data.message || data.length === 0) {
-      tbody.innerHTML = `<tr><td colspan="3">No groups found.</td></tr>`;
-      return;
-    }
-
-    data.forEach(g => {
-      tbody.innerHTML += `
-        <tr>
-          <td>${g.group_name}</td>
-          <td>${g.members.join(", ")}</td>
-          <td>
-            <button onclick="openGroupEditModal('${g.group_name}', '${g.members.join(", ")}')">Edit</button>
-            <button onclick="deleteGroup('${g.group_name}')">Delete</button>
-          </td>
-        </tr>
-      `;
-    });
+    const tbody = document.querySelector('#groupsTable tbody');
+    try {
+      const groups = await groupRequest(`?t=${Date.now()}`);
+      if (!Array.isArray(groups)) throw new Error('Invalid group list.');
+      tbody.replaceChildren();
+      if (!groups.length) {
+        const cell = tbody.insertRow().insertCell();
+        cell.colSpan = 3; cell.textContent = 'No groups found.';
+      }
+      groups.forEach(group => {
+        const row = tbody.insertRow();
+        row.insertCell().textContent = group.group_name || '(Unnamed group)';
+        row.insertCell().textContent = Array.isArray(group.members) ? group.members.join(', ') : '(Invalid members)';
+        const actions = row.insertCell();
+        const edit = document.createElement('button'); edit.textContent = 'Edit';
+        edit.addEventListener('click', () => openGroupEditModal(group));
+        const remove = document.createElement('button'); remove.textContent = 'Delete';
+        remove.addEventListener('click', () => deleteGroup(group.id));
+        actions.append(edit, remove);
+      });
+    } catch (error) { showToast(error.message); }
   }
 
-  function openGroupCreateModal() {
-    const html = `
-      <h3>Create Group</h3>
-      <label>Group Name:
-        <input type="text" id="modalGroupName">
-      </label><br>
-      <label>Members (comma separated):
-        <input type="text" id="modalGroupMembers">
-      </label><br><br>
-      <button onclick="saveGroup()">Save</button>
-      <button onclick="closeModal()">Cancel</button>
-    `;
-    openModal(html);
+  function openGroupCreateModal() { openGroupEditModal(null); }
+
+  function openGroupEditModal(group) {
+    openModal(`
+      <h3>${group ? 'Edit' : 'Create'} Group</h3>
+      <label>Group name: <input id="modalGroupName" maxlength="100" required></label>
+      <label>Student IDs (comma separated): <input id="modalGroupMembers" placeholder="1, 2, 3" required></label>
+      <p>Use current IDs from Load Skill Profiles in Recommendations.</p>
+      <p id="groupError" role="alert"></p>
+      <button id="groupSave">Save</button>
+      <button onclick="closeModal()">Cancel</button>`);
+    document.getElementById('modalGroupName').value = group?.group_name || '';
+    document.getElementById('modalGroupMembers').value = Array.isArray(group?.members) ? group.members.join(', ') : '';
+    document.getElementById('groupSave').addEventListener('click', () => saveGroup(group?.id));
   }
 
-  function openGroupEditModal(name, membersStr) {
-    const html = `
-      <h3>Edit Group '${name}'</h3>
-      <label>Members (comma separated):
-        <input type="text" id="modalGroupMembers" value="${membersStr}">
-      </label><br><br>
-      <button onclick="saveGroupMembers('${name}')">Save</button>
-      <button onclick="closeModal()">Cancel</button>
-    `;
-    openModal(html);
+  async function saveGroup(id) {
+    const button = document.getElementById('groupSave');
+    const errorBox = document.getElementById('groupError');
+    errorBox.textContent = ''; button.disabled = true;
+    try {
+      const name = document.getElementById('modalGroupName').value.trim();
+      const parts = document.getElementById('modalGroupMembers').value.split(',').map(s => s.trim());
+      if (!name) throw new Error('Enter a group name.');
+      if (parts.some(s => !/^[0-9]+$/.test(s) || !Number.isSafeInteger(Number(s)) || Number(s) <= 0)) {
+        throw new Error('Enter positive student IDs separated by commas.');
+      }
+      const members = parts.map(Number);
+      if (new Set(members).size !== members.length) throw new Error('Remove duplicate student IDs.');
+      const result = await groupRequest(id == null ? '/finalise' : `/by-id/${id}`, {
+        method: id == null ? 'POST' : 'PUT',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({group_name: name, members})
+      });
+      closeModal(); await loadGroups(); showToast(result.message);
+    } catch (error) { errorBox.textContent = error.message; }
+    finally { button.disabled = false; }
   }
 
-  async function saveGroup() {
-    const name = document.getElementById("modalGroupName").value;
-    const members = document.getElementById("modalGroupMembers").value
-      .split(",").map(m => m.trim()).filter(m => m);
-
-    const payload = { group_name: name, members };
-
-    const res = await fetch(`${backend}/ui/groups/finalise`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload)
-    });
-
-    const result = await res.json();
-    closeModal();
-    await loadGroups();
-    showToast(result.message || "Group saved.");
-  }
-
-  async function saveGroupMembers(name) {
-    const members = document.getElementById("modalGroupMembers").value
-      .split(",").map(m => m.trim()).filter(m => m);
-
-    await fetch(`${backend}/ui/groups/delete/${name}`, { method: "DELETE" });
-
-    const payload = { group_name: name, members };
-
-    const res = await fetch(`${backend}/ui/groups/finalise`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload)
-    });
-
-    const result = await res.json();
-    closeModal();
-    await loadGroups();
-    showToast(result.message || "Group updated.");
-  }
-
-  async function deleteGroup(name) {
-    const res = await fetch(`${backend}/ui/groups/delete/${name}`, {
-      method: "DELETE"
-    });
-    const result = await res.json();
-    await loadGroups();
-    showToast(result.message || "Group deleted.");
+  async function deleteGroup(id) {
+    try {
+      if (!Number.isInteger(id)) throw new Error('Rebuild the backend and database, then reload groups to get their IDs.');
+      const result = await groupRequest(`/by-id/${id}`, {method: 'DELETE'});
+      await loadGroups(); showToast(result.message);
+    } catch (error) { showToast(error.message); }
   }
 
   /* ---------------------- RECOMMENDATIONS ---------------------- */
