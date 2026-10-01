@@ -1,65 +1,71 @@
-"""Shared Release 1 MCP server.
+"""
+Shared Release 1 MCP Server.
 
-This module hosts MCP tools contributed by all five student features.
+Uses MCP Python SDK 2.x.
 
-Feature-specific MCP tool implementations belong in:
-- tools/student1.py
-- tools/student2.py
-- tools/student3.py
-- tools/student4.py
-- tools/student5.py
+The server exposes the MCP tools contributed by each student
+feature over Streamable HTTP.
 
-The final shared server will register those modules and expose the resulting
-tools through one local MCP service.
+Endpoint:
+    http://localhost:5100/mcp
 """
 
-from mcp.server.fastmcp import FastMCP
+from mcp.server import MCPServer
 
-from tools.student1 import (
-    get_project_details,
-    get_project_tasks,
-    search_project_tasks,
+from tools.student1 import register_tools as register_student1_tools
+from tools.student2 import register_tools as register_student2_tools
+from tools.student3 import register_tools as register_student3_tools
+from tools.student4 import register_tools as register_student4_tools
+from tools.student5 import register_tools as register_student5_tools
+
+
+# =========================================================
+# MCP SERVER
+# =========================================================
+
+mcp = MCPServer(
+    "University Management MCP"
 )
 
 
-mcp = FastMCP("University Management MCP")
+# =========================================================
+# REGISTER STUDENT TOOLS
+# =========================================================
+
+register_student1_tools(mcp)
+register_student2_tools(mcp)
+register_student3_tools(mcp)
+register_student4_tools(mcp)
+register_student5_tools(mcp)
 
 
-AVAILABLE_TOOLS = [
-    "project_details",
-    "project_tasks",
-    "search_tasks",
-]
-
-
-@mcp.tool()
-def project_details(project_id: int):
-    return get_project_details(project_id)
-
-
-@mcp.tool()
-def project_tasks(project_id: int):
-    return get_project_tasks(project_id)
-
-
-@mcp.tool()
-def search_tasks(
-    project_id: int,
-    search_term: str
-):
-    return search_project_tasks(
-        project_id,
-        search_term
-    )
-
+# =========================================================
+# SERVER STARTUP
+# =========================================================
 
 if __name__ == "__main__":
+
     print("Starting University Management MCP Server...")
     print("Server status: RUNNING")
-    print("Interact with MCP tools from a second terminal.")
+    print("")
+    print("MCP version: 2.x")
+    print("Transport: Streamable HTTP")
+    print("MCP endpoint: http://localhost:5100/mcp")
+    print("")
     print("Available tools:")
+    print("- project_details")
+    print("- project_tasks")
+    print("- search_tasks")
+    print("- student2_search_skills")
+    print("- student2_get_listing")
+    print("- student3_group_requirements")
+    print("- student3_list_groups")
+    print("- student4_get_skill_profile")
+    print("- student5_find_campus_spaces")
+    print("")
 
-    for tool in AVAILABLE_TOOLS:
-        print(f"- {tool}")
-
-    mcp.run()
+    mcp.run(
+        transport="streamable-http",
+        host="0.0.0.0",
+        port=5100,
+    )

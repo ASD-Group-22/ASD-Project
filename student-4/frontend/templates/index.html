@@ -142,6 +142,33 @@
         </section>
 
         <section>
+        <h2>MCP Skill Profile Tool</h2>
+
+        <button onclick="runMcpTool()">
+            Get Profile via MCP
+        </button>
+
+        <pre id="mcpDisplay">No MCP result yet.</pre>
+        </section>
+
+        <section>
+            <h2>Ask Skill Profile RAG</h2>
+
+            <label for="ragQuestion">Question</label>
+            <input
+                id="ragQuestion"
+                type="text"
+                placeholder="What skills and weaknesses does this student have?"
+            >
+
+            <button onclick="askRag()">
+                Ask RAG
+            </button>
+
+            <pre id="ragDisplay">No RAG answer yet.</pre>
+        </section>
+
+        <section>
 
             <h2>Current Profile</h2>
 
@@ -470,6 +497,67 @@ No profile loaded.
             }
         }
 
+    async function runMcpTool() {
+        const profileId = Number(document.getElementById("profileId").value);
+        const display = document.getElementById("mcpDisplay");
+
+        if (!Number.isInteger(profileId) || profileId <= 0) {
+            display.textContent = "Enter a valid Profile ID first.";
+            return;
+        }
+
+        display.textContent = "Calling MCP tool...";
+
+        try {
+            const response = await fetch(`/profiles/${profileId}/mcp`, {
+                method: "POST"
+            });
+            const data = await response.json();
+
+            display.textContent = JSON.stringify(data, null, 2);
+            document.getElementById("status").textContent = response.ok
+                ? "MCP tool returned a result."
+                : (data.error || "MCP request failed.");
+        } catch (error) {
+            display.textContent = `MCP request failed: ${error.message}`;
+        }
+    }
+
+    async function askRag() {
+        const profileId = Number(document.getElementById("profileId").value);
+        const question = document.getElementById("ragQuestion").value.trim();
+        const display = document.getElementById("ragDisplay");
+
+        if (!Number.isInteger(profileId) || profileId <= 0 || !question) {
+            display.textContent = "Enter a valid Profile ID and question.";
+            return;
+        }
+
+        display.textContent = "Searching Skill Profile sources...";
+
+        try {
+            const response = await fetch(`/profiles/${profileId}/rag`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ question })
+            });
+            const data = await response.json();
+
+            if (!response.ok) {
+                display.textContent = data.error || "RAG request failed.";
+                return;
+            }
+
+            display.textContent = [
+                data.answer || "Insufficient context to answer.",
+                `Confidence: ${data.confidence_category || "unknown"}`,
+                `Sources: ${JSON.stringify(data.citations || [], null, 2)}`
+            ].join("\n\n");
+        } catch (error) {
+            display.textContent = `RAG request failed: ${error.message}`;
+        }
+    }
+    
     </script>
 
 </body>

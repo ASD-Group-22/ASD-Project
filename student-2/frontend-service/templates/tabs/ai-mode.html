@@ -321,14 +321,28 @@
                 wireHumanReview();
 
             } catch (error) {
+                const errorMessage = String(
+                    error?.message || 'Request failed'
+                );
+
+                const showOllamaHint =
+                    /ollama|model|connect|connection|unavailable|timeout|timed out/i
+                        .test(errorMessage);
+
+                const ollamaHint = showOllamaHint
+                    ? `
+                        <p class="muted">
+                            Check that Ollama is running and the configured
+                            model names are installed.
+                        </p>
+                    `
+                    : '';
+
                 resultPanel.innerHTML = `
                     <p class="error">
-                        ${escapeHtml(error.message)}
+                        ${escapeHtml(errorMessage)}
                     </p>
-
-                    <p class="muted">
-                        Normal CRUD still works if Ollama is unavailable. Check Ollama and the installed model names.
-                    </p>
+                    ${ollamaHint}
                 `;
             }
         });

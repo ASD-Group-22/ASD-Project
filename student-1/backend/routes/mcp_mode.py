@@ -1,249 +1,249 @@
-import json
+from flask import Blueprint, jsonify, request
 
-from flask import Blueprint, request
-import requests
-
-from services.database_api import (
-    get_project_by_id_response,
-    get_tasks_by_project_response
+from services.mcp_api import (
+    get_project,
+    get_project_tasks,
+    mcp_is_enabled,
+    search_project_tasks,
 )
 
 
 mcp_bp = Blueprint(
     "mcp_mode",
-    __name__
+    __name__,
 )
 
 
-# ---------------------------------------------------------
-# MCP MODE
-# ---------------------------------------------------------
+def _disabled_response():
 
-def mcp_mode_is_enabled(req) -> bool:
-
-    import os
-
-    enabled = os.getenv(
-        "MCP_ENABLED",
-        "true"
-    ).strip().lower() in (
-        "1",
-        "true",
-        "yes",
-        "on"
-    )
-
-    if not enabled:
-        return False
-
-    mode_header = req.headers.get(
-        "X-MCP-Mode",
-        "on"
-    ).strip().lower()
-
-    return mode_header in (
-        "1",
-        "true",
-        "yes",
-        "on"
-    )
+    return jsonify({
+        "status": "disabled",
+        "error": "MCP Mode is disabled",
+    }), 403
 
 
-def mcp_disabled_response():
+# =========================================================
+# MCP STATUS
+# =========================================================
 
-    return (
-        "<p>MCP Mode is disabled.</p>",
-        403
-    )
+@mcp_bp.get("/mcp/status")
+def mcp_status():
 
-
-def mcp_render_json(title: str, payload):
-
-    return (
-        f"<h3>{title}</h3>"
-        f"<pre>{json.dumps(payload, indent=2)}</pre>"
-    )
+    return jsonify({
+        "status": (
+            "enabled"
+            if mcp_is_enabled()
+            else "disabled"
+        ),
+        "mcp_enabled": mcp_is_enabled(),
+    }), 200
 
 
 # =========================================================
 # PROJECT DETAILS
 # =========================================================
 
-@mcp_bp.post(
-    "/mcp/project-details"
-)
+@mcp_bp.post("/mcp/project-details")
 def mcp_project_details():
 
-    if not mcp_mode_is_enabled(request):
-        return mcp_disabled_response()
+    if not mcp_is_enabled():
+        return _disabled_response()
 
-    project_id = request.form.get(
-        "project_id",
-        ""
+    payload = (
+        request.get_json(silent=True)
+        or request.form
+    )
+
+    project_id = str(
+        payload.get(
+            "project_id",
+            "",
+        )
     ).strip()
 
     if not project_id:
-        return (
-            "<p>project_id is required.</p>",
-            400
-        )
+
+        return jsonify({
+            "status": "error",
+            "error": "project_id is required",
+        }), 400
 
     try:
 
-        response = get_project_by_id_response(
-            project_id
+        result = get_project(
+            int(project_id)
         )
 
-        if response.status_code == 404:
+        if (
+            result.get("status") == "error"
+            and result.get("error")
+            == "Project not found"
+        ):
+            return jsonify(result), 404
 
-            return mcp_render_json(
-                "MCP Tool: project_details",
-                {
-                    "error": "Project not found"
-                }
-            ), 404
-
-        response.raise_for_status()
-
-        return mcp_render_json(
-            "MCP Tool: project_details",
-            response.json()
-        ), 200
-
-    except requests.RequestException as exc:
-
-        return (
-            "<p>MCP project_details failed.</p>"
-            f"<pre>{exc}</pre>",
-            503
+        status_code = (
+            200
+            if result.get("status") == "success"
+            else 502
         )
+
+        return jsonify(result), status_code
+
+    except (ValueError, TypeError) as exc:
+
+        return jsonify({
+            "status": "error",
+            "error": str(exc),
+        }), 400
+
+    except Exception as exc:
+
+        return jsonify({
+            "status": "error",
+            "error": f"MCP request failed: {exc}",
+        }), 503
 
 
 # =========================================================
 # PROJECT TASKS
 # =========================================================
 
-@mcp_bp.post(
-    "/mcp/project-tasks"
-)
+@mcp_bp.post("/mcp/project-tasks")
 def mcp_project_tasks():
 
-    if not mcp_mode_is_enabled(request):
-        return mcp_disabled_response()
+    if not mcp_is_enabled():
+        return _disabled_response()
 
-    project_id = request.form.get(
-        "project_id",
-        ""
+    payload = (
+        request.get_json(silent=True)
+        or request.form
+    )
+
+    project_id = str(
+        payload.get(
+            "project_id",
+            "",
+        )
     ).strip()
 
     if not project_id:
-        return (
-            "<p>project_id is required.</p>",
-            400
-        )
+
+        return jsonify({
+            "status": "error",
+            "error": "project_id is required",
+        }), 400
 
     try:
 
-        response = get_tasks_by_project_response(
-            project_id
+        result = get_project_tasks(
+            int(project_id)
         )
 
-        if response.status_code == 404:
+        if (
+            result.get("status") == "error"
+            and result.get("error")
+            == "Project not found"
+        ):
+            return jsonify(result), 404
 
-            return mcp_render_json(
-                "MCP Tool: project_tasks",
-                {
-                    "error": "Project not found"
-                }
-            ), 404
-
-        response.raise_for_status()
-
-        return mcp_render_json(
-            "MCP Tool: project_tasks",
-            response.json()
-        ), 200
-
-    except requests.RequestException as exc:
-
-        return (
-            "<p>MCP project_tasks failed.</p>"
-            f"<pre>{exc}</pre>",
-            503
+        status_code = (
+            200
+            if result.get("status") == "success"
+            else 502
         )
+
+        return jsonify(result), status_code
+
+    except (ValueError, TypeError) as exc:
+
+        return jsonify({
+            "status": "error",
+            "error": str(exc),
+        }), 400
+
+    except Exception as exc:
+
+        return jsonify({
+            "status": "error",
+            "error": f"MCP request failed: {exc}",
+        }), 503
 
 
 # =========================================================
 # SEARCH TASKS
 # =========================================================
 
-@mcp_bp.post(
-    "/mcp/search-tasks"
-)
+@mcp_bp.post("/mcp/search-tasks")
 def mcp_search_tasks():
 
-    if not mcp_mode_is_enabled(request):
-        return mcp_disabled_response()
+    if not mcp_is_enabled():
+        return _disabled_response()
 
-    project_id = request.form.get(
-        "project_id",
-        ""
+    payload = (
+        request.get_json(silent=True)
+        or request.form
+    )
+
+    project_id = str(
+        payload.get(
+            "project_id",
+            "",
+        )
     ).strip()
 
-    search_term = request.form.get(
-        "search_term",
-        ""
-    ).strip().lower()
+    search_term = str(
+        payload.get(
+            "search_term",
+            "",
+        )
+    ).strip()
 
     if not project_id:
-        return (
-            "<p>project_id is required.</p>",
-            400
-        )
+
+        return jsonify({
+            "status": "error",
+            "error": "project_id is required",
+        }), 400
 
     if not search_term:
-        return (
-            "<p>search_term is required.</p>",
-            400
-        )
+
+        return jsonify({
+            "status": "error",
+            "error": "search_term is required",
+        }), 400
 
     try:
 
-        response = get_tasks_by_project_response(
-            project_id
+        result = search_project_tasks(
+            int(project_id),
+            search_term,
         )
 
-        if response.status_code == 404:
+        if (
+            result.get("status") == "error"
+            and result.get("error")
+            == "Project not found"
+        ):
+            return jsonify(result), 404
 
-            return mcp_render_json(
-                "MCP Tool: search_tasks",
-                {
-                    "error": "Project not found"
-                }
-            ), 404
-
-        response.raise_for_status()
-
-        tasks = response.json()
-
-        matching_tasks = [
-            task
-            for task in tasks
-            if search_term in task.get(
-                "task",
-                ""
-            ).lower()
-        ]
-
-        return mcp_render_json(
-            "MCP Tool: search_tasks",
-            matching_tasks
-        ), 200
-
-    except requests.RequestException as exc:
-
-        return (
-            "<p>MCP search_tasks failed.</p>"
-            f"<pre>{exc}</pre>",
-            503
+        status_code = (
+            200
+            if result.get("status") == "success"
+            else 502
         )
+
+        return jsonify(result), status_code
+
+    except (ValueError, TypeError) as exc:
+
+        return jsonify({
+            "status": "error",
+            "error": str(exc),
+        }), 400
+
+    except Exception as exc:
+
+        return jsonify({
+            "status": "error",
+            "error": f"MCP request failed: {exc}",
+        }), 503

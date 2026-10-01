@@ -31,7 +31,11 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Create CI environment file
-        run: cp student-2/.env.example student-2/.env
+        run: |
+          cp student-2/.env.example student-2/.env
+          sed -i 's/^AI_ENABLED=.*/AI_ENABLED=false/' student-2/.env
+          sed -i 's/^MCP_ENABLED=.*/MCP_ENABLED=false/' student-2/.env
+          sed -i 's/^RAG_ENABLED=.*/RAG_ENABLED=false/' student-2/.env
 
       - name: Verify Docker Compose
         run: docker compose version
@@ -61,7 +65,11 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Create CI environment file
-        run: cp student-2/.env.example student-2/.env
+        run: |
+          cp student-2/.env.example student-2/.env
+          sed -i 's/^AI_ENABLED=.*/AI_ENABLED=false/' student-2/.env
+          sed -i 's/^MCP_ENABLED=.*/MCP_ENABLED=false/' student-2/.env
+          sed -i 's/^RAG_ENABLED=.*/RAG_ENABLED=false/' student-2/.env
 
       - name: Start Student 2 services
         run: |
@@ -69,6 +77,23 @@ jobs:
             --env-file student-2/.env \
             -f "${COMPOSE_FILE}" \
             up -d --build
+
+      - name: Verify Release 1 services are disabled in CI
+        shell: bash
+        run: |
+          set -e
+
+          ai_enabled=$(docker compose --env-file student-2/.env -f "${COMPOSE_FILE}" exec -T student-2-skill-exchange-backend printenv AI_ENABLED)
+          mcp_enabled=$(docker compose --env-file student-2/.env -f "${COMPOSE_FILE}" exec -T student-2-skill-exchange-backend printenv MCP_ENABLED)
+          rag_enabled=$(docker compose --env-file student-2/.env -f "${COMPOSE_FILE}" exec -T student-2-skill-exchange-backend printenv RAG_ENABLED)
+
+          echo "AI_ENABLED=${ai_enabled}"
+          echo "MCP_ENABLED=${mcp_enabled}"
+          echo "RAG_ENABLED=${rag_enabled}"
+
+          test "${ai_enabled}" = "false"
+          test "${mcp_enabled}" = "false"
+          test "${rag_enabled}" = "false"
 
       - name: Wait for services
         shell: bash
@@ -158,6 +183,9 @@ jobs:
 
           - Student 2 Docker images built successfully.
           - Student 2 Compose configuration validated.
+          - AI Mode was verified disabled during CI.
+          - MCP Mode was verified disabled during CI.
+          - RAG Mode was verified disabled during CI.
           - Frontend health check returned HTTP 200.
           - Backend health check returned HTTP 200.
           - Database service health check returned HTTP 200.

@@ -8,6 +8,7 @@ from routes import (
 )
 
 from routes.mcp_mode import mcp_bp
+from routes.rag_mode import rag_bp
 
 
 app = Flask(__name__)
@@ -20,6 +21,7 @@ app.register_blueprint(projects_bp)
 app.register_blueprint(tasks_bp)
 app.register_blueprint(ai_bp)
 app.register_blueprint(mcp_bp)
+app.register_blueprint(rag_bp)
 
 
 # ============================================================

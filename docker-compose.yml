@@ -19,7 +19,7 @@ services:
       context: ./student-1/database
     container_name: student-1-database-service
     ports:
-      - "6001:6001"
+      - "${STUDENT1_DB_HOST_PORT:-6001}:6001"
     volumes:
       - student_1_database_data:/app/data
     restart: unless-stopped
@@ -36,6 +36,12 @@ services:
       OLLAMA_BASE_URL: "${STUDENT1_OLLAMA_BASE_URL:-http://host.docker.internal:11434}"
       OLLAMA_MODEL: "${OLLAMA_MODEL:-qwen3:8b}"
       OLLAMA_REVIEW_MODEL: "${OLLAMA_REVIEW_MODEL:-llama3.1:8b}"
+      MCP_ENABLED: "true"
+      RAG_ENABLED: "true"
+      MCP_URL: "http://host.docker.internal:5100/mcp"
+      RAG_SERVICE_URL: "http://host.docker.internal:5003"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     depends_on:
       - student-1-database-service
     restart: unless-stopped
@@ -78,6 +84,11 @@ services:
       - "5202:5001"
     environment:
       DATABASE_SERVICE_URL: http://student-2-skill-exchange-database:5002
+      AI_ENABLED: "true"
+      MCP_ENABLED: "true"
+      MCP_URL: "http://host.docker.internal:5100/mcp"
+      RAG_ENABLED: "true"
+      RAG_SERVICE_URL: "http://host.docker.internal:5003"
       OLLAMA_BASE_URL: "${STUDENT2_OLLAMA_BASE_URL:-http://host.docker.internal:11434/v1}"
       OLLAMA_MODEL: "${OLLAMA_MODEL:-qwen3:8b}"
       OLLAMA_REVIEW_MODEL: "${OLLAMA_REVIEW_MODEL:-llama3.1:8b}"
@@ -114,7 +125,7 @@ services:
     volumes:
       - ./student-3/database-service/data:/app/data
     ports:
-      - "6000:6000"
+      - "${STUDENT3_DB_HOST_PORT:-6000}:6000"
     restart: unless-stopped
 
   student-3-backend:
@@ -129,6 +140,11 @@ services:
       OLLAMA_URL: "${STUDENT3_OLLAMA_URL:-http://host.docker.internal:11434}"
       OLLAMA_MODEL: "${STUDENT3_OLLAMA_MODEL:-llama3.1:8b}"
       PROMPT_ROOT: "/prompts"
+      AI_ENABLED: "true"
+      MCP_ENABLED: "true"
+      RAG_ENABLED: "true"
+      MCP_URL: "http://host.docker.internal:5100/mcp"
+      RAG_SERVICE_URL: "http://host.docker.internal:5003"
     extra_hosts:
       - "host.docker.internal:host-gateway"
     depends_on:
@@ -169,6 +185,10 @@ services:
       DATABASE_SERVICE_URL: "http://student-4-database:5004"
       OLLAMA_URL: "http://host.docker.internal:11434"
       OLLAMA_MODEL: "${OLLAMA_MODEL:-qwen3:8b}"
+      MCP_ENABLED: "true"
+      RAG_ENABLED: "true"
+      MCP_URL: "http://host.docker.internal:5100/mcp"
+      RAG_ANSWER_ENDPOINT: "http://host.docker.internal:5003/answer"
     extra_hosts:
       - "host.docker.internal:host-gateway"
     depends_on:
@@ -213,7 +233,12 @@ services:
     environment:
       DATABASE_SERVICE_URL: "http://student-5-database:5000"
       OLLAMA_URL: "http://host.docker.internal:11434"
-      OLLAMA_MODEL: "qwen3:8b"
+      OLLAMA_MODEL: "qwen2.5:0.5b"
+      AI_MODE: "${AI_MODE:-true}"
+      MCP_MODE: "${MCP_MODE:-true}"
+      RAG_MODE: "${RAG_MODE:-true}"
+      MCP_SERVER_URL: "${MCP_SERVER_URL:-http://host.docker.internal:5100/mcp}"
+      RAG_SERVER_URL: "${RAG_SERVER_URL:-http://host.docker.internal:5003}"
     extra_hosts:
       - "host.docker.internal:host-gateway"
     depends_on:

@@ -1,5 +1,6 @@
 <!doctype html>
 <html lang="en">
+
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
@@ -7,6 +8,7 @@
   <script src="https://unpkg.com/htmx.org@2.0.4"></script>
   <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}" />
 </head>
+
 <body data-backend-url="{{ backend_url }}">
   <header class="topbar">
     <div><strong>University Management</strong><span> / AI Campus Space Finder</span></div>
@@ -16,21 +18,32 @@
     <section class="hero">
       <div>
         <h1>Find a campus space that actually fits your needs.</h1>
-        <p>Describe your group size, noise preference, facilities or accessibility needs. Ai takes the request, and the backend searches ONLY real stored campus spaces.</p>
+        <p>Describe your group size, noise preference, facilities or accessibility needs. Ai takes the request, and the
+          backend searches ONLY real stored campus spaces.</p>
       </div>
-      <div class="status-card"><span id="serviceDot" class="dot"></span><span id="serviceText">Checking services…</span></div>
+      <div class="status-card"><span id="serviceDot" class="dot"></span><span id="serviceText">Checking services…</span>
+      </div>
     </section>
 
     <section class="panel ai-panel">
       <div class="panel-heading">
-        <div><p class="eyebrow">AI MODE</p><h2>Natural-language finder</h2></div>
+        <div>
+          <p class="eyebrow">AI MODE</p>
+          <h2>Natural-language finder</h2>
+        </div>
       </div>
       <form id="aiForm">
-        <textarea id="query" rows="3" placeholder="e.g. I need a quiet room for 4 people with a whiteboard and power outlets"></textarea>
+        <textarea id="query" rows="3"
+          placeholder="e.g. I need a quiet room for 4 people with a whiteboard and power outlets"></textarea>
         <div class="examples">
-          <button type="button" data-example="I need a quiet room for 4 people with a whiteboard and power outlets">Quiet group study</button>
-          <button type="button" data-example="Find a wheelchair accessible study room for 3 people with a monitor">Accessible room</button>
-          <button type="button" data-example="I need a quiet room for 20 people with 1000 monitors and a whiteboard">Show adaptation</button>
+          <button type="button"
+            data-example="I need a quiet room for 4 people with a whiteboard and power outlets">Quiet group
+            study</button>
+          <button type="button"
+            data-example="Find a wheelchair accessible study room for 3 people with a monitor">Accessible room</button>
+          <button type="button"
+            data-example="I need a quiet room for 20 people with 1000 monitors and a whiteboard">Show
+            adaptation</button>
         </div>
         <button class="primary" type="submit">Find spaces with AI</button>
       </form>
@@ -38,14 +51,80 @@
       <div id="recommendations" class="cards"></div>
     </section>
 
+    <section class="panel release1-panel">
+      <div class="panel-heading">
+        <div>
+          <p class="eyebrow">MCP MODE</p>
+          <h2>Shared Campus Space Tool</h2>
+        </div>
+      </div>
+      <p class="helper">Runs the namespaced <code>student5_find_campus_spaces</code> tool on the shared local MCP server
+        through this feature's backend/API.</p>
+      <form id="mcpForm" class="release-form">
+        <div class="filters mcp-filters">
+          <input id="mcpBuilding" type="number" min="1" step="1" placeholder="Building (optional)" />
+          <select id="mcpNoise">
+            <option value="">Any noise level</option>
+            <option>Silent</option>
+            <option>Quiet</option>
+            <option>Moderate</option>
+            <option>Collaborative</option>
+            <option>Loud</option>
+          </select>
+          <input id="mcpCapacity" type="number" min="1" placeholder="Min capacity" />
+        </div>
+        <input id="mcpFacilities" class="wide-input" placeholder="Required facilities, comma separated (optional)" />
+        <label class="check-row"><input id="mcpAccessible" type="checkbox" /> Accessible space required</label>
+        <button class="primary" type="submit">Run MCP tool</button>
+      </form>
+      <div id="mcpMessage" class="message hidden"></div>
+      <div id="mcpResults" class="cards"></div>
+    </section>
+
+    <section class="panel release1-panel rag-panel">
+      <div class="panel-heading">
+        <div>
+          <p class="eyebrow">RAG MODE</p>
+          <h2>Grounded Campus Space Assistant</h2>
+        </div>
+      </div>
+      <p class="helper">Answers from retrieved trusted Campus Space Finder context and displays source citations plus a
+        confidence category.</p>
+      <form id="ragForm">
+        <textarea id="ragQuery" rows="3"
+          placeholder="e.g. What does the AI Campus Space Finder not provide?"></textarea>
+        <div class="examples">
+          <button type="button" data-rag-example="What does the AI Campus Space Finder not provide?">Feature
+            boundaries</button>
+          <button type="button" data-rag-example="Which stored campus spaces mention a whiteboard?">Grounded space
+            query</button>
+          <button type="button" data-rag-example="What are the current helicopter parking prices on Mars?">Insufficient
+            context</button>
+        </div>
+        <button class="primary" type="submit">Ask grounded RAG</button>
+      </form>
+      <div id="ragResult" class="rag-result hidden" aria-live="polite"></div>
+    </section>
+
+
     <section class="panel">
       <div class="panel-heading">
-        <div><p class="eyebrow">CRUD</p><h2>Manage campus spaces</h2></div>
+        <div>
+          <p class="eyebrow">CRUD</p>
+          <h2>Manage campus spaces</h2>
+        </div>
         <button class="primary" id="addBtn">+ Add space</button>
       </div>
       <div class="filters">
         <input id="filterText" placeholder="Search name, room or building" />
-        <select id="filterNoise"><option value="">All noise levels</option><option>Silent</option><option>Quiet</option><option>Moderate</option><option>Collaborative</option><option>Loud</option></select>
+        <select id="filterNoise">
+          <option value="">All noise levels</option>
+          <option>Silent</option>
+          <option>Quiet</option>
+          <option>Moderate</option>
+          <option>Collaborative</option>
+          <option>Loud</option>
+        </select>
         <input id="filterCapacity" type="number" min="1" placeholder="Min capacity" />
       </div>
       <div id="spaceGrid" class="cards"></div>
@@ -54,7 +133,9 @@
 
   <dialog id="spaceDialog">
     <form id="spaceForm" method="dialog">
-      <div class="dialog-heading"><h2 id="dialogTitle">Add space</h2><button type="button" class="icon" id="closeDialog">×</button></div>
+      <div class="dialog-heading">
+        <h2 id="dialogTitle">Add space</h2><button type="button" class="icon" id="closeDialog">×</button>
+      </div>
       <input type="hidden" id="space_id" />
       <div class="form-grid">
         <label>Space name<input id="space_name" required /></label>
@@ -63,19 +144,28 @@
         <label>Room number<input id="room_number" required /></label>
         <label>Maximum capacity<input id="max_capacity" type="number" min="1" required /></label>
         <label>Space type<input id="space_type" required /></label>
-        <label>Noise level<select id="noise_level" required><option>Silent</option><option>Quiet</option><option>Moderate</option><option>Collaborative</option><option>Loud</option></select></label>
+        <label>Noise level<select id="noise_level" required>
+            <option>Silent</option>
+            <option>Quiet</option>
+            <option>Moderate</option>
+            <option>Collaborative</option>
+            <option>Loud</option>
+          </select></label>
         <label>Accessibility<input id="accessibility" /></label>
         <label>Opening time<input id="opening_time" type="time" value="08:00" /></label>
         <label>Closing time<input id="closing_time" type="time" value="22:00" /></label>
-        <label class="full">Facilities (comma separated)<input id="facilities" placeholder="Wi-Fi, Whiteboard, Power Outlets" /></label>
+        <label class="full">Facilities (comma separated)<input id="facilities"
+            placeholder="Wi-Fi, Whiteboard, Power Outlets" /></label>
         <label class="full">Image URL<input id="image_url" /></label>
         <label class="full">Description<textarea id="description" rows="3"></textarea></label>
       </div>
-      <div class="dialog-actions"><button type="button" class="ghost" id="cancelDialog">Cancel</button><button class="primary" type="submit">Save space</button></div>
+      <div class="dialog-actions"><button type="button" class="ghost" id="cancelDialog">Cancel</button><button
+          class="primary" type="submit">Save space</button></div>
     </form>
   </dialog>
 
-  <script>window.BACKEND_URL = {{ backend_url|tojson }};</script>
+  <script>window.BACKEND_URL = {{ backend_url | tojson }};</script>
   <script src="{{ url_for('static', filename='app.js') }}"></script>
 </body>
+
 </html>

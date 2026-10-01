@@ -1,24 +1,24 @@
 """Shared Release 1 RAG retrieval pipeline.
 
-This module contains common retrieval and grounding infrastructure shared
-across the five student features.
+This module contains the common RAG infrastructure shared across
+the student features.
 
-Feature-specific data acquisition belongs in sources/student1.py through
-sources/student5.py.
+Feature-specific data acquisition belongs in:
 
-Shared responsibilities may include:
-- corpus construction
-- chunk preparation
-- indexing
-- retrieval
-- grounding context preparation
-- citation metadata
-- confidence handling
+    sources/student1.py
+    sources/student2.py
+    sources/student3.py
+    sources/student4.py
+    sources/student5.py
+
+The shared RAG server indexes the trusted documents supplied by
+each feature source into one shared Chroma collection.
 """
 
 import hashlib
 import json
 import os
+import re
 import time
 import uuid
 from datetime import datetime, timezone
@@ -28,7 +28,25 @@ from typing import Any
 import chromadb
 import requests
 
-from sources.student1 import build_chunks as build_student1_chunks
+from sources.student1 import (
+    build_chunks as build_student1_chunks
+)
+
+from sources.student2 import (
+    get_documents as get_student2_documents
+)
+
+from sources.student3 import (
+    get_documents as get_student3_documents
+)
+
+from sources.student4 import (
+    get_documents as get_student4_documents
+)
+
+from sources.student5 import (
+    get_documents as get_student5_documents
+)
 
 
 BASE_DIR = Path(__file__).resolve().parent
@@ -58,6 +76,7 @@ EMBED_VECTOR_SIZE = 256
 
 
 _collection = None
+
 _last_corpus_chunks = []
 
 
@@ -93,7 +112,11 @@ def embed_texts(
         ).lower().split()
 
         if not tokens:
-            vectors.append(values)
+
+            vectors.append(
+                values
+            )
+
             continue
 
         for token in tokens:
@@ -102,7 +125,9 @@ def embed_texts(
                 token.encode("utf-8")
             ).digest()
 
-            for i, byte in enumerate(digest):
+            for i, byte in enumerate(
+                digest
+            ):
 
                 index = (
                     i % EMBED_VECTOR_SIZE
@@ -124,7 +149,9 @@ def embed_texts(
                 for value in values
             ]
 
-        vectors.append(values)
+        vectors.append(
+            values
+        )
 
     return vectors
 
@@ -137,11 +164,13 @@ def get_collection():
 
     global _collection
 
-    if _collection is None:
-
-        client = chromadb.PersistentClient(
-            path=str(CHROMA_PATH)
+    client = chromadb.PersistentClient(
+        path=str(
+            CHROMA_PATH
         )
+    )
+
+    if _collection is None:
 
         _collection = (
             client.get_or_create_collection(
@@ -157,7 +186,9 @@ def reset_collection():
     global _collection
 
     client = chromadb.PersistentClient(
-        path=str(CHROMA_PATH)
+        path=str(
+            CHROMA_PATH
+        )
     )
 
     try:
@@ -196,7 +227,8 @@ def append_audit(
     )
 
     duration_ms = int(
-        (time.time() - start_time) * 1000
+        (time.time() - start_time)
+        * 1000
     )
 
     record = {
@@ -211,7 +243,8 @@ def append_audit(
         "tool_output": tool_output,
         "timestamp": now_iso(),
         "duration_ms": duration_ms,
-        "validation_status": validation_status,
+        "validation_status":
+            validation_status,
         "outcome": outcome
     }
 
@@ -227,6 +260,111 @@ def append_audit(
 
 
 # =========================================================
+# SOURCE NORMALISATION
+# =========================================================
+
+def normalise_student2_document(
+    document: dict
+) -> dict:
+
+    """Convert a Student 2 RAG document into the shared chunk format."""
+
+    return {
+        "chunk_id": document.get(
+            "chunk_id"
+        ),
+
+        "source_id": document.get(
+            "source_id",
+            "student2"
+        ),
+
+        "authority_tier": document.get(
+            "authority_tier",
+            "tier_1"
+        ),
+
+        "text": document.get(
+            "text",
+            ""
+        ),
+
+        "metadata": {
+            "source_type": "student2_api",
+            "student": "student2",
+            "feature": document.get(
+                "feature",
+                "student-2-skill-exchange"
+            ),
+            "record_type": document.get(
+                "record_type",
+                "listing"
+            ),
+            "listing_id": document.get(
+                "listing_id"
+            ),
+            "student_id": document.get(
+                "student_id",
+                ""
+            ),
+            "student_name": document.get(
+                "student_name",
+                ""
+            ),
+            "skill_offered": document.get(
+                "skill_offered",
+                ""
+            ),
+            "skill_wanted": document.get(
+                "skill_wanted",
+                ""
+            ),
+            "availability": document.get(
+                "availability",
+                ""
+            ),
+            "status": document.get(
+                "status",
+                ""
+            ),
+            "error": False
+        },
+
+        "indexed_at": now_iso()
+    }
+
+
+def make_source_error_chunk(
+    source_name: str,
+    source_type: str,
+    error
+) -> dict:
+
+    return {
+        "chunk_id": (
+            f"{source_name}_source_error"
+        ),
+
+        "source_id": source_name,
+
+        "authority_tier": "tier_1",
+
+        "text": (
+            f"{source_name} source is currently "
+            f"unavailable: {error}"
+        ),
+
+        "metadata": {
+            "source_type": source_type,
+            "student": source_name,
+            "error": True
+        },
+
+        "indexed_at": now_iso()
+    }
+
+
+# =========================================================
 # CORPUS
 # =========================================================
 
@@ -234,42 +372,307 @@ def build_corpus():
 
     chunks = []
 
-    student1 = (
-        build_student1_chunks()
-    )
+    # -----------------------------------------------------
+    # Student 1
+    # -----------------------------------------------------
 
-    if student1.get("status") == "success":
+    try:
 
-        chunks.extend(
-            student1.get(
-                "chunks",
-                []
+        student1 = (
+            build_student1_chunks()
+        )
+
+        if student1.get(
+            "status"
+        ) == "success":
+
+            student1_chunks = (
+                student1.get(
+                    "chunks",
+                    []
+                )
+            )
+
+            chunks.extend(
+                student1_chunks
+            )
+
+        else:
+
+            chunks.append(
+                make_source_error_chunk(
+                    "student1",
+                    "student1_api",
+                    student1.get(
+                        "error",
+                        "unknown error"
+                    )
+                )
+            )
+
+    except Exception as exc:
+
+        chunks.append(
+            make_source_error_chunk(
+                "student1",
+                "student1_api",
+                str(exc)
             )
         )
 
-    else:
+    # -----------------------------------------------------
+    # Student 2
+    # -----------------------------------------------------
 
-        chunks.append({
-            "chunk_id": "student1_source_error",
-            "source_id": "student1",
-            "authority_tier": "tier_1",
-            "text": (
-                "Student 1 source is "
-                "currently unavailable: "
-                f"{student1.get('error')}"
-            ),
-            "metadata": {
-                "source_type": "database_service",
-                "student": "student1",
-                "error": True
-            },
-            "indexed_at": now_iso()
-        })
+    try:
+
+        student2_documents = (
+            get_student2_documents()
+        )
+
+        if not isinstance(
+            student2_documents,
+            list
+        ):
+
+            raise ValueError(
+                "Student 2 source returned "
+                "an invalid document list"
+            )
+
+        for document in (
+            student2_documents
+        ):
+
+            if not isinstance(
+                document,
+                dict
+            ):
+
+                continue
+
+            chunk = (
+                normalise_student2_document(
+                    document
+                )
+            )
+
+            if not chunk.get(
+                "chunk_id"
+            ):
+
+                continue
+
+            if not chunk.get(
+                "text"
+            ):
+
+                continue
+
+            chunks.append(
+                chunk
+            )
+
+    except Exception as exc:
+
+        chunks.append(
+            make_source_error_chunk(
+                "student2",
+                "student2_api",
+                str(exc)
+            )
+        )
+
+    # -----------------------------------------------------
+    # Student 3
+    # -----------------------------------------------------
+
+    try:
+
+        student3_documents = (
+            get_student3_documents()
+        )
+
+        if not isinstance(
+            student3_documents,
+            list
+        ):
+
+            raise ValueError(
+                "Student 3 source returned "
+                "an invalid document list"
+            )
+
+        for document in (
+            student3_documents
+        ):
+
+            if not isinstance(
+                document,
+                dict
+            ):
+
+                continue
+
+            if not document.get(
+                "chunk_id"
+            ):
+
+                continue
+
+            if not document.get(
+                "text"
+            ):
+
+                continue
+
+            chunks.append(
+                document
+            )
+
+    except Exception as exc:
+
+        chunks.append(
+            make_source_error_chunk(
+                "student3",
+                "student3_api",
+                str(exc)
+            )
+        )
+
+    # -----------------------------------------------------
+    # Student 4
+    # -----------------------------------------------------
+
+    try:
+        student4_documents = (
+            get_student4_documents()
+        )
+
+        if not isinstance(
+            student4_documents,
+            list
+        ):
+            raise ValueError(
+                "Student 4 source returned "
+                "an invalid document list"
+            )
+
+        for document in (
+            student4_documents
+        ):
+            if not isinstance(
+                document,
+                dict
+            ):
+                continue
+
+            if not document.get(
+                "chunk_id"
+            ):
+                continue
+
+            if not document.get(
+                "text"
+            ):
+                continue
+
+            chunks.append(
+                document
+            )
+
+    except Exception as exc:
+        chunks.append(
+            make_source_error_chunk(
+                "student4",
+                "student4_api",
+                str(exc)
+            )
+        )
+
+
+    # -----------------------------------------------------
+    # Student 5
+    # -----------------------------------------------------
+
+    try:
+
+        student5_documents = (
+            get_student5_documents()
+        )
+
+        if not isinstance(
+            student5_documents,
+            list
+        ):
+
+            raise ValueError(
+                "Student 5 source returned "
+                "an invalid document list"
+            )
+
+        for document in (
+            student5_documents
+        ):
+
+            if not isinstance(
+                document,
+                dict
+            ):
+
+                continue
+
+            source_id = str(
+                document.get(
+                    "source_id",
+                    ""
+                )
+            ).strip()
+
+            content = str(
+                document.get(
+                    "content",
+                    ""
+                )
+            ).strip()
+
+            if not source_id or not content:
+
+                continue
+
+            chunks.append({
+                "chunk_id": (
+                    f"student5_{source_id}"
+                ),
+                "source_id": source_id,
+                "authority_tier": "tier_1",
+                "text": content,
+                "metadata": {
+                    "source_type": "student5_api",
+                    "student": "student5",
+                    "feature": (
+                        "student-5-campus-space-finder"
+                    ),
+                },
+                "indexed_at": now_iso(),
+            })
+
+    except Exception as exc:
+
+        chunks.append(
+            make_source_error_chunk(
+                "student5",
+                "student5_api",
+                str(exc)
+            )
+        )
 
     return chunks
 
 
-def write_corpus(chunks):
+def write_corpus(
+    chunks
+):
 
     CORPUS_PATH.parent.mkdir(
         parents=True,
@@ -292,6 +695,7 @@ def write_corpus(chunks):
 def read_corpus():
 
     if not CORPUS_PATH.exists():
+
         return []
 
     chunks = []
@@ -362,30 +766,75 @@ def refresh_corpus(
                 ids = [
                     chunk["chunk_id"]
                     for chunk in chunks
+                    if chunk.get(
+                        "chunk_id"
+                    )
                 ]
 
                 documents = [
                     chunk["text"]
                     for chunk in chunks
+                    if chunk.get(
+                        "chunk_id"
+                    )
                 ]
 
                 metadatas = [
                     {
-                        "source_id": chunk[
-                            "source_id"
-                        ],
-                        "authority_tier": chunk[
-                            "authority_tier"
-                        ],
-                        "indexed_at": chunk[
-                            "indexed_at"
-                        ]
+                        "source_id":
+                            chunk.get(
+                                "source_id"
+                            ),
+
+                        "authority_tier":
+                            chunk.get(
+                                "authority_tier"
+                            ),
+
+                        "indexed_at":
+                            chunk.get(
+                                "indexed_at",
+                                now_iso()
+                            ),
+
+                        "student":
+                            chunk.get(
+                                "metadata",
+                                {}
+                            ).get(
+                                "student",
+                                ""
+                            ),
+
+                        "source_type":
+                            chunk.get(
+                                "metadata",
+                                {}
+                            ).get(
+                                "source_type",
+                                ""
+                            ),
+
+                        "record_type":
+                            chunk.get(
+                                "metadata",
+                                {}
+                            ).get(
+                                "record_type",
+                                ""
+                            )
                     }
+
                     for chunk in chunks
+                    if chunk.get(
+                        "chunk_id"
+                    )
                 ]
 
-                embeddings = embed_texts(
-                    documents
+                embeddings = (
+                    embed_texts(
+                        documents
+                    )
                 )
 
                 collection.add(
@@ -405,10 +854,122 @@ def refresh_corpus(
                 exc
             )
 
+        student1_count = sum(
+            1
+            for chunk in chunks
+            if chunk.get(
+                "metadata",
+                {}
+            ).get(
+                "student"
+            ) == "student1"
+            or str(
+                chunk.get(
+                    "source_id",
+                    ""
+                )
+            ).startswith(
+                "student1"
+            )
+        )
+
+        student2_count = sum(
+            1
+            for chunk in chunks
+            if chunk.get(
+                "metadata",
+                {}
+            ).get(
+                "student"
+            ) == "student2"
+            or str(
+                chunk.get(
+                    "source_id",
+                    ""
+                )
+            ).startswith(
+                "student-2"
+            )
+        )
+
+        student3_count = sum(
+            1
+            for chunk in chunks
+            if chunk.get(
+                "metadata",
+                {}
+            ).get(
+                "student"
+            ) == "student3"
+            or str(
+                chunk.get(
+                    "source_id",
+                    ""
+                )
+            ).startswith(
+                "student-3"
+            )
+        )
+
+        student4_count = sum(
+            1
+            for chunk in chunks
+            if chunk.get(
+                "metadata",
+                {}
+            ).get(
+                "student"
+            ) == "student4"
+            or str(
+                chunk.get(
+                    "source_id",
+                    ""
+                )
+            ).startswith(
+                "student-4"
+            )
+        )
+
+        student5_count = sum(
+            1
+            for chunk in chunks
+            if chunk.get(
+                "metadata",
+                {}
+            ).get(
+                "student"
+            ) == "student5"
+            or str(
+                chunk.get(
+                    "source_id",
+                    ""
+                )
+            ).startswith(
+                "student5"
+            )
+            or str(
+                chunk.get(
+                    "source_id",
+                    ""
+                )
+            ).startswith(
+                "campus-space-"
+            )
+        )
+
         output = {
             "status": "success",
             "caller": caller,
-            "chunk_count": len(chunks),
+            "chunk_count": len(
+                chunks
+            ),
+            "sources": {
+                "student1": student1_count,
+                "student2": student2_count,
+                "student3": student3_count,
+                "student4": student4_count,
+                "student5": student5_count
+            },
             "collection": COLLECTION_NAME,
             "corpus_path": str(
                 CORPUS_PATH
@@ -461,6 +1022,205 @@ def refresh_corpus(
 # LEXICAL FALLBACK
 # =========================================================
 
+RELEVANCE_STOPWORDS = {
+    "who", "what", "where", "when", "why", "how",
+    "which",
+    "is", "are", "was", "were", "be", "been",
+    "have", "has", "had",
+    "the", "a", "an", "of", "to", "for", "and", "or",
+    "in", "on", "with", "do", "does", "can",
+    "please", "show", "find", "tell", "give", "me",
+    "mention", "stored"
+}
+
+
+def normalise_relevance_token(
+    token
+):
+
+    # Keep directional Skill Exchange relationship terms intact.
+    if token in {
+        "offers",
+        "wants"
+    }:
+
+        return token
+
+    # Lightweight plural normalisation for shared coursework terms.
+    if (
+        len(token) > 4
+        and token.endswith("ies")
+    ):
+
+        return (
+            token[:-3]
+            + "y"
+        )
+
+    if (
+        len(token) > 4
+        and token.endswith("s")
+        and not token.endswith(
+            (
+                "ss",
+                "us",
+                "is"
+            )
+        )
+    ):
+
+        return token[:-1]
+
+    return token
+
+
+def relevance_tokens(
+    text
+):
+
+    tokens = [
+        normalise_relevance_token(
+            token
+        )
+        for token in re.findall(
+            r"[a-z0-9+#]+",
+            (text or "").lower()
+        )
+    ]
+
+    return [
+        token
+        for token in tokens
+        if token not in RELEVANCE_STOPWORDS
+    ]
+
+
+def is_source_error(
+    chunk_id,
+    text,
+    metadata=None
+):
+
+    metadata = metadata or {}
+
+    return (
+        bool(metadata.get("error"))
+        or str(
+            chunk_id or ""
+        ).endswith(
+            "_source_error"
+        )
+        or (
+            "source is currently unavailable"
+            in (text or "").lower()
+        )
+    )
+
+
+def relevance_score(
+    query,
+    text
+):
+
+    query_tokens = relevance_tokens(
+        query
+    )
+
+    text_tokens = relevance_tokens(
+        text
+    )
+
+    if (
+        not query_tokens
+        or not text_tokens
+    ):
+
+        return 0.0
+
+    query_unique = set(
+        query_tokens
+    )
+
+    text_unique = set(
+        text_tokens
+    )
+
+    overlap = len(
+        query_unique
+        & text_unique
+    )
+
+    if overlap == 0:
+
+        return 0.0
+
+    coverage = (
+        overlap
+        / len(query_unique)
+    )
+
+    query_bigrams = set(
+        zip(
+            query_tokens,
+            query_tokens[1:]
+        )
+    )
+
+    text_bigrams = set(
+        zip(
+            text_tokens,
+            text_tokens[1:]
+        )
+    )
+
+    bigram_matches = len(
+        query_bigrams
+        & text_bigrams
+    )
+
+    relationship_terms = {
+        "offers",
+        "wants"
+    }
+
+    relationship_query = any(
+        token in relationship_terms
+        for token in query_tokens
+    )
+
+    # For directional Skill Exchange questions such as
+    # "wants Java" or "offers Python", require that
+    # relationship to occur together rather than merely
+    # finding both words somewhere in the same chunk.
+    if (
+        relationship_query
+        and len(query_tokens) >= 2
+        and bigram_matches == 0
+    ):
+
+        return 0.0
+
+    # For normal multi-term queries, require meaningful
+    # lexical coverage rather than accepting one accidental
+    # shared word.
+    if (
+        len(query_unique) > 1
+        and bigram_matches == 0
+        and (
+            overlap < 2
+            or coverage < 0.5
+        )
+    ):
+
+        return 0.0
+
+    return (
+        overlap
+        + coverage
+        + (3 * bigram_matches)
+    )
+
+
 def lexical_fallback_retrieve(
     query,
     k
@@ -469,12 +1229,6 @@ def lexical_fallback_retrieve(
     corpus = (
         _last_corpus_chunks
         or read_corpus()
-    )
-
-    query_tokens = set(
-        (query or "")
-        .lower()
-        .split()
     )
 
     tier_weight = {
@@ -492,14 +1246,27 @@ def lexical_fallback_retrieve(
             ""
         )
 
-        text_tokens = set(
-            text.lower().split()
+        metadata = (
+            chunk.get("metadata")
+            or {}
         )
 
-        overlap = len(
-            query_tokens
-            & text_tokens
+        if is_source_error(
+            chunk.get("chunk_id"),
+            text,
+            metadata
+        ):
+
+            continue
+
+        score = relevance_score(
+            query,
+            text
         )
+
+        if score <= 0:
+
+            continue
 
         scored.append({
             "rank": 0,
@@ -514,7 +1281,7 @@ def lexical_fallback_retrieve(
             ),
             "distance": None,
             "text": text,
-            "_score": overlap
+            "_score": score
         })
 
     scored.sort(
@@ -592,6 +1359,20 @@ def retrieve_context(
                         "empty_collection"
                     )
 
+                collection = (
+                    get_collection()
+                )
+
+            collection_count = (
+                collection.count()
+            )
+
+            # The shared coursework corpus is small enough to inspect
+            # every indexed chunk before applying relevance filtering.
+            # This prevents weak hash-based vector ranking from hiding
+            # exact lexical matches as more student sources are added.
+            candidate_count = collection_count
+
             query_embedding = (
                 embed_texts(
                     [query]
@@ -600,11 +1381,13 @@ def retrieve_context(
 
             results = collection.query(
                 query_embeddings=query_embedding,
-                n_results=k
+                n_results=candidate_count
             )
 
             ids = (
-                results.get("ids")
+                results.get(
+                    "ids"
+                )
                 or [[]]
             )[0]
 
@@ -635,29 +1418,64 @@ def retrieve_context(
 
                 metadata = (
                     metadatas[index]
-                    if index < len(metadatas)
+                    if index < len(
+                        metadatas
+                    )
                     else {}
                 )
 
+                document = (
+                    documents[index]
+                    if index < len(
+                        documents
+                    )
+                    else ""
+                )
+
+                if is_source_error(
+                    chunk_id,
+                    document,
+                    metadata
+                ):
+
+                    continue
+
+                score = relevance_score(
+                    query,
+                    document
+                )
+
+                if score <= 0:
+
+                    continue
+
                 ranked.append({
-                    "rank": index + 1,
+                    "rank": 0,
+
                     "chunk_id": chunk_id,
-                    "source_id": metadata.get(
-                        "source_id"
-                    ),
-                    "authority_tier": metadata.get(
-                        "authority_tier"
-                    ),
+
+                    "source_id":
+                        metadata.get(
+                            "source_id"
+                        ),
+
+                    "authority_tier":
+                        metadata.get(
+                            "authority_tier"
+                        ),
+
                     "distance": (
                         distances[index]
-                        if index < len(distances)
+                        if index < len(
+                            distances
+                        )
                         else None
                     ),
-                    "text": (
-                        documents[index]
-                        if index < len(documents)
-                        else ""
-                    )
+
+                    "text": document,
+
+                    "_relevance_score":
+                        score
                 })
 
             tier_weight = {
@@ -674,6 +1492,12 @@ def retrieve_context(
                         ),
                         0
                     ),
+
+                    row.get(
+                        "_relevance_score",
+                        0
+                    ),
+
                     -(
                         row.get(
                             "distance"
@@ -689,6 +1513,50 @@ def retrieve_context(
                 ),
                 reverse=True
             )
+
+            # Remove substantially weaker lexical matches after
+            # ranking. This keeps equally relevant evidence together while
+            # preventing loosely related records from confusing generation.
+            if ranked:
+
+                best_relevance = max(
+                    row.get(
+                        "_relevance_score",
+                        0
+                    )
+                    for row in ranked
+                )
+
+                if best_relevance > 0:
+
+                    relevance_cutoff = (
+                        best_relevance * 0.75
+                    )
+
+                    ranked = [
+                        row
+                        for row in ranked
+                        if row.get(
+                            "_relevance_score",
+                            0
+                        ) >= relevance_cutoff
+                    ]
+
+            ranked = ranked[
+                :max(k, 1)
+            ]
+
+            for index, row in enumerate(
+                ranked,
+                start=1
+            ):
+
+                row["rank"] = index
+
+                row.pop(
+                    "_relevance_score",
+                    None
+                )
 
         except Exception:
 
@@ -744,6 +1612,7 @@ def retrieve_context(
             {
                 "result_count":
                     len(ranked),
+
                 "chunk_ids": [
                     row["chunk_id"]
                     for row in ranked
@@ -789,6 +1658,7 @@ def confidence_from_results(
 ):
 
     if not results:
+
         return "Unknown"
 
     tier_1 = sum(
@@ -807,13 +1677,17 @@ def confidence_from_results(
         ) == "tier_2"
     )
 
-    if tier_1 >= 2 and len(
-        results
-    ) >= 3:
+    if (
+        tier_1 >= 2
+        and len(results) >= 3
+    ):
 
         return "High"
 
-    if tier_1 >= 1 or tier_2 >= 2:
+    if (
+        tier_1 >= 1
+        or tier_2 >= 2
+    ):
 
         return "Medium"
 
@@ -831,7 +1705,7 @@ def generate_with_ollama(
 
     model_name = os.getenv(
         "OLLAMA_MODEL",
-        "qwen2.5:0.5b"
+        "llama3.1:8b"
     )
 
     ollama_url = os.getenv(
@@ -840,13 +1714,27 @@ def generate_with_ollama(
     )
 
     prompt = f"""
-You are a retrieval-grounded project management assistant.
+You are a retrieval-grounded assistant for the shared university application.
 
-Use ONLY the provided context.
+The context may contain information from different student features,
+including projects and tasks, Skill Exchange listings, group recommendations,
+skill profiles, and campus spaces.
 
-Do not invent project information.
+Use ONLY the provided context to answer the question.
 
-If the evidence does not contain enough information,
+If the context directly contains the requested information, answer using that
+evidence even if it comes from a different feature domain.
+
+Copy names, identifiers, locations, room labels, values, and other factual
+details exactly from the provided context. Do not infer, rename, embellish,
+or add details that are not explicitly stated.
+
+When the question asks which records match a condition, mention only records
+whose provided context explicitly satisfies that condition.
+
+Do not invent information that is not present in the context.
+
+If the evidence genuinely does not contain enough information,
 return exactly:
 
 Insufficient evidence.
@@ -857,13 +1745,7 @@ QUESTION:
 CONTEXT:
 {context}
 
-Return:
-
-Answer:
-<answer>
-
-Evidence:
-<short evidence summary>
+Return a concise factual answer.
 """.strip()
 
     try:
@@ -944,6 +1826,40 @@ def answer_question(
         []
     )
 
+    if not results:
+
+        output = {
+            "status": "insufficient_context",
+            "query": query,
+            "answer": "Insufficient context.",
+            "citations": [],
+            "confidence_category": "Insufficient",
+            "retrieval_summary": {
+                "k": k,
+                "retrieved_count": 0,
+                "top_chunk": None
+            }
+        }
+
+        append_audit(
+            "answer_question",
+            {
+                "query": query,
+                "k": k,
+                "caller": caller
+            },
+            {
+                "confidence_category":
+                    "Insufficient",
+                "citation_count": 0
+            },
+            "pass",
+            "insufficient_context",
+            start
+        )
+
+        return output
+
     context = "\n\n".join(
         result.get(
             "text",
@@ -983,7 +1899,8 @@ def answer_question(
         "query": query,
         "answer": answer,
         "citations": citations,
-        "confidence_category": confidence,
+        "confidence_category":
+            confidence,
         "retrieval_summary": {
             "k": k,
             "retrieved_count":
@@ -1018,6 +1935,10 @@ def answer_question(
 
     return output
 
+
+# =========================================================
+# MAIN
+# =========================================================
 
 if __name__ == "__main__":
 

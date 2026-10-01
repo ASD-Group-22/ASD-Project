@@ -1,15 +1,7 @@
 services:
-  ollama:
-    image: ollama/ollama:latest
-    container_name: ollama
-    ports:
-      - "11434:11434"
-    volumes:
-      - ollama_models:/root/.ollama
-
   database-service:
     build: ./database-service
-    container_name: database-service
+    container_name: student-3-database-service
     restart: unless-stopped
     volumes:
       - ./database-service/data:/app/data
@@ -18,24 +10,29 @@ services:
 
   backend-service:
     build: ./backend-service
-    container_name: backend-service
+    container_name: student-3-backend-service
     restart: unless-stopped
     depends_on:
       - database-service
-      - ollama
     volumes:
       - ./backend-service:/app
       - ./prompts:/prompts
       - ./scripts:/scripts
     ports:
-      - "5000:5000"
+      - "5009:5000"
     environment:
       OLLAMA_URL: "http://host.docker.internal:11434"
       DB_URL: "http://database-service:6000"
+      AI_ENABLED: "true"
+      MCP_ENABLED: "true"
+      RAG_ENABLED: "true"
+      MCP_URL: "http://host.docker.internal:5100/mcp"
+      RAG_SERVICE_URL: "http://host.docker.internal:5003"
+      RAG_TIMEOUT_SECONDS: "180"
 
   frontend-service:
     build: ./frontend-service
-    container_name: frontend-service
+    container_name: student-3-frontend-service
     restart: unless-stopped
     depends_on:
       - backend-service
@@ -43,6 +40,3 @@ services:
       - ./frontend-service:/app
     ports:
       - "8000:8000"
-
-volumes:
-  ollama_models:

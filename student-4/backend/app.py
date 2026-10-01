@@ -1,3 +1,7 @@
+import os
+import requests
+
+from services.mcp_api import get_profile_via_mcp
 from services.llm_client import analyse_profile
 from flask import Flask, request, jsonify
 from services.database_api import (
@@ -132,6 +136,61 @@ def api_analyse_profile(profile_id):
             "error": "AI analysis failed",
             "details": str(error)
         }), 503
+
+RAG_ANSWER_ENDPOINT = os.getenv(
+    "RAG_ANSWER_ENDPOINT",
+    "http://host.docker.internal:5003/answer",
+)
+
+
+@app.route("/api/profiles/<int:profile_id>/mcp", methods=["POST"])
+def api_mcp_profile(profile_id):
+    try:
+        result = get_profile_via_mcp(profile_id)
+        return jsonify(result), 200
+    except Exception:
+        app.logger.exception("Skill Profile MCP request failed")
+        return jsonify({"error": "Shared MCP service unavailable"}), 503
+
+
+@app.route("/api/profiles/<int:profile_id>/rag", methods=["POST"])
+def api_rag_profile(profile_id):
+    if os.getenv(
+        "RAG_ENABLED",
+        "true",
+    ).lower() in (
+        "false",
+        "0",
+        "no",
+    ):
+        return jsonify({
+            "error": "RAG Mode is disabled"
+        }), 503
+
+    data = request.get_json(silent=True) or {}
+    question = data.get("question")
+
+    if not isinstance(question, str) or not question.strip():
+        return jsonify({"error": "Question is required"}), 400
+
+    try:
+        response = requests.post(
+            RAG_ANSWER_ENDPOINT,
+            json={
+                "query": (
+                    f"Skill Profile ID {profile_id}. "
+                    f"{question.strip()}"
+                ),
+                "k": 5,
+                "caller": "student-4-backend",
+            },
+            timeout=90,
+        )
+        result = response.json()
+        return jsonify(result), response.status_code
+
+    except (requests.RequestException, ValueError):
+        return jsonify({"error": "Shared RAG service unavailable"}), 503
 
 if __name__ == "__main__":
 
