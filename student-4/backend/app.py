@@ -155,6 +155,18 @@ def api_mcp_profile(profile_id):
 
 @app.route("/api/profiles/<int:profile_id>/rag", methods=["POST"])
 def api_rag_profile(profile_id):
+    if os.getenv(
+        "RAG_ENABLED",
+        "true",
+    ).lower() in (
+        "false",
+        "0",
+        "no",
+    ):
+        return jsonify({
+            "error": "RAG Mode is disabled"
+        }), 503
+
     data = request.get_json(silent=True) or {}
     question = data.get("question")
 

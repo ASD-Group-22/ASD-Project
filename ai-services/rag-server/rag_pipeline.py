@@ -40,6 +40,10 @@ from sources.student3 import (
     get_documents as get_student3_documents
 )
 
+from sources.student4 import (
+    get_documents as get_student4_documents
+)
+
 
 BASE_DIR = Path(__file__).resolve().parent
 
@@ -532,6 +536,56 @@ def build_corpus():
             )
         )
 
+    # -----------------------------------------------------
+    # Student 4
+    # -----------------------------------------------------
+
+    try:
+        student4_documents = (
+            get_student4_documents()
+        )
+
+        if not isinstance(
+            student4_documents,
+            list
+        ):
+            raise ValueError(
+                "Student 4 source returned "
+                "an invalid document list"
+            )
+
+        for document in (
+            student4_documents
+        ):
+            if not isinstance(
+                document,
+                dict
+            ):
+                continue
+
+            if not document.get(
+                "chunk_id"
+            ):
+                continue
+
+            if not document.get(
+                "text"
+            ):
+                continue
+
+            chunks.append(
+                document
+            )
+
+    except Exception as exc:
+        chunks.append(
+            make_source_error_chunk(
+                "student4",
+                "student4_api",
+                str(exc)
+            )
+        )
+
     return chunks
 
 
@@ -776,6 +830,25 @@ def refresh_corpus(
             )
         )
 
+        student4_count = sum(
+            1
+            for chunk in chunks
+            if chunk.get(
+                "metadata",
+                {}
+            ).get(
+                "student"
+            ) == "student4"
+            or str(
+                chunk.get(
+                    "source_id",
+                    ""
+                )
+            ).startswith(
+                "student-4"
+            )
+        )
+
         output = {
             "status": "success",
             "caller": caller,
@@ -785,7 +858,8 @@ def refresh_corpus(
             "sources": {
                 "student1": student1_count,
                 "student2": student2_count,
-                "student3": student3_count
+                "student3": student3_count,
+                "student4": student4_count
             },
             "collection": COLLECTION_NAME,
             "corpus_path": str(

@@ -2,12 +2,25 @@ name: Student 4 - Skill Profile CI
 
 on:
   push:
-    branches:
-      - student-4-skill-profile
+    paths:
+      - "student-4/**"
+      - "ai-services/mcp-server/tools/student4.py"
+      - "ai-services/rag-server/sources/student4.py"
+      - "ai-services/agentic-loop/scenarios/student4.py"
+      - ".github/workflows/student-4-ci.yml"
 
   pull_request:
-    branches:
-      - main
+    paths:
+      - "student-4/**"
+      - "ai-services/mcp-server/tools/student4.py"
+      - "ai-services/rag-server/sources/student4.py"
+      - "ai-services/agentic-loop/scenarios/student4.py"
+      - ".github/workflows/student-4-ci.yml"
+
+  workflow_dispatch:
+
+permissions:
+  contents: read
 
 jobs:
   build-and-test:
@@ -90,6 +103,8 @@ jobs:
             --network student4-network \
             -p 5005:5005 \
             -e DATABASE_SERVICE_URL="http://student4-database:5004" \
+            -e MCP_ENABLED="false" \
+            -e RAG_ENABLED="false" \
             student4-backend
 
 
