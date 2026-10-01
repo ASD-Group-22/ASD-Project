@@ -298,6 +298,100 @@ def evaluate_expected(
 
     failures: list[str] = []
 
+    if "success" in expected:
+        actual_success = data.get(
+            "success"
+        )
+
+        if actual_success != expected["success"]:
+            failures.append(
+                "Expected success "
+                f"{expected['success']!r}, got "
+                f"{actual_success!r}."
+            )
+
+    profile = data.get(
+        "profile",
+        {},
+    )
+
+    if not isinstance(
+        profile,
+        dict,
+    ):
+        profile = {}
+
+    if "profile_id" in expected:
+        actual_profile_id = data.get(
+            "profile_id",
+            profile.get(
+                "profile_id"
+            ),
+        )
+
+        if (
+            actual_profile_id
+            != expected["profile_id"]
+        ):
+            failures.append(
+                "Unexpected profile ID. "
+                f"Expected {expected['profile_id']}, "
+                f"got {actual_profile_id}."
+            )
+
+    if "profile_student_id" in expected:
+        actual_student_id = profile.get(
+            "student_id"
+        )
+
+        if (
+            actual_student_id
+            != expected["profile_student_id"]
+        ):
+            failures.append(
+                "Unexpected profile student ID. "
+                f"Expected "
+                f"{expected['profile_student_id']}, "
+                f"got {actual_student_id}."
+            )
+
+    required_skills = expected.get(
+        "profile_skills_include"
+    )
+
+    if required_skills:
+        skills = profile.get(
+            "skills",
+            [],
+        )
+
+        if not isinstance(
+            skills,
+            list,
+        ):
+            skills = []
+
+        actual_skill_names = {
+            item.get(
+                "skill_name"
+            )
+            for item in skills
+            if isinstance(
+                item,
+                dict,
+            )
+        }
+
+        missing_skills = set(
+            required_skills
+        ) - actual_skill_names
+
+        if missing_skills:
+            failures.append(
+                "Missing expected profile skills: "
+                f"{sorted(missing_skills)}."
+            )
+
     expected_status = expected.get(
         "status"
     )
