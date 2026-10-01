@@ -550,7 +550,7 @@ No profile loaded.
 
             display.textContent = [
                 data.answer || "Insufficient context to answer.",
-                `Confidence: ${data.confidence || "unknown"}`,
+                `Confidence: ${data.confidence_category || "unknown"}`,
                 `Sources: ${JSON.stringify(data.citations || [], null, 2)}`
             ].join("\n\n");
         } catch (error) {
