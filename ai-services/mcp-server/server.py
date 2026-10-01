@@ -15,6 +15,7 @@ from mcp.server import MCPServer
 from tools.student1 import register_tools as register_student1_tools
 from tools.student2 import register_tools as register_student2_tools
 from tools.student3 import register_tools as register_student3_tools
+from tools.student5 import register_tools as register_student5_tools
 
 
 # =========================================================
@@ -33,6 +34,7 @@ mcp = MCPServer(
 register_student1_tools(mcp)
 register_student2_tools(mcp)
 register_student3_tools(mcp)
+register_student5_tools(mcp)
 
 
 # =========================================================
@@ -56,6 +58,7 @@ if __name__ == "__main__":
     print("- student2_get_listing")
     print("- student3_group_requirements")
     print("- student3_list_groups")
+    print("- student5")
     print("")
 
     mcp.run(

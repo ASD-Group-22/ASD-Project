@@ -23,11 +23,11 @@ def env_enabled(name: str, default: bool = True) -> bool:
 
 
 def mcp_server_url() -> str:
-    return os.getenv("MCP_SERVER_URL", "http://host.docker.internal:8765/mcp")
+    return os.getenv("MCP_SERVER_URL", "http://host.docker.internal:5100/mcp")
 
 
 def rag_server_url() -> str:
-    return os.getenv("RAG_SERVER_URL", "http://host.docker.internal:8766").rstrip("/")
+    return os.getenv("RAG_SERVER_URL", "http://host.docker.internal:500").rstrip("/")
 
 
 async def _call_mcp(tool: str, arguments: dict[str, Any]) -> dict[str, Any]:
@@ -77,9 +77,9 @@ def rag_request():
 
     try:
         response = requests.post(
-            f"{rag_server_url()}/query",
-            json={"feature": "student-5", "query": query},
-            timeout=100,
+f"{rag_server_url()}/answer",
+json={"caller": "student5", "query": query, "k": 5},
+timeout=150,
         )
         data = response.json()
     except requests.RequestException as exc:
@@ -90,6 +90,27 @@ def rag_request():
     if response.status_code >= 400:
         return jsonify(data), response.status_code
 
+    if str(data.get("answer", "")).startswith("Ollama unavailable:"):
+        return jsonify({
+            "status": "error",
+            "mode": "rag",
+            "error": "generation_unavailable",
+            "message": data["answer"],
+        }), 503
+
+    # Map the shared RAG response to the frontend's expected format.
+    if str(data.get("answer", "")).startswith("Ollama unavailable:"):
+        return jsonify({
+            "status": "error",
+            "mode": "rag",
+            "error": "generation_unavailable",
+            "message": data["answer"],
+        }), 503
+    if data.get("status") == "success":
+        data["status"] = "ok"
+
+    data["sources"] = data.get("citations", [])
+    data["confidence"] = data.get("confidence_category", "")
     if data.get("status") == "ok":
         if not data.get("answer"):
             return jsonify({"error": "invalid_rag_response", "message": "answer missing"}), 502

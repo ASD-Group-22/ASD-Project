@@ -43,8 +43,8 @@ Student 5 remains available at:
 ```text
 Frontend: http://localhost:8005
 Backend:  http://localhost:8055
-MCP:      http://localhost:8765/mcp
-RAG:      http://localhost:8766
+MCP:      http://localhost:5100/mcp
+RAG:      http://localhost:5003
 ```
 
 ## Required local evidence
@@ -97,13 +97,13 @@ python ai-services/rag-server/server.py
 Verify RAG:
 
 ```bash
-curl http://localhost:8766/health
+curl http://localhost:5003/health
 ```
 
 Verify that the Student 5 backend container can reach the host RAG service:
 
 ```bash
-docker exec student-5-backend python -c "import requests; print(requests.get('http://host.docker.internal:8766/health', timeout=5).json())"
+docker exec student-5-backend python -c "import requests; print(requests.get('http://host.docker.internal:5003/health', timeout=5).json())"
 ```
 
 The Release 0 AI recommendation code also normalises nullable `facilities`

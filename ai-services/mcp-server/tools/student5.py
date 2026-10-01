@@ -53,7 +53,7 @@ def _load_spaces() -> list[dict[str, Any]]:
 def register_tools(mcp):
     """Register Student 5's feature-specific read-only MCP tools."""
 
-    @mcp.tool
+    @mcp.tool()
     def student5_find_campus_spaces(
         min_capacity: int | None = None,
         building: str | None = None,

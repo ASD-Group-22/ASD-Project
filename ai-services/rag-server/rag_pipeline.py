@@ -40,6 +40,10 @@ from sources.student3 import (
     get_documents as get_student3_documents
 )
 
+from sources.student5 import (
+    get_documents as get_student5_documents
+)
+
 
 BASE_DIR = Path(__file__).resolve().parent
 
@@ -529,6 +533,39 @@ def build_corpus():
                 "student3",
                 "student3_api",
                 str(exc)
+            )
+        )
+
+
+    # -----------------------------------------------------
+    # Student 5
+    # -----------------------------------------------------
+    
+    try:
+        documents = get_student5_documents()
+
+        for document in documents:
+            source_id = document["source_id"]
+
+            chunks.append({
+                "chunk_id": f"student5_{source_id}",
+                "source_id": source_id,
+                "authority_tier": "tier_1",
+                "text": document["content"],
+                "metadata": {
+                    "source_type": "student5_api",
+                    "student": "student5",
+                    "feature": "student-5-campus-space-finder",
+                },
+                "indexed_at": now_iso(),
+            })
+
+    except Exception as exc:
+        chunks.append(
+            make_source_error_chunk(
+                "student5",
+                "student5_api",
+                str(exc),
             )
         )
 
