@@ -46,24 +46,48 @@ async def _call_mcp(tool: str, arguments: dict[str, Any]) -> dict[str, Any]:
 @release1_bp.post("/api/mcp")
 def mcp_request():
     if not env_enabled("MCP_MODE", True):
-        return jsonify({"error": "mcp_disabled", "message": "MCP Mode is disabled"}), 503
+        return jsonify({
+            "error": "mcp_disabled",
+            "message": "MCP Mode is disabled",
+        }), 503
 
-    body = request.get_json(silent=True) or {}
+    body = request.get_json(silent=True)
+    if not isinstance(body, dict):
+        return jsonify({"error": "Request body must be a JSON object"}), 400
+
     tool = str(body.get("tool") or "student5_find_campus_spaces").strip()
-    arguments = body.get("arguments") or {}
+    arguments = body.get("arguments", {})
 
     if tool not in ALLOWED_MCP_TOOLS:
-        return jsonify({"error": "tool_not_allowed", "allowed_tools": sorted(ALLOWED_MCP_TOOLS)}), 400
+        return jsonify({
+            "error": "tool_not_allowed",
+            "allowed_tools": sorted(ALLOWED_MCP_TOOLS),
+        }), 400
+
     if not isinstance(arguments, dict):
         return jsonify({"error": "arguments must be a JSON object"}), 400
+
+    building = arguments.get("building")
+    if building is not None:
+        if type(building) is not int or building < 1:
+            return jsonify({
+                "error": "building must be a positive integer",
+            }), 400
 
     try:
         result = asyncio.run(_call_mcp(tool, arguments))
     except Exception as exc:
-        return jsonify({"error": "mcp_unavailable", "message": str(exc)}), 503
+        return jsonify({
+            "error": "mcp_unavailable",
+            "message": str(exc),
+        }), 503
 
-    return jsonify({"status": "ok", "mode": "mcp", "tool": tool, "result": result})
-
+    return jsonify({
+        "status": "ok",
+        "mode": "mcp",
+        "tool": tool,
+        "result": result,
+    })
 
 @release1_bp.post("/api/rag")
 def rag_request():

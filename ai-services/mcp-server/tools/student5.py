@@ -7,6 +7,7 @@ through the Student 5 backend/API and do not open the SQLite database directly.
 from __future__ import annotations
 
 import os
+import re
 from typing import Any
 
 import requests
@@ -29,11 +30,14 @@ def _facility_set(space: dict[str, Any]) -> set[str]:
     return {_normalise(value) for value in facilities if _normalise(value)}
 
 
-def _normalise_building(value: Any) -> str:
-    text = _normalise(value)
-    if text.startswith("building "):
-        text = text[len("building "):].strip()
-    return text
+def _normalise_building(value: Any) -> int | None:
+    text = str(value or "").strip()
+    match = re.match(
+        r"^(?:building\s+)?(\d+)(?=[A-Za-z]?(?:\s|[-–—]|$))",
+        text,
+        flags=re.IGNORECASE,
+    )
+    return int(match.group(1)) if match else None
 
 
 def _accessible(space: dict[str, Any]) -> bool:
@@ -56,7 +60,7 @@ def register_tools(mcp):
     @mcp.tool()
     def student5_find_campus_spaces(
         min_capacity: int | None = None,
-        building: str | None = None,
+        building: int | None = None,
         noise_level: str | None = None,
         required_facilities: list[str] | None = None,
         accessible_only: bool = False,
@@ -70,7 +74,7 @@ def register_tools(mcp):
         """
         spaces = _load_spaces()
         required = {_normalise(x) for x in (required_facilities or []) if _normalise(x)}
-        building_value = _normalise_building(building)
+        building_value = building
         noise_value = _normalise(noise_level)
         result: list[dict[str, Any]] = []
 
@@ -82,7 +86,10 @@ def register_tools(mcp):
 
             if min_capacity is not None and capacity < int(min_capacity):
                 continue
-            if building_value and building_value != _normalise_building(space.get("building")):
+            if (
+                building_value is not None
+                and building_value != _normalise_building(space.get("building"))
+            ):
                 continue
             if noise_value and noise_value != _normalise(space.get("noise_level")):
                 continue
