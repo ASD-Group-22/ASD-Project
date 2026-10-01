@@ -1,61 +1,67 @@
-"""Student 4 - Skill Profile RAG source integration.
+"""Student 4 Skill Profile source for the shared RAG pipeline."""
 
-Student 4 owns the feature-specific trusted-data integration in this
-module.
-
-The source should:
-- retrieve Skill Profile data through the Student 4 backend/API
-- convert appropriate feature data into retrieval documents
-- include useful source metadata for grounding and citations
-- follow the shared RAG source contract
-- avoid direct access to another feature's database
-"""
-
-import json
 import os
 
 import requests
 
 
-BACKEND_URL = os.getenv(
-    "STUDENT4_BACKEND_URL",
-    "http://localhost:5005",
+STUDENT4_BACKEND_URL = os.getenv(
+    "STUDENT4_BACKEND_URL", "http://localhost:5005"
 ).rstrip("/")
 
 
-def get_documents():
-    """Return trusted Student 4 documents for shared RAG ingestion."""
+def get_documents() -> list[dict]:
     response = requests.get(
-        f"{BACKEND_URL}/api/profiles",
-        timeout=10,
+        f"{STUDENT4_BACKEND_URL}/api/profiles",
+        timeout=15,
     )
     response.raise_for_status()
-    data = response.json()
 
-    # Support a list or an API response containing a "profiles" list.
-    profiles = data.get("profiles", []) if isinstance(data, dict) else data
+    profiles = response.json()
+    if isinstance(profiles, dict):
+        profiles = profiles.get("profiles", [])
 
     if not isinstance(profiles, list):
-        raise ValueError("Skill Profile API did not return a profile list")
+        raise ValueError("Student 4 backend returned an invalid profiles list")
 
     documents = []
 
-    for profile in profiles:
-        if not isinstance(profile, dict):
+    for item in profiles:
+        try:
+            profile_id = int(item["profile_id"])
+        except (KeyError, TypeError, ValueError):
             continue
 
-        profile_id = profile.get("id", profile.get("profile_id"))
-        if profile_id is None:
-            continue
+        # Fetch the full profile so its individual skills are included.
+        detail = requests.get(
+            f"{STUDENT4_BACKEND_URL}/api/profiles/{profile_id}",
+            timeout=15,
+        )
+        detail.raise_for_status()
+        profile = detail.json()
+
+        skill_sentences = []
+        for skill in profile.get("skills", []):
+            skill_sentences.append(
+                f"{skill.get('skill_name', '')} "
+                f"(level: {skill.get('skill_level', '')}; "
+                f"strength: {skill.get('strength', '')}; "
+                f"weakness: {skill.get('weakness', '')})"
+            )
 
         documents.append({
-            "content": json.dumps(profile, ensure_ascii=False),
-            "source": f"skill-profile:{profile_id}",
-            "feature": "student4-skill-profile",
-            "metadata": {
-                "profile_id": profile_id,
-                "source_url": f"{BACKEND_URL}/api/profiles/{profile_id}",
-            },
+            "chunk_id": f"student4_profile_{profile_id}",
+            "source_id": f"student-4:/api/profiles/{profile_id}",
+            "feature": "student-4-skill-profile",
+            "authority_tier": "tier_1",
+            "record_type": "skill_profile",
+            "profile_id": profile_id,
+            "student_id": profile.get("student_id"),
+            "text": (
+                f"Skill Profile ID: {profile_id}. "
+                f"Student ID: {profile.get('student_id', '')}. "
+                f"Skills: {'; '.join(skill_sentences)}."
+            ),
         })
 
     return documents
