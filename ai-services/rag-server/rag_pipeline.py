@@ -44,6 +44,10 @@ from sources.student4 import (
     get_documents as get_student4_documents
 )
 
+from sources.student5 import (
+    get_documents as get_student5_documents
+)
+
 
 BASE_DIR = Path(__file__).resolve().parent
 
@@ -586,6 +590,83 @@ def build_corpus():
             )
         )
 
+
+    # -----------------------------------------------------
+    # Student 5
+    # -----------------------------------------------------
+
+    try:
+
+        student5_documents = (
+            get_student5_documents()
+        )
+
+        if not isinstance(
+            student5_documents,
+            list
+        ):
+
+            raise ValueError(
+                "Student 5 source returned "
+                "an invalid document list"
+            )
+
+        for document in (
+            student5_documents
+        ):
+
+            if not isinstance(
+                document,
+                dict
+            ):
+
+                continue
+
+            source_id = str(
+                document.get(
+                    "source_id",
+                    ""
+                )
+            ).strip()
+
+            content = str(
+                document.get(
+                    "content",
+                    ""
+                )
+            ).strip()
+
+            if not source_id or not content:
+
+                continue
+
+            chunks.append({
+                "chunk_id": (
+                    f"student5_{source_id}"
+                ),
+                "source_id": source_id,
+                "authority_tier": "tier_1",
+                "text": content,
+                "metadata": {
+                    "source_type": "student5_api",
+                    "student": "student5",
+                    "feature": (
+                        "student-5-campus-space-finder"
+                    ),
+                },
+                "indexed_at": now_iso(),
+            })
+
+    except Exception as exc:
+
+        chunks.append(
+            make_source_error_chunk(
+                "student5",
+                "student5_api",
+                str(exc)
+            )
+        )
+
     return chunks
 
 
@@ -849,6 +930,33 @@ def refresh_corpus(
             )
         )
 
+        student5_count = sum(
+            1
+            for chunk in chunks
+            if chunk.get(
+                "metadata",
+                {}
+            ).get(
+                "student"
+            ) == "student5"
+            or str(
+                chunk.get(
+                    "source_id",
+                    ""
+                )
+            ).startswith(
+                "student5"
+            )
+            or str(
+                chunk.get(
+                    "source_id",
+                    ""
+                )
+            ).startswith(
+                "campus-space-"
+            )
+        )
+
         output = {
             "status": "success",
             "caller": caller,
@@ -859,7 +967,8 @@ def refresh_corpus(
                 "student1": student1_count,
                 "student2": student2_count,
                 "student3": student3_count,
-                "student4": student4_count
+                "student4": student4_count,
+                "student5": student5_count
             },
             "collection": COLLECTION_NAME,
             "corpus_path": str(
@@ -915,23 +1024,73 @@ def refresh_corpus(
 
 RELEVANCE_STOPWORDS = {
     "who", "what", "where", "when", "why", "how",
+    "which",
     "is", "are", "was", "were", "be", "been",
+    "have", "has", "had",
     "the", "a", "an", "of", "to", "for", "and", "or",
     "in", "on", "with", "do", "does", "can",
-    "please", "show", "find", "tell", "give", "me"
+    "please", "show", "find", "tell", "give", "me",
+    "mention", "stored"
 }
+
+
+def normalise_relevance_token(
+    token
+):
+
+    # Keep directional Skill Exchange relationship terms intact.
+    if token in {
+        "offers",
+        "wants"
+    }:
+
+        return token
+
+    # Lightweight plural normalisation for shared coursework terms.
+    if (
+        len(token) > 4
+        and token.endswith("ies")
+    ):
+
+        return (
+            token[:-3]
+            + "y"
+        )
+
+    if (
+        len(token) > 4
+        and token.endswith("s")
+        and not token.endswith(
+            (
+                "ss",
+                "us",
+                "is"
+            )
+        )
+    ):
+
+        return token[:-1]
+
+    return token
 
 
 def relevance_tokens(
     text
 ):
 
-    return [
-        token
+    tokens = [
+        normalise_relevance_token(
+            token
+        )
         for token in re.findall(
             r"[a-z0-9+#]+",
             (text or "").lower()
         )
+    ]
+
+    return [
+        token
+        for token in tokens
         if token not in RELEVANCE_STOPWORDS
     ]
 
@@ -1555,13 +1714,27 @@ def generate_with_ollama(
     )
 
     prompt = f"""
-You are a retrieval-grounded project management assistant.
+You are a retrieval-grounded assistant for the shared university application.
 
-Use ONLY the provided context.
+The context may contain information from different student features,
+including projects and tasks, Skill Exchange listings, group recommendations,
+skill profiles, and campus spaces.
 
-Do not invent project or Skill Exchange information.
+Use ONLY the provided context to answer the question.
 
-If the evidence does not contain enough information,
+If the context directly contains the requested information, answer using that
+evidence even if it comes from a different feature domain.
+
+Copy names, identifiers, locations, room labels, values, and other factual
+details exactly from the provided context. Do not infer, rename, embellish,
+or add details that are not explicitly stated.
+
+When the question asks which records match a condition, mention only records
+whose provided context explicitly satisfies that condition.
+
+Do not invent information that is not present in the context.
+
+If the evidence genuinely does not contain enough information,
 return exactly:
 
 Insufficient evidence.
@@ -1572,13 +1745,7 @@ QUESTION:
 CONTEXT:
 {context}
 
-Return:
-
-Answer:
-<answer>
-
-Evidence:
-<short evidence summary>
+Return a concise factual answer.
 """.strip()
 
     try:

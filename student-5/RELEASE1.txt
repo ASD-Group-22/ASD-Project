@@ -1,0 +1,128 @@
+# Student 5 Release 1 — MCP + RAG
+
+## What was added
+
+- `POST /api/mcp` — calls the shared local MCP server.
+- `POST /api/rag` — calls the shared local RAG server.
+- `GET /api/release1/health` — reports Release 1 mode/config status.
+- `student5_find_campus_spaces` — read-only namespaced MCP tool.
+- Student 5 RAG source adapter — exposes trusted feature overview + current stored campus-space records through the Student 5 backend API.
+- Student 5 MCP/RAG validation scenarios for the shared agentic loop.
+- Frontend MCP and grounded RAG panels.
+
+## Start locally
+
+From the repository root, create one local Release 1 environment:
+
+```bash
+python3 -m venv .venv-release1
+source .venv-release1/bin/activate
+pip install -r ai-services/mcp-server/requirements.txt
+pip install -r ai-services/rag-server/requirements.txt
+pip install -r ai-services/agentic-loop/requirements.txt
+```
+
+Keep Ollama running locally. Then use separate terminals:
+
+```bash
+python ai-services/mcp-server/server.py
+```
+
+```bash
+python ai-services/rag-server/server.py
+```
+
+Start the existing containerised app:
+
+```bash
+docker compose up --build -d
+```
+
+Student 5 remains available at:
+
+```text
+Frontend: http://localhost:8005
+Backend:  http://localhost:8055
+MCP:      http://localhost:5100/mcp
+RAG:      http://localhost:5003
+```
+
+## Required local evidence
+
+MCP through the Student 5 backend:
+
+```bash
+curl -X POST http://localhost:8055/api/mcp \
+  -H 'Content-Type: application/json' \
+  -d '{"tool":"student5_find_campus_spaces","arguments":{"min_capacity":2,"limit":3}}'
+```
+
+Grounded RAG through the Student 5 backend:
+
+```bash
+curl -X POST http://localhost:8055/api/rag \
+  -H 'Content-Type: application/json' \
+  -d '{"query":"What does the AI Campus Space Finder not provide?"}'
+```
+
+Shared agentic-loop validation:
+
+```bash
+python ai-services/agentic-loop/agent.py --student 5 --mode mcp
+python ai-services/agentic-loop/agent.py --student 5 --mode rag
+```
+
+The second command runs both a grounded-response check and an insufficient-context check.
+
+## Containerisation boundary
+
+MCP, RAG, Ollama/AI Mode and the shared agentic loop remain local and are **not** Docker Compose services. Only the existing student feature microservices are deployed through Docker Compose.
+
+## Troubleshooting local service errors
+
+If the frontend shows `mcp_unavailable` or `rag_unavailable`, remember that
+Release 1 MCP and RAG are intentionally not started by Docker Compose.
+Start them on the host in separate terminals before using those modes.
+
+```bash
+source .venv-release1/bin/activate
+python ai-services/mcp-server/server.py
+```
+
+```bash
+source .venv-release1/bin/activate
+python ai-services/rag-server/server.py
+```
+
+Verify RAG:
+
+```bash
+curl http://localhost:5003/health
+```
+
+Verify that the Student 5 backend container can reach the host RAG service:
+
+```bash
+docker exec student-5-backend python -c "import requests; print(requests.get('http://host.docker.internal:5003/health', timeout=5).json())"
+```
+
+The Release 0 AI recommendation code also normalises nullable `facilities`
+values before filtering so a Qwen plan returning `facilities: null` does not
+crash the deterministic Act stage.
+
+## Shared architecture ownership
+
+Release 1 uses one shared implementation rather than one implementation per
+student. Student 5 therefore owns only these feature-specific integration
+modules inside `ai-services`:
+
+```text
+ai-services/mcp-server/tools/student5.py
+ai-services/rag-server/sources/student5.py
+ai-services/agentic-loop/scenarios/student5.py
+```
+
+The shared FastMCP `server.py`, shared RAG `server.py`/`rag_pipeline.py`, and
+shared agentic `agent.py`/`core` files are group infrastructure. Student 5's
+modules plug into those shared services using the common registration/source/
+scenario contracts documented in `ai-services/ARCHITECTURE.md`.

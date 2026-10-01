@@ -228,7 +228,12 @@ services:
     environment:
       DATABASE_SERVICE_URL: "http://student-5-database:5000"
       OLLAMA_URL: "http://host.docker.internal:11434"
-      OLLAMA_MODEL: "qwen3:8b"
+      OLLAMA_MODEL: "qwen2.5:0.5b"
+      AI_MODE: "${AI_MODE:-true}"
+      MCP_MODE: "${MCP_MODE:-true}"
+      RAG_MODE: "${RAG_MODE:-true}"
+      MCP_SERVER_URL: "${MCP_SERVER_URL:-http://host.docker.internal:5100/mcp}"
+      RAG_SERVER_URL: "${RAG_SERVER_URL:-http://host.docker.internal:5003}"
     extra_hosts:
       - "host.docker.internal:host-gateway"
     depends_on:
