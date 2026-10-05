@@ -54,6 +54,7 @@ $('aiForm').addEventListener('submit', async e=>{
 document.querySelectorAll('[data-example]').forEach(b=>b.addEventListener('click',()=>{$('query').value=b.dataset.example}));
 ['filterText','filterNoise','filterCapacity'].forEach(id=>$(id).addEventListener('input',renderSpaces));
 
+document.querySelectorAll('[data-rag-example]').forEach(b=>b.addEventListener('click',()=>{$('ragQuery').value=b.dataset.ragExample}));
 
 const dialog=$('spaceDialog');
 $('addBtn').addEventListener('click',()=>openDialog()); $('closeDialog').onclick=()=>dialog.close(); $('cancelDialog').onclick=()=>dialog.close();
