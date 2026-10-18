@@ -34,3 +34,7 @@ Thumbs.db
 chroma/
 corpus/
 rag-audit.jsonl
+
+# Release 2 local runtime evidence
+ai-services/multi-agent-server/runtime/
+ai-services/agentic-loop/evidence/
