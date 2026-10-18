@@ -10,6 +10,8 @@ from typing import Any
 import requests
 from mcp import Client
 
+from core.review_runner import REVIEW_MODES, execute_review_once
+
 
 MCP_URL = os.getenv(
     "MCP_URL",
@@ -783,8 +785,14 @@ def execute_once(
     scenario: dict,
     mode: str,
 ) -> dict:
-    """Execute one MCP or RAG scenario once."""
+    """Execute one shared agentic-loop scenario once."""
     try:
+        if mode in REVIEW_MODES:
+            return execute_review_once(
+                scenario,
+                mode,
+            )
+
         if mode == "mcp":
             data = call_mcp_tool(
                 scenario["tool"],
