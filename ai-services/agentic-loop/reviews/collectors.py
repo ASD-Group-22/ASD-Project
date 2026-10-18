@@ -63,10 +63,21 @@ def _collect_multi_agent_workflow(
         )
     )
 
-    feature = review.get(
-        "feature",
-        "student2",
-    )
+    feature = str(
+        review.get(
+            "feature",
+            "",
+        )
+    ).strip()
+
+    if not feature:
+        return _unavailable(
+            "multi_agent_workflow",
+            (
+                "No feature was configured for the "
+                "Multi-Agent workflow review."
+            ),
+        )
 
     if not workflow_dir.is_dir():
         return _unavailable(
