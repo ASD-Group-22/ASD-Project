@@ -1,0 +1,19 @@
+name: Release 2 - Cloud Deployment
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  cloud-placeholder:
+    name: Cloud deployment pending
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Report cloud integration status
+        shell: bash
+        run: |
+          echo "Release 2 cloud deployment is not configured in the shared repository yet."
+          echo "This workflow is a temporary valid placeholder for the cloud integration phase."
