@@ -81,16 +81,16 @@ services:
       dockerfile: backend-service/Dockerfile
     container_name: student-2-skill-exchange-backend
     ports:
-      - "5202:5001"
+      - "${STUDENT2_BACKEND_PORT:-5202}:5001"
     environment:
       DATABASE_SERVICE_URL: http://student-2-skill-exchange-database:5002
       AI_ENABLED: "true"
       MCP_ENABLED: "true"
-      MCP_URL: "http://host.docker.internal:5100/mcp"
+      MCP_URL: "${MCP_URL:-http://host.docker.internal:5100/mcp}"
       RAG_ENABLED: "true"
       RAG_SERVICE_URL: "http://host.docker.internal:5003"
       MULTI_AGENT_ENABLED: "true"
-      MULTI_AGENT_SERVICE_URL: "http://host.docker.internal:5101"
+      MULTI_AGENT_SERVICE_URL: "${MULTI_AGENT_SERVICE_URL:-http://host.docker.internal:5101}"
       OLLAMA_BASE_URL: "${STUDENT2_OLLAMA_BASE_URL:-http://host.docker.internal:11434/v1}"
       OLLAMA_MODEL: "${OLLAMA_MODEL:-qwen3:8b}"
       OLLAMA_REVIEW_MODEL: "${OLLAMA_REVIEW_MODEL:-llama3.1:8b}"
@@ -111,7 +111,7 @@ services:
       context: ./student-2/database-service
     container_name: student-2-skill-exchange-database
     ports:
-      - "5302:5002"
+      - "${STUDENT2_DATABASE_PORT:-5302}:5002"
     volumes:
       - student_2_skill_exchange_data:/app/data
     networks:
