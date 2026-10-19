@@ -24,3 +24,4 @@ repos:
         additional_dependencies:
           - pip-audit==2.10.1
         always_run: true
+        require_serial: true
