@@ -36,6 +36,7 @@ jobs:
           sed -i 's/^AI_ENABLED=.*/AI_ENABLED=false/' student-2/.env
           sed -i 's/^MCP_ENABLED=.*/MCP_ENABLED=false/' student-2/.env
           sed -i 's/^RAG_ENABLED=.*/RAG_ENABLED=false/' student-2/.env
+          sed -i 's/^MULTI_AGENT_ENABLED=.*/MULTI_AGENT_ENABLED=false/' student-2/.env
 
       - name: Verify Docker Compose
         run: docker compose version
@@ -70,6 +71,17 @@ jobs:
           sed -i 's/^AI_ENABLED=.*/AI_ENABLED=false/' student-2/.env
           sed -i 's/^MCP_ENABLED=.*/MCP_ENABLED=false/' student-2/.env
           sed -i 's/^RAG_ENABLED=.*/RAG_ENABLED=false/' student-2/.env
+          sed -i 's/^MULTI_AGENT_ENABLED=.*/MULTI_AGENT_ENABLED=false/' student-2/.env
+
+      - name: Set up Python for Release 2 endpoint tests
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install Release 2 endpoint test dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r student-2/tests/release2/requirements.txt
 
       - name: Start Student 2 services
         run: |
@@ -78,7 +90,7 @@ jobs:
             -f "${COMPOSE_FILE}" \
             up -d --build
 
-      - name: Verify Release 1 services are disabled in CI
+      - name: Verify shared AI services are disabled in CI
         shell: bash
         run: |
           set -e
@@ -86,14 +98,17 @@ jobs:
           ai_enabled=$(docker compose --env-file student-2/.env -f "${COMPOSE_FILE}" exec -T student-2-skill-exchange-backend printenv AI_ENABLED)
           mcp_enabled=$(docker compose --env-file student-2/.env -f "${COMPOSE_FILE}" exec -T student-2-skill-exchange-backend printenv MCP_ENABLED)
           rag_enabled=$(docker compose --env-file student-2/.env -f "${COMPOSE_FILE}" exec -T student-2-skill-exchange-backend printenv RAG_ENABLED)
+          multi_agent_enabled=$(docker compose --env-file student-2/.env -f "${COMPOSE_FILE}" exec -T student-2-skill-exchange-backend printenv MULTI_AGENT_ENABLED)
 
           echo "AI_ENABLED=${ai_enabled}"
           echo "MCP_ENABLED=${mcp_enabled}"
           echo "RAG_ENABLED=${rag_enabled}"
+          echo "MULTI_AGENT_ENABLED=${multi_agent_enabled}"
 
           test "${ai_enabled}" = "false"
           test "${mcp_enabled}" = "false"
           test "${rag_enabled}" = "false"
+          test "${multi_agent_enabled}" = "false"
 
       - name: Wait for services
         shell: bash
@@ -131,6 +146,19 @@ jobs:
       - name: Run Student 2 CRUD and matching test
         shell: pwsh
         run: ./student-2/scripts/api_crud_test.ps1
+
+      - name: Run Release 2 post-commit endpoint tests
+        run: |
+          mkdir -p reports
+          python -m pytest student-2/tests/release2/test_endpoints.py -v --junitxml=reports/student-2-release2-endpoints.xml
+
+      - name: Upload Release 2 endpoint test evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: student-2-release2-endpoint-tests-${{ github.run_id }}
+          path: reports/student-2-release2-endpoints.xml
+          if-no-files-found: warn
 
       - name: Show service status
         if: always()
@@ -192,6 +220,9 @@ jobs:
           - Skill Exchange API returned HTTP 200.
           - Smoke test passed.
           - CRUD, search, and deterministic matching validation passed.
+          - Release 2 post-commit endpoint test 1 passed: GET /skill-exchange/search?skill=Python.
+          - Release 2 post-commit endpoint test 2 passed: GET /skill-exchange/1/matches.
+          - Pytest JUnit evidence was generated for the two Release 2 endpoint tests.
 
           ## Scope
 
