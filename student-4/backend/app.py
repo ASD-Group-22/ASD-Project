@@ -103,6 +103,17 @@ def api_list_profiles():
     methods=["POST"]
 )
 def api_analyse_profile(profile_id):
+    if os.getenv(
+        "AI_ENABLED",
+        "true",
+    ).lower() in (
+        "false",
+        "0",
+        "no",
+    ):
+        return jsonify({
+            "error": "AI Mode is disabled"
+        }), 503
 
     profile, status_code = get_profile(
         profile_id
@@ -195,7 +206,7 @@ def api_rag_profile(profile_id):
 if __name__ == "__main__":
 
     app.run(
-        host="0.0.0.0",
+        host=os.getenv("FLASK_HOST", "0.0.0.0"),  # noqa: S104 - required for container ingress
         port=5005,
-        debug=True
+        debug=os.getenv("FLASK_DEBUG", "false").lower() in ("1", "true", "yes")
     )
