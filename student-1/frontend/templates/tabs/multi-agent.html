@@ -1,0 +1,718 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <title>Project Management Multi-Agent Mode</title>
+
+    <link rel="stylesheet" href="/css/styles.css">
+</head>
+
+<body class="embedded-body">
+
+<main class="embedded-shell">
+
+    <section class="card">
+        <h2>Release 2 Multi-Agent Workflow</h2>
+
+        <p class="muted">
+            Run the shared Planner → Worker → Reviewer workflow using
+            project and task evidence retrieved through the Student 1 backend.
+            A human decision is required before the workflow can complete.
+        </p>
+
+        <div id="multi-agent-status" class="panel">
+            Checking Multi-Agent service status...
+        </div>
+    </section>
+
+    <section class="card">
+        <h2>Start Project Analysis</h2>
+
+        <form id="workflow-form" class="grid-form">
+
+            <label>
+                Project ID
+                <input
+                    id="workflow-project-id"
+                    type="number"
+                    min="1"
+                    required
+                    value="12"
+                >
+            </label>
+
+            <label>
+                Workflow Type
+                <select id="workflow-task-type" required>
+                    <option value="project_overview">
+                        Project Overview
+                    </option>
+                    <option value="project_task_analysis" selected>
+                        Task Analysis
+                    </option>
+                    <option value="project_risk_analysis">
+                        Risk Analysis
+                    </option>
+                </select>
+            </label>
+
+            <label class="span-2">
+                Request
+                <textarea
+                    id="workflow-request"
+                    rows="3"
+                    required
+                >Analyse outstanding tasks, identify dependencies and recommend the next priorities for project 12.</textarea>
+            </label>
+
+            <div class="span-2 action-row">
+                <button id="start-workflow" type="submit">
+                    Start Multi-Agent Workflow
+                </button>
+
+                <span id="workflow-progress" class="muted"></span>
+            </div>
+
+        </form>
+    </section>
+
+    <section class="card">
+        <h2>Workflow Result</h2>
+
+        <div id="workflow-result" class="panel">
+            Start a workflow to view Planner, Worker and Reviewer output.
+        </div>
+    </section>
+
+    <section class="card">
+        <h2>Workflow History</h2>
+
+        <div id="workflow-history" class="panel">
+            No workflow history yet.
+        </div>
+    </section>
+
+    <section class="card" id="human-review-card">
+        <h2>Required Human Review</h2>
+
+        <p class="muted">
+            The Reviewer is advisory. Choose a final human decision before
+            the workflow is considered complete.
+        </p>
+
+        <div class="review-fields">
+            <label class="span-2">
+                Review Notes
+                <textarea
+                    id="review-notes"
+                    rows="3"
+                    placeholder="Optional notes explaining your decision"
+                ></textarea>
+            </label>
+
+            <label class="span-2">
+                Corrected / Partially Accepted Response
+                <textarea
+                    id="corrected-response"
+                    rows="4"
+                    placeholder="Required for Correct. Optional for Partial Accept."
+                ></textarea>
+            </label>
+        </div>
+
+        <div class="action-row">
+            <button type="button" data-review-decision="approve">
+                Approve
+            </button>
+
+            <button
+                type="button"
+                class="secondary"
+                data-review-decision="correct"
+            >
+                Correct
+            </button>
+
+            <button
+                type="button"
+                class="secondary"
+                data-review-decision="partial_accept"
+            >
+                Partial Accept
+            </button>
+
+            <button
+                type="button"
+                class="danger"
+                data-review-decision="reject"
+            >
+                Reject
+            </button>
+        </div>
+
+        <div id="human-review-result" class="human-decision">
+            Start a workflow first.
+        </div>
+    </section>
+
+    <section class="card">
+        <h2>Release 2 Request Flow</h2>
+
+        <div class="workflow-grid">
+            <div>
+                <strong>1 · Student 1 UI</strong>
+                <span>
+                    The browser submits the project ID and analysis request
+                    through the Student 1 backend API.
+                </span>
+            </div>
+
+            <div>
+                <strong>2 · Planner + Evidence</strong>
+                <span>
+                    The Planner creates a plan and the Student 1 adapter
+                    retrieves project and task records through the owning
+                    backend API.
+                </span>
+            </div>
+
+            <div>
+                <strong>3 · Worker + Reviewer</strong>
+                <span>
+                    The Worker analyses the allowed evidence and the Reviewer
+                    checks the result against the plan and retrieved records.
+                </span>
+            </div>
+
+            <div>
+                <strong>4 · Human Review</strong>
+                <span>
+                    Approve, correct, partially accept or reject the result.
+                    The decision is recorded in the workflow history.
+                </span>
+            </div>
+        </div>
+    </section>
+
+</main>
+
+<script>
+    const API = "http://localhost:5001";
+
+    let currentWorkflowId = null;
+    let currentWorkflow = null;
+
+    const statusPanel = document.getElementById('multi-agent-status');
+    const workflowForm = document.getElementById('workflow-form');
+    const projectIdInput = document.getElementById('workflow-project-id');
+    const taskTypeInput = document.getElementById('workflow-task-type');
+    const requestInput = document.getElementById('workflow-request');
+    const startButton = document.getElementById('start-workflow');
+    const progressText = document.getElementById('workflow-progress');
+    const resultPanel = document.getElementById('workflow-result');
+    const historyPanel = document.getElementById('workflow-history');
+    const reviewNotes = document.getElementById('review-notes');
+    const correctedResponse = document.getElementById('corrected-response');
+    const humanReviewResult = document.getElementById('human-review-result');
+
+    const reviewButtons = [
+        ...document.querySelectorAll('[data-review-decision]')
+    ];
+
+    function escapeHtml(value) {
+        return String(value ?? '')
+            .replaceAll('&', '&amp;')
+            .replaceAll('<', '&lt;')
+            .replaceAll('>', '&gt;')
+            .replaceAll('"', '&quot;')
+            .replaceAll("'", '&#039;');
+    }
+
+    function renderList(items) {
+        if (!Array.isArray(items) || items.length === 0) {
+            return '<p class="muted">None.</p>';
+        }
+
+        return `
+            <ul>
+                ${items.map(item => `
+                    <li>${escapeHtml(
+                        typeof item === 'object'
+                            ? JSON.stringify(item)
+                            : item
+                    )}</li>
+                `).join('')}
+            </ul>
+        `;
+    }
+
+    async function request(path, options = {}) {
+        const response = await fetch(API + path, options);
+        const text = await response.text();
+
+        let body;
+
+        try {
+            body = JSON.parse(text);
+        } catch {
+            body = { raw: text };
+        }
+
+        if (!response.ok) {
+            throw new Error(
+                body.error ||
+                body.message ||
+                body.raw ||
+                `HTTP ${response.status}`
+            );
+        }
+
+        return body;
+    }
+
+    function getWorkflow(data) {
+        return data.workflow || data.data?.workflow || data;
+    }
+
+    function renderAgentCards(workflow) {
+        const planner = workflow.planner || {};
+        const plan = planner.plan || {};
+        const worker = workflow.worker || {};
+        const workerResult = worker.result || {};
+        const reviewer = workflow.reviewer || {};
+        const review = reviewer.review || {};
+
+        return `
+            <div class="multi-agent-grid">
+
+                <article class="agent-card">
+                    <h3>Planner</h3>
+
+                    <p class="agent-meta">
+                        ${escapeHtml(planner.status || 'not run')}
+                        · ${escapeHtml(planner.model || 'n/a')}
+                    </p>
+
+                    <p><strong>Objective</strong></p>
+                    <p>${escapeHtml(plan.objective || 'No plan available.')}</p>
+
+                    <p><strong>Steps</strong></p>
+                    ${renderList(plan.steps)}
+
+                    <p><strong>Constraints</strong></p>
+                    ${renderList(plan.constraints)}
+                </article>
+
+                <article class="agent-card">
+                    <h3>Worker</h3>
+
+                    <p class="agent-meta">
+                        ${escapeHtml(worker.status || 'not run')}
+                        · ${escapeHtml(worker.model || 'n/a')}
+                    </p>
+
+                    <p><strong>Answer</strong></p>
+                    <p>${escapeHtml(
+                        workerResult.answer || 'No Worker answer available.'
+                    )}</p>
+
+                    <p><strong>Selected Evidence</strong></p>
+                    ${renderList(workerResult.selected_references)}
+
+                    <p><strong>Limitations</strong></p>
+                    ${renderList(workerResult.limitations)}
+                </article>
+
+                <article class="agent-card">
+                    <h3>Reviewer</h3>
+
+                    <p class="agent-meta">
+                        ${escapeHtml(reviewer.status || 'not run')}
+                        · ${escapeHtml(reviewer.model || 'n/a')}
+                    </p>
+
+                    <p>
+                        <strong>Decision:</strong>
+                        ${escapeHtml(review.decision || 'not available')}
+                    </p>
+
+                    <p>
+                        <strong>Plan followed:</strong>
+                        ${escapeHtml(review.plan_followed ?? 'n/a')}
+                    </p>
+
+                    <p>
+                        <strong>Evidence grounded:</strong>
+                        ${escapeHtml(review.evidence_grounded ?? 'n/a')}
+                    </p>
+
+                    <p><strong>Issues</strong></p>
+                    ${renderList(review.issues)}
+
+                    <p><strong>Recommendation</strong></p>
+                    <p>${escapeHtml(
+                        review.recommendation || 'No recommendation available.'
+                    )}</p>
+                </article>
+
+            </div>
+        `;
+    }
+
+    function renderEvidence(evidence) {
+        if (!evidence) {
+            return '<p class="muted">No evidence available.</p>';
+        }
+
+        const items = evidence.evidence_items || [];
+        const project = evidence.project || {};
+        const tasks = evidence.tasks || [];
+
+        return `
+            <p>
+                <strong>Source:</strong>
+                ${escapeHtml(evidence.source?.service || 'Student 1 backend')}
+                ${escapeHtml(evidence.source?.endpoint || '')}
+            </p>
+
+            <p>
+                <strong>Project:</strong>
+                #${escapeHtml(project.project_id || project.id || '')}
+                ${escapeHtml(project.name || project.title || project.project_name || '')}
+            </p>
+
+            <p>
+                <strong>Evidence records:</strong>
+                ${escapeHtml(evidence.evidence_count ?? items.length)}
+                · task records ${escapeHtml(tasks.length)}
+            </p>
+
+            ${
+                items.length
+                    ? items.map(item => `
+                        <article class="candidate-row">
+                            <strong>${escapeHtml(item.reference_id || item.ref || item.id || 'Evidence')}</strong>
+                            <small>${escapeHtml(
+                                item.content || item.text || item.description ||
+                                JSON.stringify(item)
+                            )}</small>
+                        </article>
+                    `).join('')
+                    : '<p class="muted">Evidence details were not included in this response.</p>'
+            }
+        `;
+    }
+
+    function renderWorkflow(data) {
+        const workflow = getWorkflow(data);
+
+        currentWorkflow = workflow;
+        currentWorkflowId =
+            workflow.workflow_id || workflow.id || currentWorkflowId;
+
+        const humanReview = workflow.human_review || {};
+        const awaitingHuman = workflow.status === 'awaiting_human_review';
+
+        reviewButtons.forEach(button => {
+            button.disabled = !awaitingHuman;
+        });
+
+        humanReviewResult.className = 'human-decision';
+
+        if (awaitingHuman) {
+            humanReviewResult.textContent =
+                'Awaiting the required human review decision.';
+        } else if (humanReview.status) {
+            humanReviewResult.textContent =
+                `Human review status: ${humanReview.status}` +
+                (humanReview.decision
+                    ? ` · Decision: ${humanReview.decision}`
+                    : '');
+        } else {
+            humanReviewResult.textContent =
+                'Human review has not been completed.';
+        }
+
+        const finalSection = workflow.final_response
+            ? `
+                <h3>Final Response</h3>
+                <div class="panel final-response">
+                    ${escapeHtml(workflow.final_response)}
+                </div>
+            `
+            : '';
+
+        resultPanel.innerHTML = `
+            <div class="workflow-summary">
+                <span>
+                    <strong>Workflow:</strong>
+                    <code>${escapeHtml(currentWorkflowId || 'n/a')}</code>
+                </span>
+
+                <span>
+                    <strong>Status:</strong>
+                    ${escapeHtml(workflow.status || 'unknown')}
+                </span>
+
+                <span>
+                    <strong>Task:</strong>
+                    ${escapeHtml(workflow.task_type || 'unknown')}
+                </span>
+            </div>
+
+            <h3>Project Evidence</h3>
+            ${renderEvidence(workflow.evidence)}
+
+            <h3>Agent Results</h3>
+            ${renderAgentCards(workflow)}
+
+            ${finalSection}
+        `;
+    }
+
+    function renderHistory(history) {
+        if (!Array.isArray(history) || history.length === 0) {
+            historyPanel.innerHTML =
+                '<p class="muted">No workflow history available.</p>';
+            return;
+        }
+
+        historyPanel.innerHTML = history.map((row, index) => {
+            const timestamp = row.timestamp
+                ? new Date(row.timestamp).toLocaleString()
+                : '';
+
+            return `
+                <div class="history-row">
+                    <time>${escapeHtml(timestamp)}</time>
+
+                    <span class="history-stage">
+                        ${escapeHtml(row.stage || row.event || row.action || `Event ${index + 1}`)}
+                    </span>
+
+                    <span>${escapeHtml(
+                        row.message || row.details || JSON.stringify(row)
+                    )}</span>
+                </div>
+            `;
+        }).join('');
+    }
+
+    async function loadStatus() {
+        try {
+            const status = await request('/multi-agent/status');
+            const reachable = Boolean(status.service_reachable);
+
+            statusPanel.innerHTML = `
+                <p class="${reachable ? 'status-ok' : 'error'}">
+                    Multi-Agent Mode:
+                    ${escapeHtml(status.status || 'unknown')}.
+                    Shared service reachable:
+                    ${escapeHtml(reachable)}.
+                </p>
+
+                ${
+                    status.service
+                        ? `<p class="muted">
+                            Service:
+                            ${escapeHtml(status.service.service || 'shared multi-agent')}
+                        </p>`
+                        : ''
+                }
+
+                ${
+                    status.service_error
+                        ? `<p class="error">${escapeHtml(status.service_error)}</p>`
+                        : ''
+                }
+            `;
+        } catch (error) {
+            statusPanel.innerHTML = `
+                <p class="error">${escapeHtml(error.message)}</p>
+            `;
+        }
+    }
+
+    async function refreshWorkflow() {
+        if (!currentWorkflowId) return;
+
+        const workflow = await request(
+            `/multi-agent/workflows/${encodeURIComponent(currentWorkflowId)}`
+        );
+
+        renderWorkflow(workflow);
+
+        try {
+            const historyResponse = await request(
+                `/multi-agent/workflows/${encodeURIComponent(currentWorkflowId)}/history`
+            );
+
+            renderHistory(
+                historyResponse.history ||
+                historyResponse.events ||
+                []
+            );
+        } catch (error) {
+            historyPanel.textContent =
+                `Unable to load history: ${error.message}`;
+        }
+    }
+
+    workflowForm.addEventListener('submit', async event => {
+        event.preventDefault();
+
+        startButton.disabled = true;
+        progressText.textContent = 'Starting workflow...';
+        resultPanel.textContent = 'Running the Multi-Agent workflow...';
+        historyPanel.textContent = 'Waiting for workflow history...';
+
+        try {
+            const projectId = Number(projectIdInput.value);
+            const taskType = taskTypeInput.value;
+            const userRequest = requestInput.value.trim();
+
+            if (!Number.isInteger(projectId) || projectId < 1) {
+                throw new Error('Enter a valid positive project ID.');
+            }
+
+            const workflow = await request('/multi-agent/workflows', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    project_id: projectId,
+                    task_type: taskType,
+                    user_request: userRequest
+                })
+            });
+
+            const created = getWorkflow(workflow);
+
+            currentWorkflowId =
+                created.workflow_id || created.id || workflow.workflow_id;
+
+            if (!currentWorkflowId) {
+                throw new Error(
+                    'The server did not return a workflow ID. Check the API response.'
+                );
+            }
+
+            renderWorkflow(workflow);
+
+            // The shared server may return while human review is pending.
+            // Refresh the saved workflow and history using the proxy routes.
+            await refreshWorkflow();
+
+            progressText.textContent =
+                'Workflow started. Check its status and complete human review when requested.';
+        } catch (error) {
+            resultPanel.innerHTML = `
+                <p class="error">${escapeHtml(error.message)}</p>
+            `;
+
+            historyPanel.textContent = 'Workflow history unavailable.';
+            progressText.textContent = '';
+        } finally {
+            startButton.disabled = false;
+        }
+    });
+
+    reviewButtons.forEach(button => {
+        button.addEventListener('click', async () => {
+            if (!currentWorkflowId) {
+                humanReviewResult.textContent = 'Start a workflow first.';
+                return;
+            }
+
+            const decision = button.dataset.reviewDecision;
+            const corrected = correctedResponse.value.trim();
+
+            if (decision === 'correct' && !corrected) {
+                humanReviewResult.textContent =
+                    'A corrected response is required when choosing Correct.';
+                return;
+            }
+
+            if (!confirm(`Submit human review decision: ${decision}?`)) {
+                return;
+            }
+
+            reviewButtons.forEach(item => item.disabled = true);
+            humanReviewResult.textContent = 'Saving human review...';
+
+            try {
+                const result = await request(
+                    `/multi-agent/workflows/${encodeURIComponent(currentWorkflowId)}/human-review`,
+                    {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            decision,
+                            notes: reviewNotes.value.trim() || null,
+                            corrected_response: corrected || null
+                        })
+                    }
+                );
+
+                renderWorkflow(result);
+
+                // Retrieve the persisted state after submitting the decision.
+                await refreshWorkflow();
+
+                humanReviewResult.textContent =
+                    `Human review submitted: ${decision}.`;
+            } catch (error) {
+                humanReviewResult.textContent =
+                    `Unable to submit review: ${error.message}`;
+
+                if (currentWorkflow?.status === 'awaiting_human_review') {
+                    reviewButtons.forEach(item => item.disabled = false);
+                }
+            }
+        });
+    });
+
+    projectIdInput.addEventListener('input', () => {
+        const id = projectIdInput.value || '12';
+        const type = taskTypeInput.value;
+
+        const defaultRequests = {
+            project_overview:
+                `Summarise project ${id} using the retrieved project and task evidence.`,
+            project_task_analysis:
+                `Analyse outstanding tasks, identify dependencies and recommend the next priorities for project ${id}.`,
+            project_risk_analysis:
+                `Identify evidence-backed risks for project ${id} and explain possible mitigations.`
+        };
+
+        requestInput.value = defaultRequests[type];
+    });
+
+    taskTypeInput.addEventListener('change', () => {
+        const id = projectIdInput.value || '12';
+
+        const defaultRequests = {
+            project_overview:
+                `Summarise project ${id} using the retrieved project and task evidence.`,
+            project_task_analysis:
+                `Analyse outstanding tasks, identify dependencies and recommend the next priorities for project ${id}.`,
+            project_risk_analysis:
+                `Identify evidence-backed risks for project ${id} and explain possible mitigations.`
+        };
+
+        requestInput.value = defaultRequests[taskTypeInput.value];
+    });
+
+    reviewButtons.forEach(button => button.disabled = true);
+
+    loadStatus();
+</script>
+
+</body>
+</html>
