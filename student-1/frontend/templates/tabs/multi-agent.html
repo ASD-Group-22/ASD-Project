@@ -32,7 +32,7 @@
         <h2>Start Project Analysis</h2>
 
         <form id="workflow-form" class="grid-form">
-
+            
             <label>
                 Project ID
                 <input
@@ -40,23 +40,8 @@
                     type="number"
                     min="1"
                     required
-                    value="12"
+                    value="1"
                 >
-            </label>
-
-            <label>
-                Workflow Type
-                <select id="workflow-task-type" required>
-                    <option value="project_overview">
-                        Project Overview
-                    </option>
-                    <option value="project_task_analysis" selected>
-                        Task Analysis
-                    </option>
-                    <option value="project_risk_analysis">
-                        Risk Analysis
-                    </option>
-                </select>
             </label>
 
             <label class="span-2">
@@ -65,8 +50,9 @@
                     id="workflow-request"
                     rows="3"
                     required
-                >Analyse outstanding tasks, identify dependencies and recommend the next priorities for project 12.</textarea>
+                >Recommend any tasks missing from project 1 based on its description and existing tasks in the system</textarea>
             </label>
+
 
             <div class="span-2 action-row">
                 <button id="start-workflow" type="submit">
@@ -208,8 +194,18 @@
     const statusPanel = document.getElementById('multi-agent-status');
     const workflowForm = document.getElementById('workflow-form');
     const projectIdInput = document.getElementById('workflow-project-id');
-    const taskTypeInput = document.getElementById('workflow-task-type');
     const requestInput = document.getElementById('workflow-request');
+
+    // Automatically update the default request when the Project ID changes.
+    function updateDefaultRequest() {
+        const id = projectIdInput.value || '1';
+
+        requestInput.value =
+            `Recommend any tasks missing from project ${id} based on its description and existing tasks in the system`;
+    }
+
+    projectIdInput.addEventListener('input', updateDefaultRequest);
+
     const startButton = document.getElementById('start-workflow');
     const progressText = document.getElementById('workflow-progress');
     const resultPanel = document.getElementById('workflow-result');
@@ -571,7 +567,6 @@
 
         try {
             const projectId = Number(projectIdInput.value);
-            const taskType = taskTypeInput.value;
             const userRequest = requestInput.value.trim();
 
             if (!Number.isInteger(projectId) || projectId < 1) {
@@ -585,7 +580,7 @@
                 },
                 body: JSON.stringify({
                     project_id: projectId,
-                    task_type: taskType,
+                    task_type: "project_task_analysis",
                     user_request: userRequest
                 })
             });
@@ -676,37 +671,6 @@
                 }
             }
         });
-    });
-
-    projectIdInput.addEventListener('input', () => {
-        const id = projectIdInput.value || '12';
-        const type = taskTypeInput.value;
-
-        const defaultRequests = {
-            project_overview:
-                `Summarise project ${id} using the retrieved project and task evidence.`,
-            project_task_analysis:
-                `Analyse outstanding tasks, identify dependencies and recommend the next priorities for project ${id}.`,
-            project_risk_analysis:
-                `Identify evidence-backed risks for project ${id} and explain possible mitigations.`
-        };
-
-        requestInput.value = defaultRequests[type];
-    });
-
-    taskTypeInput.addEventListener('change', () => {
-        const id = projectIdInput.value || '12';
-
-        const defaultRequests = {
-            project_overview:
-                `Summarise project ${id} using the retrieved project and task evidence.`,
-            project_task_analysis:
-                `Analyse outstanding tasks, identify dependencies and recommend the next priorities for project ${id}.`,
-            project_risk_analysis:
-                `Identify evidence-backed risks for project ${id} and explain possible mitigations.`
-        };
-
-        requestInput.value = defaultRequests[taskTypeInput.value];
     });
 
     reviewButtons.forEach(button => button.disabled = true);

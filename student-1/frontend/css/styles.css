@@ -1208,3 +1208,306 @@ textarea {
     }
 
 }
+
+
+/* =========================================================
+   RELEASE 2 MULTI-AGENT WORKFLOW
+   ========================================================= */
+
+.embedded-body {
+    min-height: 100vh;
+    background: #f4f6f8;
+    color: #222;
+}
+
+.embedded-shell {
+    width: 100%;
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 25px 30px 50px;
+}
+
+.embedded-shell .card {
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+    padding: 25px;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.embedded-shell h2 {
+    margin: 0 0 12px;
+    font-size: 21px;
+    color: #111827;
+}
+
+.embedded-shell h3 {
+    margin: 20px 0 10px;
+    font-size: 17px;
+    color: #111827;
+}
+
+.embedded-shell p {
+    line-height: 1.5;
+}
+
+.embedded-shell .muted,
+.agent-meta {
+    color: #6b7280;
+    font-size: 13px;
+}
+
+.embedded-shell .panel {
+    padding: 16px;
+    background: #f9fafb;
+    border: 1px solid #e5e7eb;
+    border-radius: 7px;
+    overflow-wrap: anywhere;
+}
+
+.multi-agent-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12px;
+    margin-top: 14px;
+}
+
+.agent-card {
+    min-width: 0;
+    padding: 16px;
+    background: #f9fafb;
+    border: 1px solid #e5e7eb;
+    border-radius: 9px;
+    overflow-wrap: anywhere;
+}
+
+.agent-card h3 {
+    margin: 0 0 8px;
+    font-size: 17px;
+}
+
+.agent-card p,
+.agent-card ul {
+    margin: 8px 0;
+}
+
+.agent-card ul {
+    padding-left: 20px;
+}
+
+.agent-meta {
+    color: #6b7280;
+    font-size: 13px;
+}
+
+.workflow-summary {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 18px;
+    align-items: center;
+}
+
+.workflow-summary code {
+    overflow-wrap: anywhere;
+}
+
+.review-fields {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-top: 16px;
+}
+
+.review-fields .span-2 {
+    grid-column: 1 / -1;
+}
+
+.embedded-shell .grid-form {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+}
+
+.embedded-shell .grid-form label,
+.review-fields label {
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+    font-size: 14px;
+    font-weight: 600;
+    color: #374151;
+}
+
+.embedded-shell .span-2 {
+    grid-column: 1 / -1;
+}
+
+.embedded-shell .action-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+}
+
+.embedded-shell button {
+    border: 1px solid #1f2937;
+    border-radius: 6px;
+    padding: 10px 16px;
+    background: #1f2937;
+    color: #fff;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.embedded-shell button:hover:not(:disabled) {
+    background: #111827;
+}
+
+.embedded-shell button.secondary {
+    background: #fff;
+    color: #374151;
+    border-color: #d1d5db;
+}
+
+.embedded-shell button.secondary:hover:not(:disabled) {
+    background: #f3f4f6;
+}
+
+.embedded-shell button.danger {
+    background: #fff;
+    color: #991b1b;
+    border-color: #fecaca;
+}
+
+.embedded-shell button.danger:hover:not(:disabled) {
+    background: #fef2f2;
+}
+
+.embedded-shell button:disabled {
+    cursor: not-allowed;
+    opacity: 0.55;
+}
+
+.embedded-shell .status-ok {
+    color: #166534;
+}
+
+.embedded-shell .error {
+    color: #b91c1c;
+}
+
+.embedded-shell .human-decision {
+    margin-top: 16px;
+    padding: 12px 14px;
+    border: 1px solid #e5e7eb;
+    border-radius: 6px;
+    background: #f9fafb;
+    color: #374151;
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+.history-row {
+    display: grid;
+    grid-template-columns: 150px 120px minmax(0, 1fr);
+    gap: 12px;
+    padding: 10px 0;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.history-row:last-child {
+    border-bottom: none;
+}
+
+.history-row time,
+.history-row .history-stage {
+    color: #6b7280;
+    font-size: 13px;
+}
+
+.final-response {
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+}
+
+.candidate-row {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    padding: 12px 0;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.candidate-row:last-child {
+    border-bottom: none;
+}
+
+.candidate-row small {
+    color: #4b5563;
+    line-height: 1.5;
+    overflow-wrap: anywhere;
+}
+
+.embedded-shell .workflow-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+}
+
+.embedded-shell .workflow-grid > div {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 16px;
+    background: #f9fafb;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+}
+
+.embedded-shell .workflow-grid strong {
+    color: #111827;
+    font-size: 14px;
+}
+
+.embedded-shell .workflow-grid span {
+    color: #4b5563;
+    font-size: 13px;
+    line-height: 1.6;
+}
+
+@media (max-width: 900px) {
+    .multi-agent-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .embedded-shell {
+        padding: 20px;
+    }
+}
+
+@media (max-width: 760px) {
+    .review-fields,
+    .embedded-shell .grid-form,
+    .embedded-shell .workflow-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .review-fields .span-2,
+    .embedded-shell .span-2 {
+        grid-column: auto;
+    }
+
+    .history-row {
+        grid-template-columns: 1fr;
+        gap: 3px;
+    }
+
+    .embedded-shell .card {
+        padding: 18px;
+    }
+
+    .embedded-shell .action-row button {
+        flex: 1 1 auto;
+    }
+}
