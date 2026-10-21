@@ -1,7 +1,7 @@
 # Group 22 Azure Service Map
 
-This map was derived from the current root docker-compose.yml on the private
-Release 2 branch.
+This map reflects the integrated Release 2 service architecture defined by the
+current root `docker-compose.yml`.
 
 | Service | Container Port | ACA Ingress | Main Dependencies |
 |---|---:|---|---|

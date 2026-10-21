@@ -38,7 +38,7 @@ Current implementation:
 - MCP, RAG and Multi-Agent already use /api.
 - Normal and AI pages require cloud adaptation.
 
-Proven Student 2 POC implementation:
+Validated Student 2 cloud routing implementation:
 - Cloud image replaces remaining backend URLs with /api.
 - Nginx runtime template receives BACKEND_ORIGIN.
 - /api is reverse-proxied to the Student 2 internal backend.
@@ -110,7 +110,7 @@ Apps environment.
 
 ## Excluded VM-Era Routing Experiments
 
-The current private working tree contains earlier experimental changes that
+Earlier routing experiments used changes that
 replace localhost with the browser's current hostname while retaining local
 host ports, for example:
 
@@ -118,7 +118,7 @@ host ports, for example:
     current-host:5202
     current-host:5009
 
-Similar hostname rewriting also exists experimentally in the shared home page.
+Similar hostname rewriting was also evaluated for the shared home page.
 
 These changes were designed for a single-host/VM deployment and are not the
 target Azure Container Apps architecture.

@@ -2,16 +2,14 @@
 
 ## Status
 
-This directory contains the planned group-wide Azure Container Apps deployment
-architecture for Release 2.
+This directory contains the group-wide Azure Container Apps deployment
+implementation used for the integrated Release 2 application.
 
-It is based on the successful Student 2 Azure Container Apps proof of concept
-under:
+It supports the shared home and all five student features using separate
+frontend, backend and database Container Apps.
 
-    scripts/cloud/azure-poc/
-
-The Student 2 POC is retained separately as tested implementation/evidence.
-This directory is the blueprint for the final integrated Group 22 deployment.
+The deployment is orchestrated by `.github/workflows/cloud-deployment.yml` and
+has been validated through the official Group 22 cloud workflow.
 
 No group-wide Azure resources should be created merely by using the files in
 this directory.
@@ -128,10 +126,8 @@ Student 2 and Student 3 through SKILL_PROFILE_SERVICE_URL.
 
 ## Container Image Workflow
 
-The Azure for Students subscription has already demonstrated that ACR Tasks
-cannot be relied upon.
-
-The final workflow should therefore use:
+The Azure for Students deployment does not rely on ACR Tasks. The validated
+workflow uses:
 
     docker build
         -> az acr login
@@ -139,43 +135,35 @@ The final workflow should therefore use:
         -> docker push
         -> Azure Container Apps deployment/update
 
-The planned group scripts are:
+The group deployment scripts are:
 
     env-setup.sh
     build-images.sh
     push-images.sh
-    deploy-azure-env.sh
     deploy-databases.sh
     deploy-backends.sh
     deploy-frontends.sh
     deploy-home.sh
     deployment-testing.ps1
-    get-deployment-info.sh
 
-These should be implemented only after the group blueprint is accepted.
+These scripts are orchestrated by the official cloud deployment workflow.
 
 ## Persistence
 
-The Student 2 POC proved cloud CRUD using the existing SQLite database service,
-but the ACA writable filesystem is ephemeral.
+The integrated deployment uses the existing SQLite database services. The
+Azure Container Apps writable filesystem is ephemeral, so this configuration
+is suitable for the current assessment demonstration but is not production-grade
+persistent storage.
 
-The final group deployment must choose between:
-
-- seeded/ephemeral demonstration databases, or
-- persistent Azure Files mounts.
-
-Persistence should be added after integrated deployment works unless it is
-required for assessment evidence.
+A production deployment would require a persistent storage design, such as
+Azure Files or a managed database service.
 
 ## GitHub Actions
 
-The final:
+The `.github/workflows/cloud-deployment.yml` workflow acts as a thin
+orchestrator.
 
-    .github/workflows/cloud-deployment.yml
-
-should remain a thin orchestrator.
-
-It should:
+It:
 
 1. run only after required validation succeeds,
 2. authenticate to Azure using the approved GitHub/Azure mechanism,
