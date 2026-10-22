@@ -6,7 +6,6 @@ from models.project_requirement import ProjectRequirement
 from models.group import Group
 from models.subject import Subject
 from models.recommendation import Recommendation
-from models.student import Student
 
 app = Flask(__name__)
 
@@ -306,4 +305,4 @@ def read_recommendation(subject):
 
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=6000)
+    app.run(host="0.0.0.0", port=6000)  # noqa: S104 - Backend containers must reach this database API.

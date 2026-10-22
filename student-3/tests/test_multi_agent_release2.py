@@ -33,7 +33,17 @@ def test_create_workflow_forwards_validated_group_context(client, monkeypatch):
         'subject': ' ASD ', 'group_size': 5, 'student_ids': [1, 2, 3], 'user_request': 'Balance groups.'
     })
     assert response.status_code == 201
-    assert create.call_args.args == ('ASD', 5, [1, 2, 3], 'Balance groups.')
+    create.assert_called_once()
+    subject, group_size, student_ids, forwarded_request = create.call_args.args
+    assert (subject, group_size, student_ids) == ('ASD', 5, [1, 2, 3])
+    # Preserve the user's request while requiring the feature's evidence rules.
+    # Do not require the route to forward the original text unchanged.
+    assert forwarded_request.startswith('Balance groups.')
+    assert 'recorded subject skill requirements' in forwarded_request
+    assert 'selected skill profiles' in forwarded_request
+    assert 'never calculate, average or rank IDs' in forwarded_request
+    assert 'skill coverage' in forwarded_request
+    assert 'unavoidable gaps' in forwarded_request
 
 
 @pytest.mark.parametrize('payload', [

@@ -10,10 +10,17 @@ ui_bp = Blueprint("ui", __name__)
 DB_URL = os.getenv("DB_URL", "http://database-service:6000")
 
 
+@ui_bp.errorhandler(requests.RequestException)
+def upstream_request_error(exc):
+    if isinstance(exc, requests.Timeout):
+        return jsonify(error='Database request timed out. Please try again.'), 504
+    return jsonify(error='Database service is unavailable. Please try again.'), 502
+
+
 # ---------------- SUBJECTS ----------------
 @ui_bp.get("/subjects")
 def list_subjects():
-    res = requests.get(f"{DB_URL}/subjects")
+    res = requests.get(f"{DB_URL}/subjects", timeout=15)
     return jsonify(res.json()), res.status_code
 
 
@@ -26,7 +33,8 @@ def create_skill_req():
 
     res = requests.post(
         f"{DB_URL}/requirements",
-        json={"subject": subject, "requirements": requirements}
+        json={"subject": subject, "requirements": requirements},
+        timeout=15,
     )
 
     return jsonify(res.json()), res.status_code
@@ -34,7 +42,7 @@ def create_skill_req():
 
 @ui_bp.get("/skills/<subject>")
 def read_requirements(subject):
-    res = requests.get(f"{DB_URL}/requirements/{subject}")
+    res = requests.get(f"{DB_URL}/requirements/{subject}", timeout=15)
     return jsonify(res.json()), res.status_code
 
 
@@ -51,7 +59,7 @@ def delete_requirement(subject, skill):
 # ---------------- GROUPS ----------------
 @ui_bp.get("/groups")
 def list_groups():
-    res = requests.get(f"{DB_URL}/groups")
+    res = requests.get(f"{DB_URL}/groups", timeout=15)
     return jsonify(res.json()), res.status_code
 
 
@@ -116,7 +124,7 @@ def delete_group_by_id(group_id):
 
 @ui_bp.delete("/groups/delete/<group_name>")
 def delete_group(group_name):
-    res = requests.delete(f"{DB_URL}/groups/{group_name}")
+    res = requests.delete(f"{DB_URL}/groups/{group_name}", timeout=15)
     return jsonify(res.json()), res.status_code
 
 
