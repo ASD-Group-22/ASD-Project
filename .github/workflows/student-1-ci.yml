@@ -91,29 +91,45 @@ jobs:
             -f "${COMPOSE_FILE}" \
             up -d --build
 
-      - name: Verify AI features are disabled in CI
+            - name: Verify AI features are disabled in CI
         shell: bash
         run: |
-          set -e
+          set -uo pipefail
 
           backend_service=$(docker compose \
             --env-file student-1/.env \
             -f "${COMPOSE_FILE}" \
-            config --services | grep -i backend | head -n 1)
+            config --services | grep -i backend | head -n 1 || true)
 
           if [ -z "$backend_service" ]; then
             echo "FAIL: Could not identify the backend service."
+            docker compose \
+              --env-file student-1/.env \
+              -f "${COMPOSE_FILE}" \
+              config --services
             exit 1
           fi
 
+          echo "Backend service: ${backend_service}"
+
           for variable in AI_ENABLED MCP_ENABLED RAG_ENABLED MULTI_AGENT_ENABLED; do
-            value=$(docker compose \
+            echo "Checking ${variable}..."
+
+            if value=$(docker compose \
               --env-file student-1/.env \
               -f "${COMPOSE_FILE}" \
-              exec -T "$backend_service" printenv "$variable")
+              exec -T "$backend_service" printenv "$variable"); then
+              echo "${variable}=${value}"
+            else
+              echo "FAIL: ${variable} is missing or the command failed."
+              continue
+            fi
 
-            echo "${variable}=${value}"
-            test "$value" = "false"
+            if [ "$value" != "false" ]; then
+              echo "FAIL: Expected ${variable}=false, got '${value}'."
+            else
+              echo "PASS: ${variable} is disabled."
+            fi
           done
 
       - name: Wait for services
