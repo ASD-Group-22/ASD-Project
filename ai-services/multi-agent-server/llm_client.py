@@ -13,12 +13,12 @@ OLLAMA_URL = os.getenv(
 
 PLANNER_MODEL = os.getenv(
     "MULTI_AGENT_PLANNER_MODEL",
-    "qwen3:8b",
+    "qwen2.5:0.5b",
 )
 
 WORKER_MODEL = os.getenv(
     "MULTI_AGENT_WORKER_MODEL",
-    "qwen3:8b",
+    "qwen2.5:0.5b",
 )
 
 REVIEWER_MODEL = os.getenv(
@@ -29,7 +29,7 @@ REVIEWER_MODEL = os.getenv(
 OLLAMA_TIMEOUT_SECONDS = float(
     os.getenv(
         "MULTI_AGENT_OLLAMA_TIMEOUT_SECONDS",
-        "120",
+        "300",
     )
 )
 
