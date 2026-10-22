@@ -91,7 +91,7 @@ jobs:
             -f "${COMPOSE_FILE}" \
             up -d --build
 
-            - name: Verify AI features are disabled in CI
+      - name: Verify AI features are disabled in CI
         shell: bash
         run: |
           set -uo pipefail
