@@ -16,6 +16,9 @@ def create_app():
     from routes.release1 import r1_bp
     app.register_blueprint(r1_bp, url_prefix='/r1')
 
+    from routes.multi_agent_mode import multi_agent_bp
+    app.register_blueprint(multi_agent_bp, url_prefix='/r2')
+
     return app
 
 app = create_app()

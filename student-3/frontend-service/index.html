@@ -19,6 +19,7 @@
     <button type="button" class="tab" data-target="recommendationsPanel">Recommendations</button>
     <button type="button" class="tab" data-target="mcpPanel">MCP</button>
     <button type="button" class="tab" data-target="ragPanel">RAG</button>
+    <button type="button" class="tab" data-target="multiAgentPanel">Multi-Agent</button>
   </nav>
 
   <main class="container">
@@ -133,7 +134,45 @@
     <button id="r1RagBtn" type="button">Ask with Sources</button>
     <pre id="r1RagOutput" aria-live="polite"></pre>
   </div>
-    <footer class="footer">ASD Group 22 Â· Release 1 Â· Project Group Formation</footer>
+  <div id="multiAgentPanel" class="panel">
+    <h2>Multi-Agent Group Formation</h2>
+    <p>Create an evidence-backed group-planning workflow from recorded requirements and current Skill Profiles. The workflow always waits for your decision and never creates final groups automatically.</p>
+    <p id="maStatus" role="status"></p>
+    <div class="ma-request-grid">
+      <label>Subject: <select id="maSubject"><option value="">Loading subjects...</option></select></label>
+      <label>Target group size: <select id="maGroupSize"><option value="3">3</option><option value="4">4</option><option value="5" selected>5</option></select></label>
+    </div>
+    <label>Student IDs <span class="ma-hint">(comma separated; leave blank to use all current profiles)</span><input id="maStudentIds" placeholder="1, 2, 3"></label>
+    <label>Request <span class="ma-hint">(optional)</span><textarea id="maRequest" maxlength="1000" rows="3" placeholder="Recommend balanced groups and explain the evidence."></textarea></label>
+    <button id="maStartBtn" type="button">Start Workflow</button>
+
+    <section id="maResults" class="ma-results" hidden aria-live="polite">
+      <div id="maSummary" class="ma-summary"></div>
+      <h3>Evidence</h3>
+      <div id="maEvidence"></div>
+      <h3>Agent Results</h3>
+      <div id="maAgentResults" class="ma-agent-grid"></div>
+      <details class="ma-raw-workflow">
+        <summary>View raw workflow record</summary>
+        <pre id="maOutput"></pre>
+      </details>
+    </section>
+
+    <section class="ma-human-review" aria-labelledby="maHumanReviewHeading">
+      <h3 id="maHumanReviewHeading">Human Review</h3>
+      <p>Use the evidence, proposal and reviewer result to make the final decision. If the Reviewer cannot return valid structured JSON, this remains a human decision rather than an invented AI outcome.</p>
+      <label>Review notes or correction<textarea id="maNotes" maxlength="2000" rows="3" placeholder="Optional review notes"></textarea></label>
+      <div class="ma-actions">
+        <button data-ma-decision="approve" type="button" disabled>Approve</button>
+        <button data-ma-decision="partial_accept" type="button" disabled>Partially Accept</button>
+        <button data-ma-decision="correct" type="button" disabled>Correct</button>
+        <button data-ma-decision="reject" type="button" disabled>Reject</button>
+      </div>
+      <p id="maHumanStatus" role="status"></p>
+      <section id="maFinalResult" class="ma-evidence-card" aria-labelledby="maFinalHeading" hidden></section>
+    </section>
+  </div>
+    <footer class="footer">ASD Group 22 · Release 2 · Project Group Formation</footer>
   </main>
 
   <!-- Modal -->
@@ -176,7 +215,7 @@
 
   /* ---------------------- SUBJECTS ---------------------- */
   async function loadSubjects() {
-    const selects = ['skillsSubjectSelect', 'recSubjectSelect', 'r1Subject']
+    const selects = ['skillsSubjectSelect', 'recSubjectSelect', 'r1Subject', 'maSubject']
       .map(id => document.getElementById(id));
     try {
       const res = await fetch(`${backend}/ui/subjects?t=${Date.now()}`);
@@ -439,5 +478,7 @@ async function loadProfiles() {
 <script src="js/recommendation-history.js"></script>
 <script src="js/agentic-review.js?v=single-attempt-1"></script>
 <script src="js/release1.js?v=subject-dropdown-1"></script>
+<script src="js/multi-agent.js?v=human-review-result-1"></script>
 </body>
 </html>
+

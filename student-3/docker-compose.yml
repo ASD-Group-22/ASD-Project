@@ -29,6 +29,9 @@ services:
       MCP_URL: "http://host.docker.internal:5100/mcp"
       RAG_SERVICE_URL: "http://host.docker.internal:5003"
       RAG_TIMEOUT_SECONDS: "180"
+      MULTI_AGENT_ENABLED: "${MULTI_AGENT_ENABLED:-true}"
+      MULTI_AGENT_SERVICE_URL: "${MULTI_AGENT_SERVICE_URL:-http://host.docker.internal:5101}"
+      MULTI_AGENT_TIMEOUT_SECONDS: "${MULTI_AGENT_TIMEOUT_SECONDS:-240}"
 
   frontend-service:
     build: ./frontend-service
