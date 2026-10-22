@@ -1,0 +1,8 @@
+#multiAgentPanel .release2-flow{display:grid;gap:12px;margin-top:18px}
+#multiAgentPanel .agent-stage{background:var(--surface-soft,#f9fafb);border:1px solid var(--border,#e5e7eb);border-radius:9px;padding:16px}
+#multiAgentPanel .agent-stage strong{display:block;margin-bottom:6px;color:var(--text,#111827)}
+#multiAgentPanel .agent-stage p{margin:4px 0;font-size:14px}
+#multiAgentReview{display:grid;gap:12px;margin-top:16px}
+#multiAgentReview button{justify-self:start}
+
+#multiAgentPanel .hidden{display:none!important}
