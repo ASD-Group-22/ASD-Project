@@ -1,0 +1,174 @@
+{
+  "workflow_id": "c5f23592-3390-43f9-beda-02659d6af279",
+  "feature": "student4",
+  "task_type": "skill_profile_review",
+  "user_request": "Summarise the recorded skills, strengths, and weaknesses without inventing facts.",
+  "context": {
+    "profile_id": 1
+  },
+  "status": "rejected",
+  "created_at": "2026-10-22T19:33:37.677414+00:00",
+  "updated_at": "2026-10-22T19:33:58.715659+00:00",
+  "planner": {
+    "status": "success",
+    "agent": "planner",
+    "model": "qwen2.5:0.5b",
+    "plan": {
+      "objective": "Summarize the recorded skills, strengths, and weaknesses without inventing facts.",
+      "feature": "student4",
+      "task_type": "skill_profile_review",
+      "steps": [
+        "Retrieve the recorded skills, strengths, and weaknesses of student4 from the provided profile_id"
+      ],
+      "required_evidence": [
+        "student4"
+      ],
+      "constraints": []
+    }
+  },
+  "evidence": {
+    "feature": "student4",
+    "task_type": "skill_profile_review",
+    "source": {
+      "service": "student-4-backend-api",
+      "endpoint": "/api/profiles/1"
+    },
+    "request_context": {
+      "profile_id": 1
+    },
+    "evidence_items": [
+      {
+        "reference_id": "profile:1",
+        "kind": "skill_profile",
+        "data": {
+          "created_at": "2026-09-08 15:44:31",
+          "profile_id": 1,
+          "skills": [
+            {
+              "profile_id": 1,
+              "skill_level": "Intermediate",
+              "skill_name": "Python",
+              "strength": "Problem solving",
+              "student_skill_id": 1,
+              "weakness": "Advanced libraries"
+            },
+            {
+              "profile_id": 1,
+              "skill_level": "Intermediate",
+              "skill_name": "SQL",
+              "strength": "Database queries",
+              "student_skill_id": 2,
+              "weakness": "Query optimisation"
+            }
+          ],
+          "student_id": 1,
+          "updated_at": "2026-09-08 15:44:31"
+        }
+      }
+    ],
+    "allowed_output_references": [
+      "profile:1"
+    ],
+    "evidence_count": 1
+  },
+  "worker": {
+    "status": "success",
+    "agent": "worker",
+    "model": "llama3.1:8b",
+    "result": {
+      "answer": "Student4 has intermediate skills in Python and SQL, with strengths in problem solving and database queries, and weaknesses in advanced libraries and query optimisation.",
+      "selected_references": [
+        "profile:1"
+      ],
+      "limitations": [
+        "Insufficient evidence to provide a more detailed analysis"
+      ]
+    }
+  },
+  "reviewer": {
+    "status": "success",
+    "agent": "reviewer",
+    "model": "qwen2.5:0.5b",
+    "review": {
+      "decision": "approve",
+      "plan_followed": true,
+      "evidence_grounded": true,
+      "issues": [],
+      "recommendation": "Student4 has intermediate skills in Python and SQL, with strengths in problem solving and database queries, and weaknesses in advanced libraries and query optimisation. The provided evidence is sufficient to summarize the recorded skills, strengths, and weaknesses without inventing facts.",
+      "evidence_count": 1
+    }
+  },
+  "human_review": {
+    "status": "completed",
+    "decision": "reject",
+    "notes": "Testing human rejection: this draft must not become an accepted final response.",
+    "corrected_response": "",
+    "reviewed_at": "2026-10-22T19:33:58.714152+00:00"
+  },
+  "final_response": null,
+  "history": [
+    {
+      "timestamp": "2026-10-22T19:33:37.677432+00:00",
+      "stage": "created",
+      "message": "Multi-Agent workflow created.",
+      "details": {
+        "feature": "student4",
+        "task_type": "skill_profile_review"
+      }
+    },
+    {
+      "timestamp": "2026-10-22T19:33:40.996011+00:00",
+      "stage": "planner",
+      "message": "Planner stage completed.",
+      "details": {
+        "status": "success",
+        "model": "qwen2.5:0.5b"
+      }
+    },
+    {
+      "timestamp": "2026-10-22T19:33:41.152815+00:00",
+      "stage": "evidence",
+      "message": "Feature evidence retrieved through the owning backend/API.",
+      "details": {
+        "source": {
+          "service": "student-4-backend-api",
+          "endpoint": "/api/profiles/1"
+        },
+        "evidence_count": 1
+      }
+    },
+    {
+      "timestamp": "2026-10-22T19:33:56.096665+00:00",
+      "stage": "worker",
+      "message": "Worker stage completed using supplied application evidence.",
+      "details": {
+        "status": "success",
+        "model": "llama3.1:8b"
+      }
+    },
+    {
+      "timestamp": "2026-10-22T19:33:58.633516+00:00",
+      "stage": "reviewer",
+      "message": "Reviewer stage completed against the plan and evidence.",
+      "details": {
+        "status": "success",
+        "model": "qwen2.5:0.5b",
+        "decision": "approve"
+      }
+    },
+    {
+      "timestamp": "2026-10-22T19:33:58.634553+00:00",
+      "stage": "human_review",
+      "message": "Workflow is awaiting the required human review decision.",
+      "details": {}
+    },
+    {
+      "timestamp": "2026-10-22T19:33:58.714168+00:00",
+      "stage": "human_review",
+      "message": "Human review completed.",
+      "details": {
+        "decision": "reject"
+      }
+    }
+  ]
+}
