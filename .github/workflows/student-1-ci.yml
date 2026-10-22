@@ -82,7 +82,7 @@ jobs:
       - name: Install Release 2 endpoint test dependencies
         run: |
           python -m pip install --upgrade pip
-          python -m pip install -r student-1/tests/release2/requirements.txt
+          python -m pip install -r student-1/tests/requirements.txt
 
       - name: Start Student 1 services
         run: |
@@ -157,7 +157,7 @@ jobs:
         run: |
           mkdir -p reports
           python -m pytest \
-            student-1/tests/release2/test_endpoints.py \
+            student-1/tests/test_endpoints.py \
             -v \
             --junitxml=reports/student-1-release2-endpoints.xml
 
