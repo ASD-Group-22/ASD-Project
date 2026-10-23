@@ -1,61 +1,165 @@
-# ASD Group 22 – Release 1
+# ASD Group 22 - Release 2
 
-Release 1 extends the Group 22 Release 0 microservice application with one shared local MCP server, one shared local RAG service, and one shared local agentic validation loop.
+Final integrated Release 2 application for UTS 41026 Advanced Software Development with Agentic AI.
+
+Release 2 extends the completed Release 1 system with a shared local Multi-Agent Server, Planner, Worker and Reviewer agents, human review, Release 2 agentic-loop review modes, pre-commit security testing, post-commit endpoint CI/CD testing, and Microsoft Azure deployment.
 
 ## Student Features
 
-- Student 1 – Project Management
-- Student 2 – Skill Exchange
-- Student 3 – Project Group Formation
-- Student 4 – Skill Profile
-- Student 5 – AI Campus Space Finder
+1. Student 1 - Project Management
+2. Student 2 - Skill Exchange
+3. Student 3 - Project Group Formation
+4. Student 4 - Skill Profile
+5. Student 5 - AI Campus Space Finder
 
-## Architecture
+Each feature maintains its own frontend, backend/API and database microservices.
 
-Each student feature retains its containerised frontend, backend/API and database microservices.
+## Local Architecture
 
-The following services run locally outside Docker Compose:
+Student microservices run through the shared root `docker-compose.yml`.
 
-- Ollama / local AI – `localhost:11434`
-- Shared MCP server – `localhost:5100/mcp`
-- Shared RAG server – `localhost:5003`
-- Shared agentic validation loop
+The following shared AI services run locally outside Docker Compose:
 
-Containerised backends access local services through `host.docker.internal`.
+- Ollama - `http://localhost:11434`
+- MCP Server - `http://localhost:5100/mcp`
+- RAG Server - `http://localhost:5003`
+- Multi-Agent Server - `http://localhost:5101`
+- Shared agentic loop - `ai-services/agentic-loop/`
 
-## Shared Release 1 Services
+Containerised backends access the local shared services through `host.docker.internal`.
 
-- `ai-services/mcp-server/` – shared MCP server and feature tools
-- `ai-services/rag-server/` – shared RAG pipeline and feature sources
-- `ai-services/agentic-loop/` – shared Plan → Act → Observe → Adapt validator
+## Release 2 Multi-Agent Flow
 
-Feature-specific integrations are separated into `studentX.py` modules under the MCP tools, RAG sources and agentic scenarios directories.
+`Frontend UI -> Backend/API -> Multi-Agent Server -> Planner -> Worker -> Reviewer -> Human Review -> Backend/API -> Frontend UI`
 
-## Running the Application
+The shared Multi-Agent Server contains adapters for all five features:
 
-Start the containerised feature application from the repository root:
+- `student1`
+- `student2`
+- `student3`
+- `student4`
+- `student5`
 
-```powershell
-docker compose up -d --build
+Default local models:
 
-```
+- Planner - `qwen3:8b`
+- Worker - `qwen3:8b`
+- Reviewer - `llama3.1:8b`
 
-Ollama, the shared MCP server and shared RAG server run separately on the local host when AI, MCP and RAG functionality is required.
+Human review supports approval, correction, partial acceptance and rejection.
 
-## Validation
+## Running the Local Application
 
-The shared agentic validation loop supports MCP and RAG validation across all five student features.
+From the repository root:
 
-Final integrated validation results:
+`docker compose up -d --build`
 
-- MCP mode – 11/11 scenarios passed
-- RAG mode – 15/15 scenarios passed
-- Combined – 26/26 scenarios passed
+Unified home page:
 
-RAG validation covers retrieval, grounded responses with citations and confidence categories, and insufficient-context behaviour.
+`http://localhost:3000`
 
-## CI/CD
+Feature frontends:
 
-Student-specific GitHub Actions workflows are located under `.github/workflows/student-*-ci.yml`.
+| Feature | Frontend |
+| --- | --- |
+| Student 1 - Project Management | `http://localhost:3001` |
+| Student 2 - Skill Exchange | `http://localhost:8202` |
+| Student 3 - Group Formation | `http://localhost:8000` |
+| Student 4 - Skill Profile | `http://localhost:5006` |
+| Student 5 - Campus Space Finder | `http://localhost:8005` |
 
-The workflows build and validate the containerised feature microservices without depending on the locally hosted MCP and RAG services.
+## Shared Agentic AI Services
+
+Release 0 and Release 1 functionality is retained:
+
+- AI-Mode with Ollama
+- shared MCP Server
+- shared RAG Server
+- grounded RAG responses with citations and confidence handling
+- shared Plan -> Act -> Observe -> Adapt agentic loop
+
+Release 2 adds:
+
+- shared Multi-Agent Server
+- Planner Agent
+- Worker Agent
+- Reviewer Agent
+- Human Review
+- Multi-Agent Workflow Review
+- Testing Report Review
+- Cloud Deployment Report Review
+
+## Security and Testing
+
+Local pre-commit validation uses:
+
+- Ruff security and correctness rules
+- detect-secrets
+- pip-audit
+
+Per-student testing reports and raw evidence are stored under:
+
+`reports/release2/`
+
+Each student's GitHub Actions workflow tests two assigned backend/API endpoint functions.
+
+Final validated software-changing commit:
+
+`9d623239f4e30840b00e5ef221702114317a519c`
+
+Successful final integration CI:
+
+`39973124752`
+
+Successful final student workflow runs:
+
+| Student | Run |
+| --- | ---: |
+| Student 1 | `39972587866` |
+| Student 2 | `39973749169` |
+| Student 3 | `39972587659` |
+| Student 4 | `39972587459` |
+| Student 5 | `39972587538` |
+
+See `docs/release2-evidence-index.md` for detailed evidence locations.
+
+## Cloud Deployment
+
+The integrated group application was deployed using Microsoft Azure Container Apps.
+
+The required cloud baseline keeps local Agentic AI integrations disabled by default:
+
+- AI-Mode - disabled
+- MCP - disabled
+- RAG - disabled
+- Multi-Agent - disabled
+
+Core frontend, backend/API, database and CRUD functionality remain operational in the cloud deployment.
+
+Cloud deployment artefacts:
+
+- `.github/workflows/cloud-deployment.yml`
+- `scripts/cloud/azure/`
+- `reports/release2/cloud-deployment-report.md`
+- `reports/release2/cloud-deployment-results.md`
+
+## Repository Structure
+
+- `.github/workflows/` - GitHub Actions CI/CD workflows
+- `ai-services/` - MCP, RAG, Multi-Agent and agentic-loop services
+- `docs/` - final documentation and Release 2 evidence index
+- `reports/release2/` - testing, deployment and evidence reports
+- `scripts/cloud/azure/` - reusable Azure deployment scripts
+- `shared/` - unified home page and shared resources
+- `student-1/` - Project Management
+- `student-2/` - Skill Exchange
+- `student-3/` - Project Group Formation
+- `student-4/` - Skill Profile
+- `student-5/` - Campus Space Finder
+- `docker-compose.yml` - integrated local microservice deployment
+
+## Release 2 Evidence
+
+See:
+
+`docs/release2-evidence-index.md`

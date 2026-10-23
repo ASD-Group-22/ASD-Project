@@ -147,3 +147,22 @@ The detailed deployment evidence is stored in:
 Official GitHub Actions deployment:
 
 `https://github.com/ASD-Group-22/ASD-Project/actions/runs/39589826282`
+
+## Final Human Release Decision
+
+**Decision: APPROVE**
+
+After reviewing the Azure deployment results and the successful Cloud Deployment Review, Group 22 approved the deployed Release 2 baseline for final submission.
+
+The decision was based on the following verified evidence:
+
+- all 16 required Azure Container Apps were deployed successfully;
+- the shared home page and all five student frontends were reachable;
+- CRUD validation passed for Students 1 through 5;
+- backend and database services remained internal to the Azure environment;
+- AI-Mode, MCP, RAG and Multi-Agent functionality remained disabled for the required cloud baseline;
+- the Release 2 Cloud Deployment Review completed successfully.
+
+The deployment is therefore accepted as meeting the Release 2 cloud baseline for final submission.
+
+Decision recorded: 24 October 2026.
