@@ -118,6 +118,5 @@ and the shared agentic-loop validation logs.
 ## Result
 
 Student 4 satisfies the Release 2 security-testing and post-commit endpoint
-testing requirements. The previous report's outstanding CI and integration
-limitations have been resolved: the Student 4 CI workflow and final integration
+testing requirements. Earlier CI and integration limitations have been resolved: the Student 4 CI workflow and final integration
 CI now both pass.

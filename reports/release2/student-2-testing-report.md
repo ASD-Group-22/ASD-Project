@@ -94,7 +94,7 @@ are:
 1. `GET /skill-exchange/search?skill=Python`
 2. `GET /skill-exchange/1/matches`
 
-The official workflow run `39196391412` executed successfully against commit
+The official workflow run `39973749169` executed successfully against commit
 `9d623239f4e30840b00e5ef221702114317a519c`.
 
 The workflow completed these validation stages successfully:
@@ -132,11 +132,11 @@ Pytest reported:
 
 ## CI Evidence Artifacts
 
-Successful workflow run `39196391412` generated the following GitHub Actions
+Successful workflow run `39973749169` generated the following GitHub Actions
 artifacts:
 
-- `student-2-ci-evidence-39196391412`
-- `student-2-release2-endpoint-tests-39196391412`
+- `student-2-ci-evidence-39973749169`
+- `student-2-release2-endpoint-tests-39973749169`
 
 The endpoint-test artifact contains the generated pytest/JUnit evidence for the
 two required Release 2 endpoint tests.
