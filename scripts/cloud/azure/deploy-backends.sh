@@ -141,6 +141,7 @@ deploy_backend \
     "AI_ENABLED=false" \
     "MCP_ENABLED=false" \
     "RAG_ENABLED=false" \
+    "MULTI_AGENT_ENABLED=false" \
     "FLASK_DEBUG=false"
 
 S4_API_FQDN="$(get_fqdn "g22-r2-s4-api")"
@@ -165,7 +166,8 @@ deploy_backend \
     "DATABASE_SERVICE_URL=https://${S1_DB_FQDN}" \
     "AI_ENABLED=false" \
     "MCP_ENABLED=false" \
-    "RAG_ENABLED=false"
+    "RAG_ENABLED=false" \
+    "MULTI_AGENT_ENABLED=false"
 
 # ------------------------------------------------------------
 # Student 2 - Skill Exchange
@@ -196,7 +198,8 @@ deploy_backend \
     "PROMPT_ROOT=/prompts" \
     "AI_ENABLED=false" \
     "MCP_ENABLED=false" \
-    "RAG_ENABLED=false"
+    "RAG_ENABLED=false" \
+    "MULTI_AGENT_ENABLED=false"
 
 # ------------------------------------------------------------
 # Student 5 - AI Campus Space Finder
@@ -209,7 +212,8 @@ deploy_backend \
     "DATABASE_SERVICE_URL=https://${S5_DB_FQDN}" \
     "AI_MODE=false" \
     "MCP_MODE=false" \
-    "RAG_MODE=false"
+    "RAG_MODE=false" \
+    "MULTI_AGENT_MODE=false"
 
 echo
 echo "============================================================"
