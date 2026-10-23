@@ -4,32 +4,32 @@
 
 Student 2 - Skill Exchange Service
 
-## Evidence Baseline
+## Final Validation Baseline
 
-Release 2 implementation branch:
+Final integrated branch:
 
-`release2/student-2`
+`release2/final-integration`
 
-Validated Student 2 implementation commit:
+Final validated commit:
 
-`8a64a09e8a8a6c148e52511bb1cecf99f22c21c0`
+`9d623239f4e30840b00e5ef221702114317a519c`
 
-The official Student 2 GitHub Actions workflow was manually dispatched against
-that exact branch commit after the final integrated endpoint portability change.
+Successful Student 2 GitHub Actions run:
 
-Successful workflow run:
-
-`39196391412`
+`39973749169`
 
 Workflow:
 
 `Student 2 - Skill Exchange CI`
 
-Result:
+Successful final integration run:
 
-- Status: completed
-- Conclusion: success
-- Event: workflow_dispatch
+`39973124752`
+
+Results:
+
+- Student 2 CI: PASS
+- Final integration CI: PASS
 
 ## Pre-Commit Security Testing
 
@@ -66,6 +66,18 @@ Both repeated validation runs produced:
 
 No dependency vulnerability was reported by the successful final audits.
 
+## Final Pre-Commit Security Evidence
+
+Final validation on the integrated branch:
+
+- Ruff security and correctness: PASS
+- detect-secrets: PASS
+- pip-audit Release 2 dependencies: PASS
+
+Evidence:
+
+- `reports/release2/evidence/student-2-security-checks-final.txt`
+
 ## Post-Commit CI/CD Endpoint Testing
 
 Student 2 uses the GitHub Actions workflow:
@@ -83,7 +95,7 @@ are:
 2. `GET /skill-exchange/1/matches`
 
 The official workflow run `39196391412` executed successfully against commit
-`8a64a09e8a8a6c148e52511bb1cecf99f22c21c0`.
+`9d623239f4e30840b00e5ef221702114317a519c`.
 
 The workflow completed these validation stages successfully:
 

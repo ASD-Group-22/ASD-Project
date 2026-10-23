@@ -1,65 +1,123 @@
-# Student 4 Release 2 Testing Evidence
+# Student 4 Release 2 Testing Report
 
-## Scope
+## Feature
 
-Student 4 Skill Profile Service adds profile-grounded Multi-Agent
-review through the shared server, with frontend and backend proxy
-routes and a Student 4 evidence adapter.
+Student 4 - Skill Profile Service
 
-## Automated endpoint tests
+## Final Validation Baseline
 
-Four local tests passed for two distinct backend endpoint functions:
-api_create_profile and api_get_profile.
+Final integrated branch:
 
-Cases:
-- Successful creation forwards the supplied payload and returns 201.
-- Empty creation data returns 400 without calling the database.
-- Successful retrieval forwards the profile ID and returns its data.
-- Missing-profile retrieval preserves the database service's 404.
+`release2/final-integration`
 
-These are Flask endpoint tests with mocked database calls. They do
-not prove live database persistence or external AI availability.
+Security-remediation commit:
 
-Test source: student-4/backend/tests/test_endpoints.py
-Recorded output: reports/release2/evidence/student-4-endpoint-tests.txt
+`9d623239f4e30840b00e5ef221702114317a519c`
 
-## Security checks
+Successful Student 4 GitHub Actions run:
 
-The staged changes passed the configured Ruff security/correctness,
-detect-secrets, and pip-audit hooks.
+`39972587459`
 
-Configuration: .pre-commit-config.yaml
-Recorded output: reports/release2/evidence/student-4-security-checks.txt
+Successful final integration run:
 
-These results apply to the scope selected by the configured hooks.
+`39973124752`
 
-## Manual Multi-Agent checks
+Results:
 
-Verified:
-- Backend connectivity to the shared server.
-- Retrieval of profile 1 as workflow evidence.
-- Successful Worker output using llama3.1:8b.
-- Successful Reviewer output.
-- Frontend approval publishes the accepted answer.
-- Frontend correction publishes the replacement text.
-- Terminal rejection returns rejected with no final response.
+- Student 4 CI: PASS
+- Final integration CI: PASS
 
-The initial qwen2.5:0.5b Worker returned an invalid limitations field.
-Switching the Worker to llama3.1:8b produced valid output in the
-subsequent observed run. Model output remains nondeterministic.
+## Pre-Commit Security Testing
 
-## Agentic review
+The repository pre-commit configuration executes:
 
-The Student 4 multi-agent-review scenario passed on its first attempt:
-executed 1, passed 1, failed 0, skipped 0.
+- Ruff security and correctness rules (`S` and `F`)
+- detect-secrets
+- pip-audit
 
-Audit: ai-services/agentic-loop/evidence/agentic-validation.jsonl
-Original workflows: ai-services/multi-agent-server/runtime/workflows
+The initial Student 4 scan reported:
 
-## CI and remaining limits
+- three `S310` URL-use findings in the legacy Student 4 agentic-loop client;
+- Docker `0.0.0.0` binding;
+- Flask database debug mode enabled.
 
-The Student 4 CI workflow includes the four endpoint tests.
-Remote CI execution has not yet been verified for these changes.
+The findings were reviewed and remediated:
 
-Partial acceptance, full R1 regression checks, final integration,
-and Student 4 cloud CRUD verification remain outstanding.
+- Flask database debug mode was disabled;
+- Docker binding was retained because the service must be reachable through
+  the Docker network and was narrowly documented;
+- the configured local service URL calls were retained and narrowly documented
+  instead of disabling the security rule globally.
+
+Final Student 4 security validation:
+
+- Ruff security and correctness: PASS
+- detect-secrets: PASS
+- pip-audit Release 2 dependencies: PASS
+
+Evidence:
+
+- `reports/release2/evidence/student-4-security-checks-initial.txt`
+- `reports/release2/evidence/student-4-security-checks-final.txt`
+
+The Student 4 database was rebuilt after remediation and started successfully
+with:
+
+`Debug mode: off`
+
+## Post-Commit CI/CD Endpoint Testing
+
+Workflow:
+
+`.github/workflows/student-4-ci.yml`
+
+Endpoint test source:
+
+`student-4/backend/tests/test_endpoints.py`
+
+Two distinct backend/API endpoint functions are tested:
+
+1. `POST /api/profiles`
+2. `GET /api/profiles/{profile_id}`
+
+Four endpoint cases are covered:
+
+- successful profile creation;
+- rejection of empty profile data;
+- successful profile retrieval;
+- missing-profile 404 preservation.
+
+The workflow also:
+
+- builds the database, backend and frontend images;
+- runs the backend endpoint tests;
+- starts the services on a CI Docker network;
+- validates database and backend availability;
+- checks seeded Skill Profile data;
+- verifies the frontend responds successfully.
+
+GitHub Actions run `39972587459` completed successfully on commit
+`9d623239f4e30840b00e5ef221702114317a519c`.
+
+## Multi-Agent and Agentic Review Evidence
+
+Student 4 also contributed committed Release 2 agentic evidence.
+
+The shared evidence includes successful review results for:
+
+- Multi-Agent Workflow Review;
+- Testing Report Review;
+- Cloud Deployment Report Review.
+
+Evidence is stored under:
+
+`reports/release2/evidence/`
+
+and the shared agentic-loop validation logs.
+
+## Result
+
+Student 4 satisfies the Release 2 security-testing and post-commit endpoint
+testing requirements. The previous report's outstanding CI and integration
+limitations have been resolved: the Student 4 CI workflow and final integration
+CI now both pass.
