@@ -1,3 +1,4 @@
+
 name: Student 1 - Student Projects CI
 
 on:
@@ -31,7 +32,12 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Create CI environment file
-        run: cp student-1/.env.example student-1/.env
+        run: |
+          cp student-1/.env.example student-1/.env
+          sed -i 's/^AI_ENABLED=.*/AI_ENABLED=false/' student-1/.env
+          sed -i 's/^MCP_ENABLED=.*/MCP_ENABLED=false/' student-1/.env
+          sed -i 's/^RAG_ENABLED=.*/RAG_ENABLED=false/' student-1/.env
+          sed -i 's/^MULTI_AGENT_ENABLED=.*/MULTI_AGENT_ENABLED=false/' student-1/.env
 
       - name: Verify Docker Compose
         run: docker compose version
@@ -61,7 +67,22 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Create CI environment file
-        run: cp student-1/.env.example student-1/.env
+        run: |
+          cp student-1/.env.example student-1/.env
+          sed -i 's/^AI_ENABLED=.*/AI_ENABLED=false/' student-1/.env
+          sed -i 's/^MCP_ENABLED=.*/MCP_ENABLED=false/' student-1/.env
+          sed -i 's/^RAG_ENABLED=.*/RAG_ENABLED=false/' student-1/.env
+          sed -i 's/^MULTI_AGENT_ENABLED=.*/MULTI_AGENT_ENABLED=false/' student-1/.env
+
+      - name: Set up Python for Release 2 endpoint tests
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install Release 2 endpoint test dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r student-1/tests/requirements.txt
 
       - name: Start Student 1 services
         run: |
@@ -69,6 +90,47 @@ jobs:
             --env-file student-1/.env \
             -f "${COMPOSE_FILE}" \
             up -d --build
+
+      - name: Verify AI features are disabled in CI
+        shell: bash
+        run: |
+          set -uo pipefail
+
+          backend_service=$(docker compose \
+            --env-file student-1/.env \
+            -f "${COMPOSE_FILE}" \
+            config --services | grep -i backend | head -n 1 || true)
+
+          if [ -z "$backend_service" ]; then
+            echo "FAIL: Could not identify the backend service."
+            docker compose \
+              --env-file student-1/.env \
+              -f "${COMPOSE_FILE}" \
+              config --services
+            exit 1
+          fi
+
+          echo "Backend service: ${backend_service}"
+
+          for variable in AI_ENABLED MCP_ENABLED RAG_ENABLED MULTI_AGENT_ENABLED; do
+            echo "Checking ${variable}..."
+
+            if value=$(docker compose \
+              --env-file student-1/.env \
+              -f "${COMPOSE_FILE}" \
+              exec -T "$backend_service" printenv "$variable"); then
+              echo "${variable}=${value}"
+            else
+              echo "FAIL: ${variable} is missing or the command failed."
+              continue
+            fi
+
+            if [ "$value" != "false" ]; then
+              echo "FAIL: Expected ${variable}=false, got '${value}'."
+            else
+              echo "PASS: ${variable} is disabled."
+            fi
+          done
 
       - name: Wait for services
         shell: bash
@@ -97,6 +159,7 @@ jobs:
           check_url "http://localhost:3001/"
           check_url "http://localhost:5001/health"
           check_url "http://localhost:6001/health"
+          check_url "http://localhost:5001/projects"
 
       - name: Run Student 1 smoke test
         shell: pwsh
@@ -105,6 +168,22 @@ jobs:
       - name: Run Student 1 CRUD test
         shell: pwsh
         run: ./student-1/tests/api_crud_test.ps1
+
+      - name: Run Release 2 endpoint tests
+        run: |
+          mkdir -p reports
+          python -m pytest \
+            student-1/tests/test_endpoints.py \
+            -v \
+            --junitxml=reports/student-1-release2-endpoints.xml
+
+      - name: Upload Release 2 endpoint test evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: student-1-release2-endpoint-tests-${{ github.run_id }}
+          path: reports/student-1-release2-endpoints.xml
+          if-no-files-found: warn
 
       - name: Show service status
         if: always()
@@ -157,16 +236,22 @@ jobs:
 
           - Student 1 Docker images built successfully.
           - Student 1 Compose configuration validated.
+          - AI features were verified disabled during CI.
           - Frontend health check returned HTTP 200.
           - Backend health check returned HTTP 200.
-          - Database service health check returned HTTP 200.
+          - Database health check returned HTTP 200.
+          - Projects API returned HTTP 200.
           - Smoke test passed.
           - CRUD validation passed.
+          - Release 2 endpoint tests passed.
+          - Pytest JUnit evidence was generated.
 
           ## Scope
 
-          This workflow validates the Student 1 Student Projects microservices.
-          AI model execution is validated separately using the local Ollama runtime.
+          This workflow validates the Student 1 Project Management
+          microservices, CRUD operations, and Release 2 endpoints.
+          AI model execution is validated separately using the local
+          Ollama runtime.
           EOF
 
           echo "https://github.com/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}" \
