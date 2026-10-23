@@ -1,0 +1,4 @@
+# Pytest assertions are intentional test checks, not production input validation.
+# This file applies only within Student 3's tests; other security rules stay enabled.
+[lint.per-file-ignores]
+"test_*.py" = ["S101"]

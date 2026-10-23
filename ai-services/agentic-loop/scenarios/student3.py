@@ -1,4 +1,3 @@
-"""Feature-owned scenarios for the shared runner; no separate server or runner."""
 import os
 import requests
 
@@ -48,6 +47,59 @@ def get_scenarios():
         'expected': {'status': 'success', 'minimum_results': 1, 'source_prefix': 'student-3:'},
         'path': '/r1/rag/retrieve', 'payload': {'query': f'Project Group Formation {subject} skill requirements', 'k': 5},
         'expect': 'retrieval'})
+
+    # Release 2 reviews are executed by the existing shared agentic-loop
+    # runner. They point to real generated evidence instead of duplicating
+    # a feature-specific agentic loop.
+    scenarios['multi-agent-review'] = [
+        {
+            'id': 'student3_multi_agent_workflow_review',
+            'feature': 'student-3-group-formation',
+            'review_title': 'Student 3 Multi-Agent Workflow Review',
+            'description': (
+                'Review a completed Student 3 group-formation workflow for '
+                'Planner, Worker, Reviewer, evidence grounding and human review.'
+            ),
+            'review': {
+                'feature': 'student3',
+                'workflow_dir': 'ai-services/multi-agent-server/runtime/workflows',
+            },
+        },
+    ]
+    scenarios['testing-report-review'] = [
+        {
+            'id': 'student3_testing_report_review',
+            'feature': 'student-3-group-formation',
+            'review_title': 'Student 3 Testing Report Review',
+            'description': (
+                'Review Student 3 Release 2 pre-commit and post-commit endpoint '
+                'testing evidence and identify unsupported claims, gaps or risks.'
+            ),
+            'review': {
+                'primary_path': 'reports/release2/student-3-testing-report.md',
+                'supplemental_paths': [
+                    '.pre-commit-config.yaml',
+                    '.github/workflows/student-3-ci.yml',
+                    'student-3/tests/release2/test_endpoints.py',
+                ],
+            },
+        },
+    ]
+    scenarios['cloud-deployment-review'] = [
+        {
+            'id': 'student3_cloud_deployment_review',
+            'feature': 'student-3-group-formation',
+            'review_title': 'Student 3 Cloud Deployment Report Review',
+            'description': (
+                'Review the integrated Release 2 cloud evidence, including Student 3 '
+                'core group-formation availability and disabled local AI-service baseline.'
+            ),
+            'review': {
+                'primary_path': 'reports/release2/cloud-deployment-report.md',
+                'supplemental_paths': ['.github/workflows/cloud-deployment.yml'],
+            },
+        },
+    ]
     return scenarios
 
 
