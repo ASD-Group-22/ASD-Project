@@ -21,7 +21,7 @@ OLLAMA_URL = os.getenv("OLLAMA_URL", "http://ollama:11434")
 OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "qwen2.5:0.5b")
 OLLAMA_TIMEOUT_SECONDS = int(os.getenv("OLLAMA_TIMEOUT_SECONDS", "90"))
 AI_MODE = os.getenv("AI_MODE", "true").lower() == "true"
-LOG_PATH = Path(os.getenv("AGENTIC_LOG_PATH", "/app/logs/agentic-loop.jsonl"))
+LOG_PATH = Path(os.getenv("AGENTIC_LOG_PATH", str(Path(__file__).resolve().parent / "logs" / "agentic-loop.jsonl")))
 PROMPT_DIR = Path(__file__).parent / "prompts"
 
 LOG_PATH.parent.mkdir(parents=True, exist_ok=True)
@@ -262,7 +262,7 @@ def explain(query, req, mode, relaxed, ranked):
 
 @app.get("/health")
 def health():
-    return jsonify({"status": "ok", "service": "student-5-backend", "ai_mode": AI_MODE, "mcp_mode": os.getenv("MCP_MODE", "true").lower() == "true", "rag_mode": os.getenv("RAG_MODE", "true").lower() == "true", "model": OLLAMA_MODEL})
+    return jsonify({"status": "ok", "service": "student-5-backend", "ai_mode": AI_MODE, "mcp_mode": os.getenv("MCP_MODE", "true").lower() == "true", "rag_mode": os.getenv("RAG_MODE", "true").lower() == "true", "multi_agent_mode": os.getenv("MULTI_AGENT_MODE", "false").lower() == "true", "model": OLLAMA_MODEL})
 
 
 @app.route("/api/spaces", methods=["GET", "POST"])
@@ -285,6 +285,8 @@ def space_item(space_id):
 
 @app.post("/api/spaces/recommend")
 def recommend():
+    if not AI_MODE:
+        return jsonify({"error": "AI Mode is disabled in this environment"}), 503
     body = request.get_json(silent=True) or {}
     query = str(body.get("query") or "").strip()
     if len(query) < 3:
@@ -353,6 +355,10 @@ def get_agentic_logs():
         return jsonify([])
     lines = LOG_PATH.read_text(encoding="utf-8").splitlines()[-limit:]
     return jsonify([json.loads(line) for line in lines if line.strip()])
+
+
+from release2 import bp as release2_blueprint
+app.register_blueprint(release2_blueprint)
 
 
 if __name__ == "__main__":

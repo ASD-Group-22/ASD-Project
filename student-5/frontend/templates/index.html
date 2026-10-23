@@ -7,6 +7,7 @@
   <title>AI Campus Space Finder</title>
   <script src="https://unpkg.com/htmx.org@2.0.4"></script>
   <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}" />
+  <link rel="stylesheet" href="{{ url_for('static', filename='release2.css') }}" />
 </head>
 
 <body data-backend-url="{{ backend_url }}">
@@ -129,7 +130,27 @@
       </div>
       <div id="spaceGrid" class="cards"></div>
     </section>
-  </main>
+  <section class="panel" id="multiAgentPanel">
+  <div class="panel-heading"><div><p class="eyebrow">RELEASE 2 · MULTI-AGENT</p>
+    <h2>Human-reviewed campus recommendations</h2></div></div>
+  <p class="helper">Planner → Worker → Reviewer → Human approval. Stored spaces only; no booking or live occupancy.</p>
+  <form id="multiAgentForm"><label for="multiAgentQuery">What space do you need?</label>
+    <textarea id="multiAgentQuery" required minlength="3" maxlength="500" placeholder="Quiet space for 4 with a whiteboard"></textarea>
+    <button class="primary" type="submit">Run multi-agent workflow</button></form>
+  <div id="multiAgentStatus" class="message hidden" role="status" aria-live="polite"></div>
+  <div id="multiAgentResult" class="hidden"></div>
+  <form id="multiAgentReview" class="hidden">
+    <label for="multiAgentDecision">Human review decision</label>
+    <select id="multiAgentDecision"><option value="approve">Approve</option><option value="correct">Correct response</option><option value="partially_accept">Partially accept</option><option value="reject">Reject</option></select>
+    <label for="multiAgentComment">Review comment (required unless approving)</label>
+    <textarea id="multiAgentComment"></textarea>
+    <label for="multiAgentCorrectedResponse">Corrected response (required when choosing Correct)</label>
+    <textarea id="multiAgentCorrectedResponse"></textarea>
+    <button class="primary" type="submit">Record human decision</button>
+  </form>
+</section>
+
+</main>
 
   <dialog id="spaceDialog">
     <form id="spaceForm" method="dialog">
@@ -166,6 +187,7 @@
 
   <script>window.BACKEND_URL = {{ backend_url | tojson }};</script>
   <script src="{{ url_for('static', filename='app.js') }}"></script>
+  <script src="{{ url_for('static', filename='release2.js') }}"></script>
 </body>
 
 </html>

@@ -1,0 +1,6 @@
+[lint]
+select = ["S"]
+
+[lint.per-file-ignores]
+"**/tests/**" = ["S101"]
+"student-5/backend/app.py" = ["S104"]

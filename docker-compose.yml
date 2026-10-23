@@ -245,6 +245,8 @@ services:
       RAG_MODE: "${RAG_MODE:-true}"
       MCP_SERVER_URL: "${MCP_SERVER_URL:-http://host.docker.internal:5100/mcp}"
       RAG_SERVER_URL: "${RAG_SERVER_URL:-http://host.docker.internal:5003}"
+      MULTI_AGENT_MODE: "${MULTI_AGENT_MODE:-true}"
+      MULTI_AGENT_SERVER_URL: "${MULTI_AGENT_SERVER_URL:-http://host.docker.internal:5101}"
     extra_hosts:
       - "host.docker.internal:host-gateway"
     depends_on:
