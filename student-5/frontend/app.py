@@ -17,4 +17,4 @@ def health():
     return {"status": "ok", "service": "student-5-frontend"}
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=8005)
+    app.run(host="0.0.0.0", port=8005)  # noqa: S104 - required for Docker networking

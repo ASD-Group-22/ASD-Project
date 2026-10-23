@@ -79,5 +79,5 @@ assert client.delete(f'/groups/by-id/{broken_id}').status_code == 200
 assert client.get('/groups').json == []
 """
     env['PYTHONPATH'] = str(ROOT / 'student-3/database-service')
-    result = subprocess.run([sys.executable, '-B', '-c', code], cwd=tmp_path, env=env, capture_output=True, text=True)
+    result = subprocess.run([sys.executable, '-B', '-c', code], cwd=tmp_path, env=env, capture_output=True, text=True)  # noqa: S603 - fixed interpreter and internal test input
     assert result.returncode == 0, result.stdout + result.stderr

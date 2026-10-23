@@ -1,0 +1,20 @@
+Ruff security and correctness............................................Failed
+- hook id: ruff-check
+- exit code: 1
+
+student-1\backend\routes\__init__.py:1:23: F401 `.projects.projects_bp` imported but unused; consider removing, adding to `__all__`, or using a redundant alias
+student-1\backend\routes\__init__.py:2:20: F401 `.tasks.tasks_bp` imported but unused; consider removing, adding to `__all__`, or using a redundant alias
+student-1\backend\routes\__init__.py:3:17: F401 `.ai.ai_bp` imported but unused; consider removing, adding to `__all__`, or using a redundant alias
+student-1\backend\routes\projects.py:7:19: F811 [*] Redefinition of unused `Blueprint` from line 4: `Blueprint` redefined here
+student-1\backend\services\__init__.py:1:15: F401 `.project_service` imported but unused; consider removing, adding to `__all__`, or using a redundant alias
+student-1\backend\services\__init__.py:2:15: F401 `.prompt_loader` imported but unused; consider removing, adding to `__all__`, or using a redundant alias
+student-1\backend\services\__init__.py:3:15: F401 `.llm_client` imported but unused; consider removing, adding to `__all__`, or using a redundant alias
+student-1\database\app.py:282:9: S608 Possible SQL injection vector through string-based query construction
+student-1\database\app.py:565:9: S608 Possible SQL injection vector through string-based query construction
+student-1\database\app.py:648:14: S104 Possible binding to all interfaces
+student-1\database\app.py:650:9: S201 Use of `debug=True` in Flask app detected
+Found 11 errors.
+[*] 1 fixable with `--fix`.
+
+Detect committed secrets.................................................Passed
+pip-audit Release 2 dependencies.........................................Passed

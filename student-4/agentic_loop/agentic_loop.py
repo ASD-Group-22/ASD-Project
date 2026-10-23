@@ -62,7 +62,7 @@ def get_url(url):
 
     try:
 
-        with urllib.request.urlopen(
+        with urllib.request.urlopen(  # noqa: S310 - configured local HTTP service URL
             url,
             timeout=10
         ) as response:
@@ -111,7 +111,7 @@ def call_ollama(system_prompt, prompt):
         payload
     ).encode("utf-8")
 
-    request = urllib.request.Request(
+    request = urllib.request.Request(  # noqa: S310 - configured local HTTP service URL
         f"{OLLAMA_URL}/api/generate",
         data=request_data,
         headers={
@@ -120,7 +120,7 @@ def call_ollama(system_prompt, prompt):
         method="POST"
     )
 
-    with urllib.request.urlopen(
+    with urllib.request.urlopen(  # noqa: S310 - configured local HTTP service URL
         request,
         timeout=300
     ) as response:

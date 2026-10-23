@@ -1,0 +1,10 @@
+Ruff security and correctness............................................Failed
+- hook id: ruff-check
+- exit code: 1
+
+student-3\tests\test_group_crud.py:82:14: S603 `subprocess` call: check for execution of untrusted input
+student-3\tests\test_http_integration.py:34:19: S603 `subprocess` call: check for execution of untrusted input
+Found 2 errors.
+
+Detect committed secrets.................................................Passed
+pip-audit Release 2 dependencies.........................................Passed

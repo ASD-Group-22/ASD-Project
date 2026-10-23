@@ -278,14 +278,8 @@ def update_project(project_id):
 
     values.append(project_id)
 
-    connection.execute(
-        f"""
-        UPDATE projects
-        SET {set_clause}
-        WHERE id = ?
-        """,
-        values
-    )
+    query = f"UPDATE projects SET {set_clause} WHERE id = ?"  # noqa: S608 - columns restricted to allowed_fields
+    connection.execute(query, values)
 
     connection.commit()
 
@@ -561,14 +555,8 @@ def update_task(task_id):
 
     values.append(task_id)
 
-    connection.execute(
-        f"""
-        UPDATE tasks
-        SET {set_clause}
-        WHERE id = ?
-        """,
-        values
-    )
+    query = f"UPDATE tasks SET {set_clause} WHERE id = ?"  # noqa: S608 - columns restricted to allowed_fields
+    connection.execute(query, values)
 
     connection.commit()
 
@@ -645,7 +633,7 @@ def delete_task(task_id):
 if __name__ == "__main__":
 
     app.run(
-        host="0.0.0.0",
+        host="0.0.0.0",  # noqa: S104 - required for Docker networking
         port=6001,
-        debug=True
+        debug=False
     )

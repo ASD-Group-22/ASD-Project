@@ -1,0 +1,13 @@
+Ruff security and correctness............................................Failed
+- hook id: ruff-check
+- exit code: 1
+
+student-4\agentic_loop\agentic_loop.py:65:14: S310 Audit URL open for permitted schemes. Allowing use of `file:` or custom schemes is often unexpected.
+student-4\agentic_loop\agentic_loop.py:114:15: S310 Audit URL open for permitted schemes. Allowing use of `file:` or custom schemes is often unexpected.
+student-4\agentic_loop\agentic_loop.py:123:10: S310 Audit URL open for permitted schemes. Allowing use of `file:` or custom schemes is often unexpected.
+student-4\database\app.py:314:14: S104 Possible binding to all interfaces
+student-4\database\app.py:316:9: S201 Use of `debug=True` in Flask app detected
+Found 5 errors.
+
+Detect committed secrets.................................................Passed
+pip-audit Release 2 dependencies.........................................Passed
