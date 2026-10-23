@@ -1,0 +1,3 @@
+Ruff security and correctness............................................Passed
+Detect committed secrets.................................................Passed
+pip-audit Release 2 dependencies.........................................Passed

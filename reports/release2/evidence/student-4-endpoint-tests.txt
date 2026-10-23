@@ -1,0 +1,37 @@
+docker :  Container asd-project-stude
+nt-4-backend-run-18e26d51c5dd
+Creating
+At line:3 char:1
++ docker compose run --rm --no-deps
+student-4-backend python -m unittes
+...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpe
+   cified: ( Container asd-...1c5dd
+   Creating :String) [], RemoteExc
+ eption
+    + FullyQualifiedErrorId : Native
+   CommandError
+
+ Container asd-project-student-4-back
+end-run-18e26d51c5dd Created
+test_create_profile_rejects_empty_dat
+a (test_endpoints.ProfileEndpointTest
+s.test_create_profile_rejects_empty_d
+ata) ... ok
+test_create_profile_success (test_end
+points.ProfileEndpointTests.test_crea
+te_profile_success) ... ok
+test_get_profile_not_found (test_endp
+oints.ProfileEndpointTests.test_get_p
+rofile_not_found) ... ok
+test_get_profile_success (test_endpoi
+nts.ProfileEndpointTests.test_get_pro
+file_success) ... ok
+
+-------------------------------------
+---------------------------------
+Ran 4 tests in 0.045s
+
+OK

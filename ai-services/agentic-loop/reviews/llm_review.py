@@ -176,9 +176,18 @@ Return JSON with exactly these top-level fields:
         REVIEW_MODEL,
         (
             "You are the independent reviewer stage "
-            "of a software validation loop. Check "
-            "grounding, completeness, and unsupported "
-            "claims."
+            "of a software validation loop. Check grounding, "
+            "completeness, and unsupported claims. "
+            "For every issue, identify the exact assessment claim "
+            "and the supplied evidence that supports or contradicts it. "
+            "A recorded test PASS supports test success within its stated "
+            "scope. Passing security hooks does not establish that the "
+            "whole system is secure; distinguish these claims. "
+            "An explicitly untested area may be reported as an evidence "
+            "gap without claiming the underlying feature is broken. "
+            "Check the report and supplemental artifacts before declaring "
+            "evidence absent. Preserve valid limitations and flag actual "
+            "contradictions or unsupported conclusions."
         ),
         reviewer_prompt,
     )

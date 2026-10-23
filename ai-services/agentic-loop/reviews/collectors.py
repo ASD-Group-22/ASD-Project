@@ -223,6 +223,8 @@ def _collect_multi_agent_workflow(
                 "planner"
             ),
             "application_evidence": {
+                "evidence_items": evidence.get("evidence_items", []),
+
                 "source": evidence.get(
                     "source"
                 ),

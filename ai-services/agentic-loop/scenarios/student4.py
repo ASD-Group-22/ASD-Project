@@ -124,4 +124,66 @@ def get_scenarios():
                 },
             },
         ],
+        "multi-agent-review": [
+            {
+                "id": "student4_multi_agent_workflow_review",
+                "feature": FEATURE,
+                "review_title": "Student 4 Multi-Agent Workflow Review",
+                "description": (
+                    "Review a real Student 4 workflow for agent outputs, "
+                    "profile evidence, and human review."
+                ),
+                "review": {
+                    "feature": "student4",
+                    "workflow_dir": (
+                        "ai-services/multi-agent-server/runtime/workflows"
+                    ),
+                },
+            },
+        ],
+                "testing-report-review": [
+            {
+                "id": "student4_testing_report_review",
+                "feature": FEATURE,
+                "review_title": "Student 4 Testing Report Review",
+                "description": (
+                    "Review Student 4 test and security evidence "
+                    "and identify unsupported claims or missing checks."
+                ),
+                "review": {
+                    "primary_path": (
+                        "reports/release2/student-4-testing-report.md"
+                    ),
+                    "supplemental_paths": [
+                        ".pre-commit-config.yaml",
+                        ".github/workflows/student-4-ci.yml",
+                        "student-4/backend/tests/test_endpoints.py",
+                        "reports/release2/evidence/student-4-endpoint-tests.txt",
+                        "reports/release2/evidence/student-4-security-checks.txt",
+                    ],
+                },
+            },
+        ],
+        "cloud-deployment-review": [
+            {
+                "id": "student4_cloud_deployment_review",
+                "feature": FEATURE,
+                "review_title": "Student 4 Cloud Deployment Review",
+                "description": (
+                    "Review shared cloud deployment evidence for "
+                    "Student 4 CRUD and disabled-by-default AI services."
+                ),
+                "review": {
+                    "primary_path": (
+                        "reports/release2/cloud-deployment-report.md"
+                    ),
+                    "supplemental_paths": [
+                        ".github/workflows/cloud-deployment.yml",
+                        "reports/release2/cloud-deployment-results.md",
+                        "scripts/cloud/azure/deploy-backends.sh",
+                        "scripts/cloud/azure/SERVICE_MAP.md",
+                    ],
+                },
+            },
+        ],
     }

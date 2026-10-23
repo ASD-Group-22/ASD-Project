@@ -1,0 +1,193 @@
+{
+  "workflow_id": "b138eeeb-8960-4f80-aef7-b754f05a5c26",
+  "feature": "student4",
+  "task_type": "skill_profile_review",
+  "user_request": "Summarise the recorded skills, strengths, and weaknesses in this profile. Identify gaps in the recorded information without inventing facts.",
+  "context": {
+    "profile_id": 1
+  },
+  "status": "completed",
+  "created_at": "2026-10-22T19:16:41.043465+00:00",
+  "updated_at": "2026-10-22T19:18:05.521647+00:00",
+  "planner": {
+    "status": "success",
+    "agent": "planner",
+    "model": "qwen2.5:0.5b",
+    "plan": {
+      "objective": "Summarize the recorded skills, strengths, and weaknesses in this profile.",
+      "feature": "student4",
+      "task_type": "skill_profile_review",
+      "steps": [
+        "Identify the recorded skills, strengths, and weaknesses in the profile.",
+        "Summarize the information in a concise manner.",
+        "Identify gaps in the recorded information without inventing facts."
+      ],
+      "required_evidence": [
+        "skills",
+        "strengths",
+        "weaknesses"
+      ],
+      "constraints": []
+    }
+  },
+  "evidence": {
+    "feature": "student4",
+    "task_type": "skill_profile_review",
+    "source": {
+      "service": "student-4-backend-api",
+      "endpoint": "/api/profiles/1"
+    },
+    "request_context": {
+      "profile_id": 1
+    },
+    "evidence_items": [
+      {
+        "reference_id": "profile:1",
+        "kind": "skill_profile",
+        "data": {
+          "created_at": "2026-09-08 15:44:31",
+          "profile_id": 1,
+          "skills": [
+            {
+              "profile_id": 1,
+              "skill_level": "Intermediate",
+              "skill_name": "Python",
+              "strength": "Problem solving",
+              "student_skill_id": 1,
+              "weakness": "Advanced libraries"
+            },
+            {
+              "profile_id": 1,
+              "skill_level": "Intermediate",
+              "skill_name": "SQL",
+              "strength": "Database queries",
+              "student_skill_id": 2,
+              "weakness": "Query optimisation"
+            }
+          ],
+          "student_id": 1,
+          "updated_at": "2026-09-08 15:44:31"
+        }
+      }
+    ],
+    "allowed_output_references": [
+      "profile:1"
+    ],
+    "evidence_count": 1
+  },
+  "worker": {
+    "status": "success",
+    "agent": "worker",
+    "model": "llama3.1:8b",
+    "result": {
+      "answer": "The recorded skills are Python and SQL, with Intermediate levels. Strengths are problem solving and database queries, while weaknesses are advanced libraries and query optimisation.",
+      "selected_references": [
+        "profile:1"
+      ],
+      "limitations": [
+        "Insufficient evidence to identify gaps in recorded information"
+      ]
+    }
+  },
+  "reviewer": {
+    "status": "success",
+    "agent": "reviewer",
+    "model": "qwen2.5:0.5b",
+    "review": {
+      "decision": "approve",
+      "plan_followed": true,
+      "evidence_grounded": true,
+      "issues": [],
+      "recommendation": "The recorded skills, strengths, and weaknesses in the profile are summarized correctly. The selected evidence references are 'profile:1'. However, the limitations are 'Insufficient evidence to identify gaps in recorded information'.",
+      "plan": {
+        "objective": "Summarize the recorded skills, strengths, and weaknesses in this profile.",
+        "feature": "student4",
+        "task_type": "skill_profile_review",
+        "steps": [
+          "Identify the recorded skills, strengths, and weaknesses in the profile.",
+          "Summarize the information in a concise manner.",
+          "Identify gaps in the recorded information without inventing facts."
+        ],
+        "required_evidence": [
+          "skills",
+          "strengths",
+          "weaknesses"
+        ],
+        "constraints": []
+      }
+    }
+  },
+  "human_review": {
+    "status": "completed",
+    "decision": "correct",
+    "notes": "Revised the summary to state each skill and its recorded improvement area explicitly.\n\n4.",
+    "corrected_response": "Profile 1 records intermediate Python and SQL skills. Python strengths include problem solving, with advanced libraries recorded as an area for improvement. SQL strengths include database queries, with query optimisation recorded as an area for improvement. These are recorded profile details, not an independent assessment of proficiency.",
+    "reviewed_at": "2026-10-22T19:18:05.520023+00:00"
+  },
+  "final_response": "Profile 1 records intermediate Python and SQL skills. Python strengths include problem solving, with advanced libraries recorded as an area for improvement. SQL strengths include database queries, with query optimisation recorded as an area for improvement. These are recorded profile details, not an independent assessment of proficiency.",
+  "history": [
+    {
+      "timestamp": "2026-10-22T19:16:41.043495+00:00",
+      "stage": "created",
+      "message": "Multi-Agent workflow created.",
+      "details": {
+        "feature": "student4",
+        "task_type": "skill_profile_review"
+      }
+    },
+    {
+      "timestamp": "2026-10-22T19:16:45.080387+00:00",
+      "stage": "planner",
+      "message": "Planner stage completed.",
+      "details": {
+        "status": "success",
+        "model": "qwen2.5:0.5b"
+      }
+    },
+    {
+      "timestamp": "2026-10-22T19:16:45.114543+00:00",
+      "stage": "evidence",
+      "message": "Feature evidence retrieved through the owning backend/API.",
+      "details": {
+        "source": {
+          "service": "student-4-backend-api",
+          "endpoint": "/api/profiles/1"
+        },
+        "evidence_count": 1
+      }
+    },
+    {
+      "timestamp": "2026-10-22T19:17:00.985477+00:00",
+      "stage": "worker",
+      "message": "Worker stage completed using supplied application evidence.",
+      "details": {
+        "status": "success",
+        "model": "llama3.1:8b"
+      }
+    },
+    {
+      "timestamp": "2026-10-22T19:17:03.786557+00:00",
+      "stage": "reviewer",
+      "message": "Reviewer stage completed against the plan and evidence.",
+      "details": {
+        "status": "success",
+        "model": "qwen2.5:0.5b",
+        "decision": "approve"
+      }
+    },
+    {
+      "timestamp": "2026-10-22T19:17:03.787393+00:00",
+      "stage": "human_review",
+      "message": "Workflow is awaiting the required human review decision.",
+      "details": {}
+    },
+    {
+      "timestamp": "2026-10-22T19:18:05.520048+00:00",
+      "stage": "human_review",
+      "message": "Human review completed.",
+      "details": {
+        "decision": "correct"
+      }
+    }
+  ]
+}
