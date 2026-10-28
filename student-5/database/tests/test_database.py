@@ -1,10 +1,11 @@
-import json
 import os
 import tempfile
 
 import pytest
 
-os.environ["DATABASE_PATH"] = tempfile.mktemp(suffix=".db")
+db_fd, db_path = tempfile.mkstemp(suffix=".db")
+os.close(db_fd)
+os.environ["DATABASE_PATH"] = db_path
 import app as db_app
 
 

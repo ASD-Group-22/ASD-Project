@@ -1,0 +1,221 @@
+name: Release 2 - Integrated Azure Deployment
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+  id-token: write
+
+concurrency:
+  group: release2-azure-deployment
+  cancel-in-progress: false
+
+env:
+  RESOURCE_GROUP: lab11-rg
+  ACA_ENV: lab11-env-31080-standard
+  ACR_NAME: lab11registry3098
+  IDENTITY_NAME: g22-r2-acr-pull
+
+jobs:
+  validate-student-ci:
+    name: Validate required student CI
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Require successful student workflows for this commit
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+
+          echo "Validating student CI for commit: $GITHUB_SHA"
+          echo
+
+          workflows=(
+            "student-1-ci.yml"
+            "student-2-ci.yml"
+            "student-3-ci.yml"
+            "student-4-ci.yml"
+            "student-5-ci.yml"
+          )
+
+          for workflow in "${workflows[@]}"; do
+            echo "Checking $workflow..."
+
+            result="$(
+              gh run list \
+                --repo "$GITHUB_REPOSITORY" \
+                --workflow "$workflow" \
+                --commit "$GITHUB_SHA" \
+                --limit 20 \
+                --json headSha,conclusion,url
+            )"
+
+            success_url="$(
+              printf '%s' "$result" |
+                jq -r \
+                  --arg sha "$GITHUB_SHA" \
+                  '[.[] | select(.headSha == $sha and .conclusion == "success")][0].url // empty'
+            )"
+
+            if [[ -z "$success_url" ]]; then
+              echo "::error::No successful $workflow run exists for commit $GITHUB_SHA."
+              echo "Run or wait for the required student CI workflows, then rerun this deployment."
+              exit 1
+            fi
+
+            echo "PASS: $workflow"
+            echo "      $success_url"
+            echo
+          done
+
+          echo "All five required student CI workflows passed for $GITHUB_SHA."
+
+  deploy-azure:
+    name: Deploy integrated application to Azure
+    runs-on: ubuntu-latest
+    needs: validate-student-ci
+
+    steps:
+      - name: Checkout exact validated commit
+        uses: actions/checkout@v4
+
+      - name: Set deployment image tag
+        shell: bash
+        run: |
+          echo "DEPLOY_TAG=release2-${GITHUB_SHA::7}" >> "$GITHUB_ENV"
+
+      - name: Azure login using GitHub OIDC
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Prepare Azure CLI
+        shell: bash
+        run: |
+          set -euo pipefail
+          az config set extension.use_dynamic_install=yes_without_prompt
+          az extension add --name containerapp --upgrade --only-show-errors
+
+      - name: Verify existing Azure deployment foundation
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          az group show \
+            --name "$RESOURCE_GROUP" \
+            --output none
+
+          az acr show \
+            --name "$ACR_NAME" \
+            --resource-group "$RESOURCE_GROUP" \
+            --output none
+
+          az containerapp env show \
+            --name "$ACA_ENV" \
+            --resource-group "$RESOURCE_GROUP" \
+            --output none
+
+          az identity show \
+            --name "$IDENTITY_NAME" \
+            --resource-group "$RESOURCE_GROUP" \
+            --output none
+
+          echo "Azure deployment foundation: PASS"
+
+      - name: Build all 16 Release 2 images
+        shell: bash
+        run: |
+          set -euo pipefail
+          IMAGE_TAG="release2-local" \
+            bash scripts/cloud/azure/build-images.sh
+
+      - name: Refresh Azure OIDC login before registry push
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Push all 16 images to Azure Container Registry
+        shell: bash
+        run: |
+          set -euo pipefail
+          ACR_NAME="$ACR_NAME" \
+          IMAGE_TAG="release2-local" \
+          REMOTE_TAG="$DEPLOY_TAG" \
+            bash scripts/cloud/azure/push-images.sh
+
+      - name: Refresh Azure OIDC login before deployment
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Deploy database Container Apps
+        shell: bash
+        run: |
+          set -euo pipefail
+          IMAGE_TAG="$DEPLOY_TAG" \
+            bash scripts/cloud/azure/deploy-databases.sh
+
+      - name: Deploy backend Container Apps
+        shell: bash
+        run: |
+          set -euo pipefail
+          IMAGE_TAG="$DEPLOY_TAG" \
+            bash scripts/cloud/azure/deploy-backends.sh
+
+      - name: Deploy frontend Container Apps
+        shell: bash
+        run: |
+          set -euo pipefail
+          IMAGE_TAG="$DEPLOY_TAG" \
+            bash scripts/cloud/azure/deploy-frontends.sh
+
+      - name: Deploy shared home Container App
+        shell: bash
+        run: |
+          set -euo pipefail
+          IMAGE_TAG="$DEPLOY_TAG" \
+            bash scripts/cloud/azure/deploy-home.sh
+
+      - name: Clear previous deployment evidence
+        shell: bash
+        run: |
+          rm -f reports/release2/cloud-deployment-results.md
+
+      - name: Validate integrated Azure deployment and CRUD
+        shell: pwsh
+        run: |
+          ./scripts/cloud/azure/deployment-testing.ps1
+
+      - name: Record workflow deployment metadata
+        if: success()
+        shell: bash
+        run: |
+          {
+            echo
+            echo "## GitHub Actions Deployment"
+            echo
+            echo "- Workflow run: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+            echo "- Commit: $GITHUB_SHA"
+            echo "- Image tag: $DEPLOY_TAG"
+            echo "- Resource group: $RESOURCE_GROUP"
+            echo "- Container Apps environment: $ACA_ENV"
+            echo "- Registry: $ACR_NAME"
+          } >> reports/release2/cloud-deployment-results.md
+
+      - name: Upload cloud deployment evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: release2-cloud-deployment-evidence-${{ github.run_number }}
+          path: reports/release2/cloud-deployment-results.md
+          if-no-files-found: warn

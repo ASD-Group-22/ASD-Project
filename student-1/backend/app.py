@@ -9,6 +9,7 @@ from routes import (
 
 from routes.mcp_mode import mcp_bp
 from routes.rag_mode import rag_bp
+from routes.multi_agent_mode import multi_agent_bp
 
 
 app = Flask(__name__)
@@ -22,6 +23,7 @@ app.register_blueprint(tasks_bp)
 app.register_blueprint(ai_bp)
 app.register_blueprint(mcp_bp)
 app.register_blueprint(rag_bp)
+app.register_blueprint(multi_agent_bp)
 
 
 # ============================================================
@@ -42,7 +44,7 @@ def health():
 
 if __name__ == "__main__":
     app.run(
-        host="0.0.0.0",
+        host="0.0.0.0",  # noqa: S104 - required for Docker container networking
         port=5001,
-        debug=True
+        debug=False
     )

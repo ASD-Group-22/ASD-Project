@@ -6,6 +6,7 @@ import json
 import sys
 
 from core.audit import append_audit
+from core.review_runner import REVIEW_MODES
 from core.runner import run_scenario
 
 
@@ -42,6 +43,9 @@ def selected_modes(
             "rag",
         )
 
+    if mode == "release2":
+        return REVIEW_MODES
+
     return (
         mode,
     )
@@ -57,16 +61,26 @@ def describe_action(
             f"{scenario.get('tool', 'unknown')}"
         )
 
-    return (
-        f"call RAG "
-        f"{scenario.get('action', 'unknown')}"
-    )
+    if mode == "rag":
+        return (
+            f"call RAG "
+            f"{scenario.get('action', 'unknown')}"
+        )
+
+    if mode in REVIEW_MODES:
+        return (
+            "collect real evidence and run a "
+            "two-stage implementation/reviewer "
+            "validation"
+        )
+
+    return "run validation scenario"
 
 
 def main() -> int:
     parser = argparse.ArgumentParser(
         description=(
-            "Shared Release 1 Plan -> Act -> "
+            "Shared Release 1/2 Plan -> Act -> "
             "Observe -> Adapt validation loop."
         )
     )
@@ -76,6 +90,10 @@ def main() -> int:
         choices=(
             "mcp",
             "rag",
+            "multi-agent-review",
+            "testing-report-review",
+            "cloud-deployment-review",
+            "release2",
             "all",
         ),
         default="all",
@@ -128,7 +146,7 @@ def main() -> int:
         "=" * 72
     )
     print(
-        "RELEASE 1 SHARED AGENTIC VALIDATION LOOP"
+        "RELEASE 1/2 SHARED AGENTIC VALIDATION LOOP"
     )
     print(
         "Workflow: Plan -> Act -> Observe -> Adapt"

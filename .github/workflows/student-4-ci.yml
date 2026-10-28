@@ -8,6 +8,7 @@ on:
       - "ai-services/rag-server/sources/student4.py"
       - "ai-services/agentic-loop/scenarios/student4.py"
       - ".github/workflows/student-4-ci.yml"
+      - "ai-services/multi-agent-server/**"
 
   pull_request:
     paths:
@@ -16,6 +17,7 @@ on:
       - "ai-services/rag-server/sources/student4.py"
       - "ai-services/agentic-loop/scenarios/student4.py"
       - ".github/workflows/student-4-ci.yml"
+      - "ai-services/multi-agent-server/**"
 
   workflow_dispatch:
 
@@ -48,6 +50,11 @@ jobs:
             -t student4-backend \
             ./student-4/backend
 
+
+      - name: Test Student 4 backend endpoints
+        run: |
+          docker run --rm student4-backend \
+            python -m unittest discover -s tests -v
 
       - name: Build frontend image
         run: |

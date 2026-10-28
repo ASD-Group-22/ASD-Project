@@ -31,7 +31,7 @@ def test_services_over_http(tmp_path):
         logs.append(log)
 
         code = bootstrap + f'\nfrom werkzeug.serving import make_server\nmake_server("127.0.0.1", {port}, app.app).serve_forever()'
-        process = subprocess.Popen([sys.executable, '-B', '-c', code], cwd=tmp_path, env=env, stdout=log, stderr=log)
+        process = subprocess.Popen([sys.executable, '-B', '-c', code], cwd=tmp_path, env=env, stdout=log, stderr=log)  # noqa: S603 - fixed interpreter and internal test input
         processes.append(process)
         url = f'http://127.0.0.1:{port}'
 

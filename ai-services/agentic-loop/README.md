@@ -1,7 +1,7 @@
 # Shared Agentic Validation Loop
 
-Release 1 uses one shared team agentic loop rather than one independent loop per
-student.
+The repository uses one shared non-containerised agentic loop for Release 1
+and Release 2 validation rather than separate runners for each student.
 
 The shared loop follows:
 
@@ -9,16 +9,31 @@ The shared loop follows:
 
 ## Structure
 
-- `agent.py` - shared entry point and orchestration
-- `core/runner.py` - executes MCP/RAG validation scenarios
-- `core/audit.py` - records validation activity and results
+- `agent.py` - shared command-line entry point and orchestration
+- `core/runner.py` - executes Release 1 MCP/RAG scenarios and dispatches Release 2 reviews
+- `core/review_runner.py` - validates Release 2 review outcomes
+- `core/audit.py` - records structured validation activity and results
+- `reviews/collectors.py` - collects real workflow, testing, and deployment evidence
+- `reviews/llm_review.py` - performs two-stage implementation and reviewer assessment
 - `scenarios/studentX.py` - feature-specific scenarios owned by each student
 
-The shared loop should support:
+## Release 1 Modes
 
-- MCP validation mode
-- RAG validation mode
-- combined validation mode
+- `mcp`
+- `rag`
+- `all` - runs the Release 1 MCP and RAG validation modes
 
-Student-specific feature logic should remain inside the corresponding scenario
-module wherever practical.
+## Release 2 Review Modes
+
+- `multi-agent-review`
+- `testing-report-review`
+- `cloud-deployment-review`
+- `release2` - runs all three Release 2 review modes
+
+Release 2 review modes collect real project evidence before using the local
+LLM review stages. Missing required evidence is reported as unavailable rather
+than being treated as a successful review.
+
+The raw JSONL audit output under `evidence/` is local runtime evidence and is
+not committed. Required submission/report evidence can be exported into the
+repository's `reports/release2/` directory.

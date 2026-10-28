@@ -1,0 +1,148 @@
+name: Release 2 - Integration CI
+
+on:
+  push:
+    branches:
+      - release2-integration
+  pull_request:
+    branches:
+      - release2-integration
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  integration-check:
+    name: Validate integrated Release 2 foundation
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Verify shared Release 2 foundation
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          required_files=(
+            "docker-compose.yml"
+            ".pre-commit-config.yaml"
+            "scripts/security/pip_audit_release2.py"
+            ".github/workflows/student-1-ci.yml"
+            ".github/workflows/student-2-ci.yml"
+            ".github/workflows/student-3-ci.yml"
+            ".github/workflows/student-4-ci.yml"
+            ".github/workflows/student-5-ci.yml"
+            "ai-services/agentic-loop/agent.py"
+            "ai-services/agentic-loop/core/runner.py"
+            "ai-services/agentic-loop/core/review_runner.py"
+            "ai-services/agentic-loop/reviews/collectors.py"
+            "ai-services/agentic-loop/reviews/llm_review.py"
+            "ai-services/multi-agent-server/app.py"
+            "ai-services/multi-agent-server/coordinator.py"
+            "ai-services/multi-agent-server/llm_client.py"
+            "ai-services/multi-agent-server/workflow_store.py"
+            "ai-services/multi-agent-server/requirements.txt"
+            "ai-services/multi-agent-server/adapters/__init__.py"
+            "ai-services/multi-agent-server/agents/planner_agent.py"
+            "ai-services/multi-agent-server/agents/worker_agent.py"
+            "ai-services/multi-agent-server/agents/reviewer_agent.py"
+          )
+
+          for path in "${required_files[@]}"; do
+            if [[ ! -s "$path" ]]; then
+              echo "::error::Required file is missing or empty: $path"
+              exit 1
+            fi
+
+            echo "PASS: $path"
+          done
+
+      - name: Verify cloud workflow placeholder is retained
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          if [[ ! -f ".github/workflows/cloud-deployment.yml" ]]; then
+            echo "::error::Missing .github/workflows/cloud-deployment.yml"
+            exit 1
+          fi
+
+          echo "PRESENT: cloud-deployment.yml"
+          echo "Cloud implementation is validated separately during the cloud phase."
+
+      - name: Verify required pre-commit scanners are configured
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          required_hooks=(
+            "ruff-check"
+            "detect-secrets"
+            "pip-audit-release2"
+          )
+
+          for hook in "${required_hooks[@]}"; do
+            if ! grep -q "$hook" ".pre-commit-config.yaml"; then
+              echo "::error::Missing required pre-commit hook: $hook"
+              exit 1
+            fi
+
+            echo "PASS: $hook"
+          done
+
+      - name: Check Python syntax for shared Release 2 services
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          python -m compileall -q \
+            ai-services/agentic-loop \
+            ai-services/multi-agent-server \
+            scripts/security
+
+          echo "Shared Release 2 Python syntax: PASS"
+
+      - name: Validate pre-commit configuration
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          python -m pip install \
+            --disable-pip-version-check \
+            --quiet \
+            pre-commit==4.7.0
+
+          pre-commit validate-config .pre-commit-config.yaml
+
+          echo "Pre-commit configuration: PASS"
+
+      - name: Check committed diff for whitespace errors
+        if: github.event_name == 'push'
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          if git rev-parse HEAD^ >/dev/null 2>&1; then
+            git diff --check HEAD^ HEAD
+          else
+            git diff --check
+          fi
+
+          echo "Git whitespace validation: PASS"
+
+      - name: Integration CI summary
+        shell: bash
+        run: |
+          echo "Release 2 shared foundation validation: PASS"
+          echo "Student endpoint testing remains in the five student CI workflows."
+          echo "Cloud deployment remains a separate Release 2 integration phase."

@@ -103,6 +103,17 @@ def api_list_profiles():
     methods=["POST"]
 )
 def api_analyse_profile(profile_id):
+    if os.getenv(
+        "AI_ENABLED",
+        "true",
+    ).lower() in (
+        "false",
+        "0",
+        "no",
+    ):
+        return jsonify({
+            "error": "AI Mode is disabled"
+        }), 503
 
     profile, status_code = get_profile(
         profile_id
@@ -192,10 +203,149 @@ def api_rag_profile(profile_id):
     except (requests.RequestException, ValueError):
         return jsonify({"error": "Shared RAG service unavailable"}), 503
 
+# RELEASE 2: MULTI-AGENT SKILL PROFILE REVIEW
+
+MULTI_AGENT_URL = os.getenv(
+    "MULTI_AGENT_URL",
+    "http://host.docker.internal:5101",
+).rstrip("/")
+
+
+def multi_agent_enabled():
+    return os.getenv(
+        "MULTI_AGENT_ENABLED", "false"
+    ).lower() in ("true", "1", "yes")
+
+
+def multi_agent_request(method, path, payload=None):
+    try:
+        response = requests.request(
+            method,
+            f"{MULTI_AGENT_URL}{path}",
+            json=payload,
+            timeout=300,
+        )
+        result = response.json()
+
+        if not isinstance(result, dict):
+            raise ValueError("Expected a JSON object")
+
+        return result, response.status_code
+
+    except requests.Timeout:
+        return {
+            "error": (
+                "Multi-Agent request timed out. "
+                "The workflow may still be running."
+            )
+        }, 504
+
+    except (requests.RequestException, ValueError):
+        app.logger.exception("Multi-Agent request failed")
+        return {"error": "Shared Multi-Agent service unavailable"}, 503
+
+
+@app.post("/api/profiles/<int:profile_id>/multi-agent")
+def api_start_profile_workflow(profile_id):
+    if not multi_agent_enabled():
+        return jsonify({"error": "Multi-Agent mode is disabled"}), 503
+
+    data = request.get_json(silent=True)
+    if not isinstance(data, dict):
+        return jsonify({"error": "A JSON object is required"}), 400
+
+    user_request = data.get("user_request", "")
+    if not isinstance(user_request, str) or not user_request.strip():
+        return jsonify({"error": "A review request is required"}), 400
+
+    try:
+        profile, status_code = get_profile(profile_id)
+    except (requests.RequestException, ValueError):
+        return jsonify({"error": "Profile database unavailable"}), 503
+
+    if status_code != 200:
+        return jsonify(profile), status_code
+
+    if not profile.get("skills"):
+        return jsonify({"error": "Profile has no skills to review"}), 400
+
+    result, status_code = multi_agent_request(
+        "POST",
+        "/workflows",
+        {
+            "feature": "student4",
+            "task_type": "skill_profile_review",
+            "user_request": user_request.strip(),
+            "context": {"profile_id": profile_id},
+        },
+    )
+    return jsonify(result), status_code
+
+
+@app.get("/api/multi-agent/workflows/<uuid:workflow_id>")
+def api_get_profile_workflow(workflow_id):
+    if not multi_agent_enabled():
+        return jsonify({"error": "Multi-Agent mode is disabled"}), 503
+
+    result, status_code = multi_agent_request(
+        "GET", f"/workflows/{workflow_id}"
+    )
+
+    if status_code == 200 and result.get("feature") != "student4":
+        return jsonify({"error": "Student 4 workflow not found"}), 404
+
+    return jsonify(result), status_code
+
+
+@app.post("/api/multi-agent/workflows/<uuid:workflow_id>/human-review")
+def api_review_profile_workflow(workflow_id):
+    if not multi_agent_enabled():
+        return jsonify({"error": "Multi-Agent mode is disabled"}), 503
+
+    data = request.get_json(silent=True)
+    if not isinstance(data, dict):
+        return jsonify({"error": "A JSON object is required"}), 400
+
+    decision = data.get("decision")
+    if not isinstance(decision, str) or decision not in (
+        "approve", "correct", "partial_accept", "reject"
+    ):
+        return jsonify({"error": "Invalid review decision"}), 400
+
+    notes = data.get("notes", "")
+    corrected_response = data.get("corrected_response", "")
+
+    if not isinstance(notes, str) or not isinstance(corrected_response, str):
+        return jsonify({"error": "Review notes and correction must be text"}), 400
+
+    if decision == "correct" and not corrected_response.strip():
+        return jsonify({"error": "Enter a corrected response"}), 400
+
+    workflow, status_code = multi_agent_request(
+        "GET", f"/workflows/{workflow_id}"
+    )
+
+    if status_code != 200:
+        return jsonify(workflow), status_code
+
+    if workflow.get("feature") != "student4":
+        return jsonify({"error": "Student 4 workflow not found"}), 404
+
+    result, status_code = multi_agent_request(
+        "POST",
+        f"/workflows/{workflow_id}/human-review",
+        {
+            "decision": decision,
+            "notes": notes.strip(),
+            "corrected_response": corrected_response.strip(),
+        },
+    )
+    return jsonify(result), status_code
+
 if __name__ == "__main__":
 
     app.run(
-        host="0.0.0.0",
+        host=os.getenv("FLASK_HOST", "0.0.0.0"),  # noqa: S104 - required for container ingress
         port=5005,
-        debug=True
+        debug=os.getenv("FLASK_DEBUG", "false").lower() in ("1", "true", "yes")
     )

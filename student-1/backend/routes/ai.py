@@ -273,6 +273,18 @@ def run_agentic_loop(project_id):
     methods=["POST"]
 )
 def generate_task(project_id):
+    if os.getenv(
+        "AI_ENABLED",
+        "true",
+    ).lower() in (
+        "false",
+        "0",
+        "no",
+    ):
+        return jsonify({
+            "error": "AI Mode is disabled"
+        }), 503
+
     try:
         result, status_code = run_agentic_loop(
             project_id

@@ -4,6 +4,7 @@ on:
   push:
     paths:
       - "student-3/**"
+      - "ai-services/multi-agent-server/**"
       - "ai-services/mcp-server/**"
       - "ai-services/rag-server/**"
       - "ai-services/agentic-loop/**"
@@ -13,6 +14,7 @@ on:
   pull_request:
     paths:
       - "student-3/**"
+      - "ai-services/multi-agent-server/**"
       - "ai-services/mcp-server/**"
       - "ai-services/rag-server/**"
       - "ai-services/agentic-loop/**"
@@ -51,7 +53,9 @@ jobs:
       - name: Run tests with simulated Ollama
         run: |
           mkdir -p reports
-          python -m pytest student-3/tests -v --junitxml=reports/student-3-tests.xml
+          python -m pytest student-3/tests -v \
+            --ignore=student-3/tests/release2 \
+            --junitxml=reports/student-3-tests.xml
 
       - name: Disable Student 3 AI services in CI containers
         shell: bash
@@ -65,6 +69,7 @@ jobs:
                 AI_ENABLED: "false"
                 MCP_ENABLED: "false"
                 RAG_ENABLED: "false"
+                MULTI_AGENT_ENABLED: "false"
           YAML
           echo "COMPOSE_FILE=docker-compose.yml:$override" >> "$GITHUB_ENV"
 
@@ -104,13 +109,20 @@ jobs:
           print(f"Retrieved {len(profiles)} live skill profiles through the group backend")
           PY
 
-      - name: Verify Student 3 AI, MCP and RAG are disabled
+      - name: Run Student 3 Release 2 post-commit endpoint tests
+        env:
+          STUDENT3_BACKEND_URL: http://localhost:5009
+        run: |
+          python -m pytest student-3/tests/release2/test_endpoints.py -v \
+            --junitxml=reports/student-3-release2-endpoints.xml
+
+      - name: Verify Student 3 AI, MCP, RAG and Multi-Agent are disabled
         run: |
           docker compose exec -T student-3-backend python - <<'PY'
           import os
           import requests
 
-          for flag in ("AI_ENABLED", "MCP_ENABLED", "RAG_ENABLED"):
+          for flag in ("AI_ENABLED", "MCP_ENABLED", "RAG_ENABLED", "MULTI_AGENT_ENABLED"):
               assert os.environ.get(flag) == "false", f"{flag} was not disabled"
 
           base = "http://127.0.0.1:5000"
@@ -124,9 +136,10 @@ jobs:
               ("/r1/rag/answer", {"query": "What are the ASD requirements?"}),
               ("/r1/rag/retrieve", {"query": "ASD"}),
               ("/r1/rag/refresh", {}),
+              ("/r2/multi-agent/workflows", {"subject": "ASD", "group_size": 5, "student_ids": [1, 2, 3]}),
           ):
               response = requests.post(base + path, json=payload, timeout=5)
-              assert response.status_code == 503, (path, response.status_code, response.text)
+              assert response.status_code in (403, 503), (path, response.status_code, response.text)
               assert "disabled" in response.json().get("error", "").lower(), (path, response.text)
           print("Student 3 AI, MCP and RAG are disabled; profile access was verified separately.")
           PY

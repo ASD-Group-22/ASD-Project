@@ -146,10 +146,68 @@ def rag_profile(profile_id):
     except (requests.RequestException, ValueError):
         return jsonify({"error": "RAG backend request failed"}), 503
 
-if __name__ == "__main__":
+# RELEASE 2: MULTI-AGENT FRONTEND ROUTES
 
+def proxy_multi_agent(method, path, payload=None):
+    try:
+        response = requests.request(
+            method,
+            f"{BACKEND_SERVICE_URL}{path}",
+            json=payload,
+            timeout=330,
+        )
+        return jsonify(response.json()), response.status_code
+
+    except requests.Timeout:
+        return jsonify({
+            "error": "Multi-Agent request timed out."
+        }), 504
+
+    except (requests.RequestException, ValueError):
+        return jsonify({
+            "error": "Multi-Agent backend unavailable."
+        }), 503
+
+
+@app.post("/profiles/<int:profile_id>/multi-agent")
+def start_profile_workflow(profile_id):
+    data = request.get_json(silent=True)
+
+    if not isinstance(data, dict):
+        return jsonify({"error": "A JSON object is required"}), 400
+
+    return proxy_multi_agent(
+        "POST",
+        f"/api/profiles/{profile_id}/multi-agent",
+        data,
+    )
+
+
+@app.get("/multi-agent/workflows/<uuid:workflow_id>")
+def get_profile_workflow(workflow_id):
+    return proxy_multi_agent(
+        "GET",
+        f"/api/multi-agent/workflows/{workflow_id}",
+    )
+
+
+@app.post("/multi-agent/workflows/<uuid:workflow_id>/human-review")
+def review_profile_workflow(workflow_id):
+    data = request.get_json(silent=True)
+
+    if not isinstance(data, dict):
+        return jsonify({"error": "A JSON object is required"}), 400
+
+    return proxy_multi_agent(
+        "POST",
+        f"/api/multi-agent/workflows/{workflow_id}/human-review",
+        data,
+    )
+
+if __name__ == "__main__":
     app.run(
-        host="0.0.0.0",
+        host="0.0.0.0",  # noqa: S104 - required for container ingress
         port=5006,
-        debug=True
+        debug=os.getenv("FLASK_DEBUG", "false").lower()
+        in ("true", "1", "yes"),
     )

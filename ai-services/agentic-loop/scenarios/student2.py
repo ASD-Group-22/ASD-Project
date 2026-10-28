@@ -1,7 +1,7 @@
 """Student 2 - Skill Exchange agentic validation scenarios.
 
 This module defines Student 2 validation scenarios for the single shared
-Release 1 agentic loop.
+Release 1 and Release 2 shared agentic loop.
 
 The shared runner is responsible for executing these scenarios.
 
@@ -13,7 +13,7 @@ FEATURE = "student-2-skill-exchange"
 
 
 def get_scenarios():
-    """Return Student 2 MCP and RAG validation scenarios."""
+    """Return Student 2 Release 1 and Release 2 scenarios."""
 
     return {
         "mcp": [
@@ -145,6 +145,87 @@ def get_scenarios():
                     "answer": "Insufficient context.",
                     "citation_count": 0,
                     "confidence_category": "Insufficient",
+                },
+            },
+        ],
+        "multi-agent-review": [
+            {
+                "id": "student2_multi_agent_workflow_review",
+                "feature": FEATURE,
+                "review_title": (
+                    "Student 2 Multi-Agent Workflow Review"
+                ),
+                "description": (
+                    "Review a real completed Student 2 "
+                    "Multi-Agent workflow for Planner, Worker, "
+                    "Reviewer, evidence-grounding, and required "
+                    "human review."
+                ),
+                "review": {
+                    "feature": "student2",
+                    "workflow_dir": (
+                        "ai-services/multi-agent-server/"
+                        "runtime/workflows"
+                    ),
+                },
+            },
+        ],
+        "testing-report-review": [
+            {
+                "id": "student2_testing_report_review",
+                "feature": FEATURE,
+                "review_title": (
+                    "Student 2 Testing Report Review"
+                ),
+                "description": (
+                    "Review Student 2 Release 2 pre-commit and "
+                    "post-commit testing evidence and identify "
+                    "unsupported claims, gaps, or risks."
+                ),
+                "review": {
+                    "primary_path": (
+                        "reports/release2/"
+                        "student-2-testing-report.md"
+                    ),
+                    "supplemental_paths": [
+                        ".pre-commit-config.yaml",
+                        (
+                            ".github/workflows/"
+                            "student-2-ci.yml"
+                        ),
+                        (
+                            "student-2/tests/release2/"
+                            "test_endpoints.py"
+                        ),
+                    ],
+                },
+            },
+        ],
+        "cloud-deployment-review": [
+            {
+                "id": "student2_cloud_deployment_review",
+                "feature": FEATURE,
+                "review_title": (
+                    "Student 2 Cloud Deployment Report Review"
+                ),
+                "description": (
+                    "Review real cloud deployment evidence for "
+                    "the integrated Release 2 application, "
+                    "including Student 2 CRUD availability and "
+                    "the required disabled-by-default AI "
+                    "service baseline."
+                ),
+                "review": {
+                    "primary_path": (
+                        "reports/release2/"
+                        "cloud-deployment-report.md"
+                    ),
+                    "supplemental_paths": [
+                        (
+                            ".github/workflows/"
+                            "cloud-deployment.yml"
+                        ),
+                    ],
                 },
             },
         ],

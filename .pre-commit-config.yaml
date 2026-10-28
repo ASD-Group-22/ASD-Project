@@ -1,0 +1,27 @@
+repos:
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.17.1
+    hooks:
+      - id: ruff-check
+        name: Ruff security and correctness
+        args:
+          - --select=S,F
+          - --output-format=concise
+        files: ^(ai-services/|student-[1-5]/|scripts/)
+
+  - repo: https://github.com/Yelp/detect-secrets
+    rev: v1.5.0
+    hooks:
+      - id: detect-secrets
+        name: Detect committed secrets
+
+  - repo: local
+    hooks:
+      - id: pip-audit-release2
+        name: pip-audit Release 2 dependencies
+        entry: python scripts/security/pip_audit_release2.py
+        language: python
+        additional_dependencies:
+          - pip-audit==2.10.1
+        always_run: true
+        require_serial: true

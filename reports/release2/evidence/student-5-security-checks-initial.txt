@@ -1,0 +1,15 @@
+Ruff security and correctness............................................Failed
+- hook id: ruff-check
+- exit code: 1
+
+student-5\database\app.py:375:9: S608 Possible SQL injection vector through string-based query construction
+student-5\database\app.py:399:18: S608 Possible SQL injection vector through string-based query construction
+student-5\database\app.py:419:18: S104 Possible binding to all interfaces
+student-5\database\tests\test_database.py:1:8: F401 [*] `json` imported but unused
+student-5\database\tests\test_database.py:7:31: S306 Use of insecure and deprecated function (`mktemp`)
+student-5\frontend\app.py:20:18: S104 Possible binding to all interfaces
+Found 6 errors.
+[*] 1 fixable with `--fix`.
+
+Detect committed secrets.................................................Passed
+pip-audit Release 2 dependencies.........................................Passed

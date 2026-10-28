@@ -68,6 +68,16 @@ jobs:
           AGENTIC_LOG_PATH: ${{ runner.temp }}/student-5-logs/agentic-loop.jsonl
         run: python -m pytest -q tests
 
+
+      - name: Release 2 GET and POST endpoint tests
+        working-directory: student-5/backend
+        env:
+          AI_MODE: 'false'
+          MCP_MODE: 'false'
+          RAG_MODE: 'false'
+          MULTI_AGENT_MODE: 'false'
+        run: python -m pytest -v tests/test_release2_endpoints.py
+
       - name: Check Student 5 Python syntax
         run: |
           python -m compileall -q student-5

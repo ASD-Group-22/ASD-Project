@@ -372,7 +372,7 @@ def create_space():
     columns = list(clean.keys())
     conn = connect()
     cur = conn.execute(
-        f"INSERT INTO campus_spaces ({','.join(columns)}) VALUES ({','.join(['?'] * len(columns))})",
+        f"INSERT INTO campus_spaces ({','.join(columns)}) VALUES ({','.join(['?'] * len(columns))})",  # noqa: S608 - columns restricted to FIELDS allowlist
         [clean[c] for c in columns],
     )
     conn.commit()
@@ -396,7 +396,7 @@ def update_space(space_id):
         conn.close()
         return jsonify({"error": "Space not found"}), 404
     assignments = ", ".join([f"{k} = ?" for k in clean])
-    conn.execute(f"UPDATE campus_spaces SET {assignments} WHERE space_id = ?", [*clean.values(), space_id])
+    conn.execute(f"UPDATE campus_spaces SET {assignments} WHERE space_id = ?", [*clean.values(), space_id])  # noqa: S608 - columns restricted to FIELDS allowlist
     conn.commit()
     row = conn.execute("SELECT * FROM campus_spaces WHERE space_id = ?", (space_id,)).fetchone()
     conn.close()
@@ -416,4 +416,4 @@ def delete_space(space_id):
 
 if __name__ == "__main__":
     init_db()
-    app.run(host="0.0.0.0", port=5000)
+    app.run(host="0.0.0.0", port=5000)  # noqa: S104 - required for Docker networking

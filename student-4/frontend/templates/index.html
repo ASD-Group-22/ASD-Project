@@ -32,6 +32,7 @@
         <section>
 
             <h2>Create Profile</h2>
+            <p class="feature-description">Record a student's skill, proficiency level, strength, and area for improvement.</p>
 
             <label>
                 Student ID
@@ -104,6 +105,7 @@
         <section>
 
             <h2>Find Profile</h2>
+            <p class="feature-description">Load and manage a saved skill profile using its profile ID.</p>
 
             <label>
                 Profile ID
@@ -134,6 +136,7 @@
 
         <section>
         <h2>AI Skill Analysis</h2>
+        <p class="feature-description">Generate an AI analysis of the selected profile's skills and areas for improvement.</p>
 
         <pre id="analysisDisplay">
         No AI analysis generated.
@@ -143,6 +146,7 @@
 
         <section>
         <h2>MCP Skill Profile Tool</h2>
+        <p class="feature-description">Retrieve the selected profile through the group's shared MCP server.</p>
 
         <button onclick="runMcpTool()">
             Get Profile via MCP
@@ -153,6 +157,7 @@
 
         <section>
             <h2>Ask Skill Profile RAG</h2>
+            <p class="feature-description">Ask about a profile using the shared RAG corpus, then review the answer's sources and confidence.</p>
 
             <label for="ragQuestion">Question</label>
             <input
@@ -171,6 +176,7 @@
         <section>
 
             <h2>Current Profile</h2>
+            <p class="feature-description">View the profile currently loaded from the Skill Profile service.</p>
 
             <pre id="profileDisplay">
 No profile loaded.
@@ -188,6 +194,58 @@ No profile loaded.
             </p>
 
         </section>
+
+       <section>
+    <h2>Multi-Agent Skill Profile Review</h2>
+    <p>Uses the Profile ID entered above.</p>
+
+    <label for="multiAgentRequest">Review request</label>
+    <textarea id="multiAgentRequest" rows="3" style="width: 100%;">Summarise the recorded skills, strengths, and weaknesses in this profile. Identify gaps in the recorded information without inventing facts.</textarea>
+
+    <button id="runWorkflowButton" onclick="runProfileWorkflow()">
+        Run Multi-Agent Review
+    </button>
+
+    <p id="workflowStatus" role="status">No workflow started.</p>
+
+    <h3>Planner</h3>
+    <pre id="plannerDisplay">—</pre>
+
+    <h3>Profile Evidence</h3>
+    <pre id="evidenceDisplay">—</pre>
+
+    <h3>Worker</h3>
+    <pre id="workerDisplay">—</pre>
+
+    <h3>Reviewer</h3>
+    <pre id="reviewerDisplay">—</pre>
+
+    <fieldset id="humanReviewControls" disabled>
+        <legend><h3>Human Review</h3></legend>
+
+        <label for="humanDecision">Decision</label>
+        <select id="humanDecision">
+            <option value="approve">Approve</option>
+            <option value="correct">Replace with my revised response</option>ion>
+            <option value="reject">Reject</option>
+        </select>
+
+        <label for="humanNotes">Review notes (optional)
+        <textarea id="humanNotes" rows="2"
+                  style="width: 100%;"></textarea>
+
+        <label for="correctedResponse">
+            Revised response — fill in only when replacing or revising the AI answer
+        </label>
+        <textarea id="correctedResponse" rows="3"
+                  style="width: 100%;"></textarea>
+
+        <button onclick="submitProfileReview()">Submit Decision</button>
+    </fieldset>
+
+    <h3>Final Response</h3>
+    <pre id="finalResponseDisplay">Awaiting a completed review.</pre>
+</section>
 
     </main>
 
@@ -502,7 +560,7 @@ No profile loaded.
         const display = document.getElementById("mcpDisplay");
 
         if (!Number.isInteger(profileId) || profileId <= 0) {
-            display.textContent = "Enter a valid Profile ID first.";
+            display.textContent = "Load a valid Profile ID first.";
             return;
         }
 
@@ -557,7 +615,221 @@ No profile loaded.
             display.textContent = `RAG request failed: ${error.message}`;
         }
     }
-    
+
+        let activeWorkflowId = null;
+
+    function showProfileWorkflow(workflow) {
+        activeWorkflowId = workflow.workflow_id;
+
+        const displays = {
+            plannerDisplay: workflow.planner,
+            evidenceDisplay: workflow.evidence,
+            workerDisplay: workflow.worker,
+            reviewerDisplay: workflow.reviewer
+        };
+
+        for (const [id, value] of Object.entries(displays)) {
+            document.getElementById(id).textContent =
+                JSON.stringify(value, null, 2);
+        }
+
+        const fallback = ["planner", "worker", "reviewer"].some(
+            stage => workflow[stage]?.status === "fallback"
+        );
+
+        document.getElementById("workflowStatus").textContent =
+            `Workflow: ${workflow.workflow_id} | Status: ${workflow.status}` +
+            (fallback ? " | Warning: an AI stage used fallback output." : "");
+
+        document.getElementById("humanReviewControls").disabled =
+            workflow.status !== "awaiting_human_review";
+
+        document.getElementById("finalResponseDisplay").textContent =
+            workflow.status === "rejected"
+                ? "Response rejected by human reviewer."
+                : (workflow.final_response ?? "Awaiting human review.");
+    }
+
+    async function runProfileWorkflow() {
+        const profileId = Number(
+            document.getElementById("profileId").value
+        );
+        const userRequest = document.getElementById(
+            "multiAgentRequest"
+        ).value.trim();
+
+        const status = document.getElementById("workflowStatus");
+        const button = document.getElementById("runWorkflowButton");
+
+        if (!Number.isInteger(profileId) || profileId <= 0 || !userRequest) {
+            status.textContent = "Enter a valid Profile ID and review request.";
+            return;
+        }
+
+        activeWorkflowId = null;
+        button.disabled = true;
+        document.getElementById("humanReviewControls").disabled = true;
+
+        for (const id of [
+            "plannerDisplay", "evidenceDisplay",
+            "workerDisplay", "reviewerDisplay", "finalResponseDisplay"
+        ]) {
+            document.getElementById(id).textContent = "—";
+        }
+
+        document.getElementById("humanNotes").value = "";
+        document.getElementById("correctedResponse").value = "";
+        document.getElementById("humanDecision").value = "approve";
+        status.textContent = "Running Planner, Worker, and Reviewer…";
+
+        try {
+            const response = await fetch(`/profiles/${profileId}/multi-agent`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ user_request: userRequest })
+            });
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(data.error || "Workflow failed.");
+            }
+
+            showProfileWorkflow(data);
+        } catch (error) {
+            status.textContent = error.message;
+        } finally {
+            button.disabled = false;
+        }
+    }
+
+    async function submitProfileReview() {
+        if (!activeWorkflowId) return;
+
+        const decision = document.getElementById("humanDecision").value;
+        const notes = document.getElementById("humanNotes").value.trim();
+        const correctedResponse = document.getElementById(
+            "correctedResponse"
+        ).value.trim();
+
+        const status = document.getElementById("workflowStatus");
+        const controls = document.getElementById("humanReviewControls");
+        const runButton = document.getElementById("runWorkflowButton");
+
+        if (decision === "correct" && !correctedResponse) {
+            status.textContent = "Enter your corrected response first.";
+            return;
+        }
+
+        controls.disabled = true;
+        runButton.disabled = true;
+        status.textContent = "Saving human decision…";
+
+        try {
+            const response = await fetch(
+                `/multi-agent/workflows/${activeWorkflowId}/human-review`,
+                {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        decision,
+                        notes,
+                        corrected_response: correctedResponse
+                    })
+                }
+            );
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(data.error || "Could not save decision.");
+            }
+
+            showProfileWorkflow(data);
+        } catch (error) {
+            status.textContent = error.message;
+            controls.disabled = false;
+        } finally {
+            runButton.disabled = false;
+        }
+    }
+
+    </script>
+
+    <script>
+    (() => {
+        const main = document.querySelector("main");
+        const sections = [...main.querySelectorAll(":scope > section")];
+
+        const groups = {
+            "Create Profile": "profile",
+            "Find Profile": "profile",
+            "Current Profile": "profile",
+            "AI Skill Analysis": "ai",
+            "MCP Skill Profile Tool": "mcp",
+            "Ask Skill Profile RAG": "rag",
+            "Multi-Agent Skill Profile Review": "multi"
+        };
+
+        // Keep the existing Status section visible on every tab.
+        for (const section of sections) {
+            const title = section.querySelector("h2")?.textContent.trim();
+            section.dataset.tab = groups[title] || "shared";
+        }
+
+        const nav = document.createElement("nav");
+        nav.className = "mode-tabs";
+        nav.setAttribute("aria-label", "Skill Profile modes");
+
+        const tabs = [
+            ["profile", "Profile"],
+            ["ai", "AI Analysis"],
+            ["mcp", "MCP Mode"],
+            ["rag", "RAG Mode"],
+            ["multi", "Multi-Agent"]
+        ];
+
+        function showTab(selected) {
+            for (const section of sections) {
+                section.classList.toggle(
+                    "tab-hidden",
+                    section.dataset.tab !== "shared" &&
+                    section.dataset.tab !== selected
+                );
+            }
+
+            for (const button of nav.querySelectorAll("button")) {
+                const active = button.dataset.tab === selected;
+                button.classList.toggle("active", active);
+                button.setAttribute("aria-selected", String(active));
+            }
+        }
+
+        for (const [key, label] of tabs) {
+            const button = document.createElement("button");
+            button.type = "button";
+            button.textContent = label;
+            button.dataset.tab = key;
+            button.addEventListener("click", () => showTab(key));
+            nav.appendChild(button);
+        }
+
+        main.querySelector(":scope > p").insertAdjacentElement("afterend", nav);
+
+        // Put this action beside its output while keeping its original function.
+        const analysisButton = main.querySelector(
+            'button[onclick="generateAnalysis()"]'
+        );
+        const analysisSection = sections.find(
+            section => section.dataset.tab === "ai"
+        );
+        analysisSection.insertBefore(
+            analysisButton,
+            analysisSection.querySelector("#analysisDisplay")
+        );
+
+        showTab("profile");
+    })();
     </script>
 
 </body>

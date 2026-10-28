@@ -5,12 +5,6 @@ import sqlite3
 app = Flask(__name__)
 DATABASE_NAME = os.getenv("DATABASE_NAME", "/app/data/skill_exchange.db")
 
-FIELDS = (
-    "listing_id", "student_id", "student_name", "skill_offered", "skill_wanted",
-    "availability", "description", "status", "created_at", "updated_at"
-)
-
-
 def get_db_connection():
     conn = sqlite3.connect(DATABASE_NAME)
     conn.row_factory = sqlite3.Row
@@ -34,7 +28,13 @@ def validate_payload(payload):
 
 def get_listing_or_none(conn, listing_id):
     return conn.execute(
-        f"SELECT {', '.join(FIELDS)} FROM skill_exchange_listings WHERE listing_id = ?",
+        """
+        SELECT
+            listing_id, student_id, student_name, skill_offered, skill_wanted,
+            availability, description, status, created_at, updated_at
+        FROM skill_exchange_listings
+        WHERE listing_id = ?
+        """,
         (listing_id,),
     ).fetchone()
 
@@ -50,14 +50,31 @@ def health():
 @app.get("/listings")
 def get_listings():
     include_inactive = request.args.get("include_inactive", "false").lower() == "true"
-    query = f"SELECT {', '.join(FIELDS)} FROM skill_exchange_listings"
-    params = ()
-    if not include_inactive:
-        query += " WHERE status = ?"
-        params = ("active",)
-    query += " ORDER BY listing_id"
     conn = get_db_connection()
-    rows = conn.execute(query, params).fetchall()
+
+    if include_inactive:
+        rows = conn.execute(
+            """
+            SELECT
+                listing_id, student_id, student_name, skill_offered, skill_wanted,
+                availability, description, status, created_at, updated_at
+            FROM skill_exchange_listings
+            ORDER BY listing_id
+            """
+        ).fetchall()
+    else:
+        rows = conn.execute(
+            """
+            SELECT
+                listing_id, student_id, student_name, skill_offered, skill_wanted,
+                availability, description, status, created_at, updated_at
+            FROM skill_exchange_listings
+            WHERE status = ?
+            ORDER BY listing_id
+            """,
+            ("active",),
+        ).fetchall()
+
     conn.close()
     return jsonify([dict(row) for row in rows]), 200
 
@@ -70,8 +87,11 @@ def search_listings():
     like = f"%{skill}%"
     conn = get_db_connection()
     rows = conn.execute(
-        f"""
-        SELECT {', '.join(FIELDS)} FROM skill_exchange_listings
+        """
+        SELECT
+            listing_id, student_id, student_name, skill_offered, skill_wanted,
+            availability, description, status, created_at, updated_at
+        FROM skill_exchange_listings
         WHERE status = 'active'
           AND (skill_offered LIKE ? COLLATE NOCASE OR skill_wanted LIKE ? COLLATE NOCASE)
         ORDER BY listing_id
@@ -169,4 +189,4 @@ def deactivate_listing(listing_id):
 
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5002, debug=False)
+    app.run(host="0.0.0.0", port=5002, debug=False)  # noqa: S104 - container service must listen outside loopback
